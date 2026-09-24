@@ -1,0 +1,44 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env — never commit secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# database
+/nuvra.db
+/nuvra.db-journal
+/nuvra.db-wal
+/nuvra.db-shm
+*.db
+
+# tests
+/coverage
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo

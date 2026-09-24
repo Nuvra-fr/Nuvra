@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `affiliate_code` text;
