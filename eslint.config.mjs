@@ -1,4 +1,6 @@
 import { FlatCompat } from '@eslint/eslintrc';
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -18,4 +20,24 @@ export default [
     ],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  // Type-aware rules for everything that talks to the database: libSQL is
+  // asynchronous, so a missing `await` silently becomes a bug at runtime.
+  // Drizzle query builders are thenables rather than Promises — hence
+  // checkThenables.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx', 'scripts/**/*.ts', 'tests/**/*.ts', 'drizzle.config.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
+    plugins: { '@typescript-eslint': tsPlugin },
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { checkThenables: true }],
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+      '@typescript-eslint/await-thenable': 'error',
+    },
+  },
 ];

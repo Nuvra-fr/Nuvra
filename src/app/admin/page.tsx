@@ -19,10 +19,10 @@ export default async function AdminOverview() {
   const mode = paymentsMode();
   const testMode = mode === 'test';
 
-  const allUsers = db.select({ id: users.id }).from(users).all().length;
-  const allWs = db.select({ id: workspaces.id }).from(workspaces).all().length;
+  const allUsers = (await db.select({ id: users.id }).from(users).all()).length;
+  const allWs = (await db.select({ id: workspaces.id }).from(workspaces).all()).length;
 
-  const paidOrders = db
+  const paidOrders = await db
     .select()
     .from(orders)
     .where(eq(orders.status, 'PAID'))
@@ -31,25 +31,25 @@ export default async function AdminOverview() {
   const gmv30 = paidOrders.filter((o) => o.paidAt && o.paidAt >= since30).reduce((s, o) => s + o.totalCents, 0);
   const academyGmv = paidOrders.filter((o) => o.kind === 'ACADEMY_SALE').reduce((s, o) => s + o.totalCents, 0);
   const creatorGmv = gmv - academyGmv;
-  const refunds = db.select().from(orders).where(eq(orders.status, 'REFUNDED')).all().length;
+  const refunds = (await db.select().from(orders).where(eq(orders.status, 'REFUNDED')).all()).length;
   const refundRate = paidOrders.length ? Math.round((refunds / paidOrders.length) * 1000) / 10 : 0;
 
-  const subs = db
+  const subs = (await db
     .select({ sub: subscriptions, plan: subscriptionPlans })
     .from(subscriptions)
     .innerJoin(subscriptionPlans, eq(subscriptions.planId, subscriptionPlans.id))
-    .all()
+    .all())
     .filter((s) => s.sub.status === 'active' || s.sub.status === 'trialing');
   const mrr = subs.reduce((s, x) => s + (x.sub.stripeSubscriptionId || !testMode ? x.plan.priceCents : x.plan.priceCents), 0);
-  const proWs = db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.plan, 'PRO')).all().length;
-  const freeWs = db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.plan, 'FREE')).all().length;
+  const proWs = (await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.plan, 'PRO')).all()).length;
+  const freeWs = (await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.plan, 'FREE')).all()).length;
 
-  const listingsPending = db.select({ id: marketplaceListings.id }).from(marketplaceListings).where(eq(marketplaceListings.status, 'PENDING')).all().length;
-  const pendingPayouts = db.select({ id: payouts.id }).from(payouts).where(eq(payouts.status, 'PENDING')).all().length;
-  const failedEmails = db.select({ id: emailLogs.id }).from(emailLogs).where(eq(emailLogs.status, 'FAILED')).all().length;
+  const listingsPending = (await db.select({ id: marketplaceListings.id }).from(marketplaceListings).where(eq(marketplaceListings.status, 'PENDING')).all()).length;
+  const pendingPayouts = (await db.select({ id: payouts.id }).from(payouts).where(eq(payouts.status, 'PENDING')).all()).length;
+  const failedEmails = (await db.select({ id: emailLogs.id }).from(emailLogs).where(eq(emailLogs.status, 'FAILED')).all()).length;
 
-  const summary = ledgerSummary();
-  const platformNet = getPlatformRevenue();
+  const summary = await ledgerSummary();
+  const platformNet = await getPlatformRevenue();
 
   const conversion = freeWs + proWs > 0 ? Math.round((proWs / (freeWs + proWs)) * 1000) / 10 : 0;
 
@@ -94,7 +94,7 @@ export default async function AdminOverview() {
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2" padded>
           <h2 className="mb-4 text-sm font-semibold text-zinc-200">Platform GMV — 14 days</h2>
-          <BarChart data={revenueSeries(14)} format={(v) => formatCents(v)} />
+          <BarChart data={await revenueSeries(14)} format={(v) => formatCents(v)} />
         </Card>
         <Card padded>
           <h2 className="mb-4 text-sm font-semibold text-zinc-200">Ledger accounts</h2>

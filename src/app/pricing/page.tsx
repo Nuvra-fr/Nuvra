@@ -24,7 +24,7 @@ const PLAN_MATRIX: { label: string; free: string; pro: string }[] = [
 ];
 
 export default async function PricingPage() {
-  const cfg = getAllConfig();
+  const cfg = await getAllConfig();
   const proPrice = Number(cfg['pro.priceCents'] ?? 2900);
   const businessPrice = Number(cfg['business.priceCents'] ?? 9900);
   const academyPrice = Number(cfg['academy.priceCents'] ?? 19700);

@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Automations' };
 
 export default async function AutomationsPage() {
   const ctx = await requireUser();
-  const rows = db
+  const rows = await db
     .select()
     .from(automations)
     .where(eq(automations.workspaceId, ctx.workspace.id))

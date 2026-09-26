@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Admin — Email queue' };
 
 export default async function AdminEmailsPage() {
   await requireAdmin();
-  const rows = db.select().from(emailLogs).orderBy(desc(emailLogs.createdAt)).limit(200).all();
+  const rows = await db.select().from(emailLogs).orderBy(desc(emailLogs.createdAt)).limit(200).all();
   const scheduled = rows.filter((r) => r.status === 'SCHEDULED').length;
   const queued = rows.filter((r) => r.status === 'QUEUED').length;
   const failed = rows.filter((r) => r.status === 'FAILED').length;

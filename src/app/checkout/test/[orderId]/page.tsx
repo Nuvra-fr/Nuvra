@@ -18,14 +18,14 @@ export default async function TestCheckoutPage({
   params: Promise<{ orderId: string }>;
 }) {
   const { orderId } = await params;
-  const order = db.select().from(orders).where(eq(orders.id, orderId)).get();
+  const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
   if (!order || order.mode !== 'TEST') notFound();
   if (order.status === 'PAID') {
     // already confirmed — go to success
     const { redirect } = await import('next/navigation');
     redirect(`/checkout/success?order=${orderId}`);
   }
-  const items = db.select().from(orderItems).where(eq(orderItems.orderId, orderId)).all();
+  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId)).all();
 
   return (
     <div className="min-h-screen bg-ink-950">

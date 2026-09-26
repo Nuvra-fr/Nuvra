@@ -19,7 +19,7 @@ export default async function ProductsPage({
 }) {
   const ctx = await requireUser();
   const sp = await searchParams;
-  const rows = db
+  const rows = await db
     .select()
     .from(products)
     .where(eq(products.workspaceId, ctx.workspace.id))
@@ -32,7 +32,7 @@ export default async function ProductsPage({
 
   const salesPerProduct = new Map<string, { count: number; total: number }>();
   for (const p of rows) {
-    const sales = db
+    const sales = await db
       .select({ total: orders.totalCents })
       .from(orderItems)
       .innerJoin(orders, eq(orderItems.orderId, orders.id))

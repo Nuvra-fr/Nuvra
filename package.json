@@ -2,7 +2,7 @@
   "name": "nuvra",
   "version": "0.1.0",
   "private": true,
-  "description": "Nuvra — Create. Sell. Teach. Scale. The all-in-one operating system for digital business.",
+  "description": "Nuvra \u2014 Create. Sell. Teach. Scale. The all-in-one operating system for digital business.",
   "engines": {
     "node": ">=22.14"
   },
@@ -15,15 +15,15 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "smoke": "bash scripts/smoke.sh",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx scripts/db-migrate.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx scripts/seed.ts",
-    "db:reset": "rm -f nuvra.db && drizzle-kit push && tsx scripts/seed.ts"
+    "db:reset": "rm -f nuvra.db nuvra.db-wal nuvra.db-shm && tsx scripts/db-migrate.ts && tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.3",
     "lucide-react": "^1.48.0",
@@ -35,7 +35,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

@@ -12,9 +12,9 @@ export async function GET(
   const ctx = await getSession();
   if (!ctx) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
   const { id } = await params;
-  const lesson = db.select().from(lessons).where(eq(lessons.id, id)).get();
+  const lesson = await db.select().from(lessons).where(eq(lessons.id, id)).get();
   if (!lesson) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const course = db.select().from(courses).where(eq(courses.id, lesson.courseId)).get();
+  const course = await db.select().from(courses).where(eq(courses.id, lesson.courseId)).get();
   if (!course || course.workspaceId !== ctx.workspace.id) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
   }

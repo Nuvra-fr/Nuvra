@@ -13,15 +13,15 @@ export const metadata: Metadata = { title: 'Funnels' };
 
 export default async function FunnelsPage() {
   const ctx = await requireUser();
-  const rows = db
+  const rows = await db
     .select()
     .from(funnels)
     .where(eq(funnels.workspaceId, ctx.workspace.id))
     .orderBy(desc(funnels.updatedAt))
     .all();
 
-  const withCounts = rows.map((f) => {
-    const steps = db
+  const withCounts = await Promise.all(rows.map(async (f) => {
+    const steps = await db
       .select({ step: funnelSteps, page: pages })
       .from(funnelSteps)
       .innerJoin(pages, eq(funnelSteps.pageId, pages.id))
@@ -29,7 +29,7 @@ export default async function FunnelsPage() {
       .all();
     const views = steps.reduce((s, st) => s + st.page.views, 0);
     return { ...f, stepCount: steps.length, views };
-  });
+  }));
 
   return (
     <div>

@@ -17,15 +17,15 @@ export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
   const ctx = await requireUser();
-  const domains = db.select().from(customDomains).where(eq(customDomains.workspaceId, ctx.workspace.id)).all();
+  const domains = await db.select().from(customDomains).where(eq(customDomains.workspaceId, ctx.workspace.id)).all();
 
   const integrations = [
     { name: 'Stripe (payments)', ok: paymentsMode() === 'stripe', hint: paymentsMode() === 'stripe' ? 'configured' : 'set STRIPE_SECRET_KEY' },
     { name: 'Email provider', ok: emailProvider() === 'RESEND', hint: emailProvider() === 'RESEND' ? 'Resend live' : 'set RESEND_API_KEY (outbox otherwise)' },
-    { name: 'Nuvra AI', ok: aiProviderConfigured() && flagEnabled('ai'), hint: aiProviderConfigured() ? (flagEnabled('ai') ? 'configured' : 'flag disabled') : 'set AI_API_KEY' },
-    { name: 'Marketplace flag', ok: flagEnabled('marketplace'), hint: flagEnabled('marketplace') ? 'enabled' : 'disabled by admin' },
-    { name: 'Affiliates flag', ok: flagEnabled('affiliates'), hint: flagEnabled('affiliates') ? 'enabled' : 'disabled by admin' },
-    { name: 'Custom domains flag', ok: flagEnabled('customDomains'), hint: flagEnabled('customDomains') ? 'enabled' : 'disabled by admin' },
+    { name: 'Nuvra AI', ok: aiProviderConfigured() && await flagEnabled('ai'), hint: aiProviderConfigured() ? (await flagEnabled('ai') ? 'configured' : 'flag disabled') : 'set AI_API_KEY' },
+    { name: 'Marketplace flag', ok: flagEnabled('marketplace'), hint: await flagEnabled('marketplace') ? 'enabled' : 'disabled by admin' },
+    { name: 'Affiliates flag', ok: flagEnabled('affiliates'), hint: await flagEnabled('affiliates') ? 'enabled' : 'disabled by admin' },
+    { name: 'Custom domains flag', ok: flagEnabled('customDomains'), hint: await flagEnabled('customDomains') ? 'enabled' : 'disabled by admin' },
   ];
 
   return (
@@ -72,7 +72,7 @@ export default async function SettingsPage() {
           <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-200">
             <Globe className="h-4 w-4 text-nuvra-400" /> Custom domains
           </div>
-          {!flagEnabled('customDomains') ? (
+          {!await flagEnabled('customDomains') ? (
             <InlineAlert tone="warning">
               Custom domains are available on Nuvra Pro and currently gated by the{' '}
               <code>customDomains</code> feature flag (disabled by admin).

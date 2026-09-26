@@ -4,6 +4,10 @@ import { settings } from '@/db/schema';
 /**
  * Admin-editable platform configuration.
  * NEVER hardcode business values in the frontend — everything reads from here.
+ *
+ * Values live in the database, so every read is asynchronous. A 5-second
+ * in-memory cache keeps that invisible in practice, and concurrent readers
+ * share a single in-flight query.
  */
 
 export const CONFIG_DEFAULTS: Record<string, unknown> = {
@@ -38,46 +42,57 @@ export const CONFIG_DEFAULTS: Record<string, unknown> = {
 
 let cache: Map<string, unknown> | null = null;
 let cacheAt = 0;
+let inflight: Promise<Map<string, unknown>> | null = null;
 const CACHE_TTL_MS = 5_000;
 
-function loadCache(): Map<string, unknown> {
+async function loadCache(): Promise<Map<string, unknown>> {
   const now = Date.now();
   if (cache && now - cacheAt < CACHE_TTL_MS) return cache;
-  const map = new Map<string, unknown>(Object.entries(CONFIG_DEFAULTS));
-  try {
-    const rows = db.select().from(settings).all();
-    for (const r of rows) {
-      try {
-        map.set(r.key, JSON.parse(r.value));
-      } catch {
-        map.set(r.key, r.value);
+  if (inflight) return inflight; // concurrent readers share one query
+
+  inflight = (async () => {
+    const map = new Map<string, unknown>(Object.entries(CONFIG_DEFAULTS));
+    try {
+      const rows = await db.select().from(settings);
+      for (const r of rows) {
+        try {
+          map.set(r.key, JSON.parse(r.value));
+        } catch {
+          map.set(r.key, r.value);
+        }
       }
+    } catch {
+      // DB not ready — defaults only
     }
-  } catch {
-    // DB not ready — defaults only
+    cache = map;
+    cacheAt = Date.now();
+    return map;
+  })();
+
+  try {
+    return await inflight;
+  } finally {
+    inflight = null;
   }
-  cache = map;
-  cacheAt = now;
-  return map;
 }
 
-export function getConfig<T = unknown>(key: string): T {
-  const map = loadCache();
+export async function getConfig<T = unknown>(key: string): Promise<T> {
+  const map = await loadCache();
   if (map.has(key)) return map.get(key) as T;
   return CONFIG_DEFAULTS[key] as T;
 }
 
-export function getAllConfig(): Record<string, unknown> {
-  return Object.fromEntries(loadCache());
+export async function getAllConfig(): Promise<Record<string, unknown>> {
+  return Object.fromEntries(await loadCache());
 }
 
-export function setConfig(key: string, value: unknown): void {
-  db.insert(settings)
+export async function setConfig(key: string, value: unknown): Promise<void> {
+  await db
+    .insert(settings)
     .values({ key, value: JSON.stringify(value), description: null })
     .onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(value) } })
     .run();
-  cache = null;
-  cacheAt = 0;
+  invalidateConfigCache();
 }
 
 export function invalidateConfigCache(): void {
@@ -87,27 +102,27 @@ export function invalidateConfigCache(): void {
 
 // ── Business-model shortcuts ──────────────────────────────
 
-export function freeCommissionBps(): number {
+export function freeCommissionBps(): Promise<number> {
   return getConfig<number>('commission.freeBps');
 }
 
-export function resellerBps(): number {
+export function resellerBps(): Promise<number> {
   return getConfig<number>('commission.resellerBps');
 }
 
-export function academyPriceCents(): number {
+export function academyPriceCents(): Promise<number> {
   return getConfig<number>('academy.priceCents');
 }
 
-export function proPriceCents(): number {
+export function proPriceCents(): Promise<number> {
   return getConfig<number>('pro.priceCents');
 }
 
-export function flagEnabled(key: string): boolean {
-  return getConfig<boolean>(`flags.${key}`) === true;
+export async function flagEnabled(key: string): Promise<boolean> {
+  return (await getConfig<boolean>(`flags.${key}`)) === true;
 }
 
-export function aiCreditsForPlan(plan: string): number {
+export function aiCreditsForPlan(plan: string): Promise<number> {
   if (plan === 'PRO') return getConfig<number>('ai.proCredits');
   if (plan === 'BUSINESS' || plan === 'AGENCY') return getConfig<number>('ai.businessCredits');
   return getConfig<number>('ai.freeCredits');

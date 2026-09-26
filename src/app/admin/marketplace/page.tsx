@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Admin — Moderation' };
 
 export default async function AdminModerationPage() {
   await requireAdmin();
-  const rows = db
+  const rows = await db
     .select({ listing: marketplaceListings, ws: workspaces })
     .from(marketplaceListings)
     .leftJoin(workspaces, eq(marketplaceListings.workspaceId, workspaces.id))

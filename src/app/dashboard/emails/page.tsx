@@ -22,28 +22,28 @@ export default async function EmailsPage({
   const sp = await searchParams;
   const tab = sp.tab === 'sequences' ? 'sequences' : sp.tab === 'outbox' ? 'outbox' : 'campaigns';
 
-  const campaigns = db
+  const campaigns = await db
     .select()
     .from(emailCampaigns)
     .where(eq(emailCampaigns.workspaceId, ctx.workspace.id))
     .orderBy(desc(emailCampaigns.updatedAt))
     .all();
 
-  const sequences = db
+  const sequences = await db
     .select()
     .from(emailSequences)
     .where(eq(emailSequences.workspaceId, ctx.workspace.id))
     .orderBy(desc(emailSequences.updatedAt))
     .all();
 
-  const outbox = db
+  const outbox = await db
     .select()
     .from(emailLogs)
     .orderBy(desc(emailLogs.createdAt))
     .limit(60)
     .all();
 
-  const contactCount = db.select({ id: contacts.id }).from(contacts).where(eq(contacts.workspaceId, ctx.workspace.id)).all().length;
+  const contactCount = (await db.select({ id: contacts.id }).from(contacts).where(eq(contacts.workspaceId, ctx.workspace.id)).all()).length;
 
   return (
     <div>
@@ -148,8 +148,8 @@ export default async function EmailsPage({
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {sequences.map((s) => {
-                const steps = db
+              {await Promise.all(sequences.map(async (s) => {
+                const steps = await db
                   .select()
                   .from(emailSequenceSteps)
                   .where(eq(emailSequenceSteps.sequenceId, s.id))
@@ -176,7 +176,7 @@ export default async function EmailsPage({
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           )}
         </div>

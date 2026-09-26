@@ -52,7 +52,7 @@ async function runActions(
   runId: string,
   startIndex = 0,
 ): Promise<RunActionsResult> {
-  const actions = db
+  const actions = await db
     .select()
     .from(automationActions)
     .where(eq(automationActions.automationId, automationId))
@@ -78,7 +78,7 @@ async function runActions(
         }
         case 'send_notification': {
           if (ctx.userId) {
-            db.insert(notifications)
+            await db.insert(notifications)
               .values({
                 userId: String(ctx.userId),
                 workspaceId: null,
@@ -94,7 +94,7 @@ async function runActions(
         case 'add_tag':
         case 'remove_tag': {
           if (ctx.contactId) {
-            const c = db.select().from(contacts).where(eq(contacts.id, String(ctx.contactId))).get();
+            const c = await db.select().from(contacts).where(eq(contacts.id, String(ctx.contactId))).get();
             if (c) {
               const tags = safeJson<string[]>(c.tags, []);
               const tag = String(config.tag ?? '');
@@ -103,7 +103,7 @@ async function runActions(
                 action.type === 'add_tag'
                   ? Array.from(new Set([...tags, tag]))
                   : tags.filter((t) => t !== tag);
-              db.update(contacts).set({ tags: JSON.stringify(next) }).where(eq(contacts.id, c.id)).run();
+              await db.update(contacts).set({ tags: JSON.stringify(next) }).where(eq(contacts.id, c.id)).run();
             }
           }
           break;
@@ -115,7 +115,7 @@ async function runActions(
         case 'wait': {
           // Pause the run; remaining actions resume via processWaitingRuns()
           const hours = Number(config.hours ?? 24);
-          db.update(automationRuns)
+          await db.update(automationRuns)
             .set({
               status: 'WAITING',
               context: JSON.stringify({
@@ -141,7 +141,7 @@ async function runActions(
         }
         case 'create_task': {
           if (ctx.contactId) {
-            db.insert(contactActivities)
+            await db.insert(contactActivities)
               .values({
                 contactId: String(ctx.contactId),
                 type: 'task',
@@ -163,7 +163,7 @@ async function runActions(
 
 export async function emitEvent(input: EventInput): Promise<EmitResult> {
   const payload = input.payload ?? {};
-  const evt = db
+  const evt = await db
     .insert(domainEvents)
     .values({
       name: input.name,
@@ -181,24 +181,24 @@ export async function emitEvent(input: EventInput): Promise<EmitResult> {
 
   // 1 — Active automations matching this trigger
   if (input.workspaceId) {
-    const autos = db
+    const autos = (await db
       .select()
       .from(automations)
       .where(
         and(eq(automations.workspaceId, input.workspaceId), eq(automations.active, true)),
       )
-      .all()
+      .all())
       .filter((a) => a.triggerEvent === input.name);
 
     for (const a of autos) {
-      const run = db
+      const run = await db
         .insert(automationRuns)
         .values({ automationId: a.id, status: 'RUNNING', context: JSON.stringify(ctx) })
         .returning({ id: automationRuns.id })
         .get();
       const res = await runActions(a.id, ctx, run.id);
       if (!res.waited) {
-        db.update(automationRuns)
+        await db.update(automationRuns)
           .set({
             status: res.error ? 'FAILED' : 'COMPLETED',
             error: res.error ?? null,
@@ -207,7 +207,7 @@ export async function emitEvent(input: EventInput): Promise<EmitResult> {
           .where(eq(automationRuns.id, run.id))
           .run();
       }
-      db.update(automations)
+      await db.update(automations)
         .set({ runCount: a.runCount + 1 })
         .where(eq(automations.id, a.id))
         .run();
@@ -215,17 +215,17 @@ export async function emitEvent(input: EventInput): Promise<EmitResult> {
     }
 
     // 2 — Active email sequences with this trigger
-    const seqs = db
+    const seqs = (await db
       .select()
       .from(emailSequences)
       .where(
         and(eq(emailSequences.workspaceId, input.workspaceId), eq(emailSequences.active, true)),
       )
-      .all()
+      .all())
       .filter((s) => s.triggerEvent === input.name);
 
     for (const s of seqs) {
-      const steps = db
+      const steps = await db
         .select()
         .from(emailSequenceSteps)
         .where(eq(emailSequenceSteps.sequenceId, s.id))
@@ -244,7 +244,7 @@ export async function emitEvent(input: EventInput): Promise<EmitResult> {
             relatedTo: `sequence:${s.id}`,
           });
         } else {
-          scheduleEmail({
+          await scheduleEmail({
             to: String(to),
             subject: step.subject,
             body: step.body,
@@ -258,14 +258,14 @@ export async function emitEvent(input: EventInput): Promise<EmitResult> {
     }
   }
 
-  db.update(domainEvents).set({ processedAt: new Date() }).where(eq(domainEvents.id, evt.id)).run();
+  await db.update(domainEvents).set({ processedAt: new Date() }).where(eq(domainEvents.id, evt.id)).run();
 
   return { eventId: evt.id, automationsRun, sequencesTriggered };
 }
 
 /** Resume automations paused by a `wait` action. Safe to call repeatedly. */
 export async function processWaitingRuns(): Promise<number> {
-  const waiting = db
+  const waiting = await db
     .select()
     .from(automationRuns)
     .where(eq(automationRuns.status, 'WAITING'))
@@ -279,9 +279,9 @@ export async function processWaitingRuns(): Promise<number> {
     }>(run.context, {});
     if (!ctx.resumeAt || new Date(ctx.resumeAt).getTime() > Date.now()) continue;
     if (!ctx.automationId) continue;
-    db.update(automationRuns).set({ status: 'RUNNING' }).where(eq(automationRuns.id, run.id)).run();
+    await db.update(automationRuns).set({ status: 'RUNNING' }).where(eq(automationRuns.id, run.id)).run();
     const res = await runActions(ctx.automationId, ctx, run.id, ctx.startIdx ?? 0);
-    db.update(automationRuns)
+    await db.update(automationRuns)
       .set({
         status: res.waited ? 'WAITING' : res.error ? 'FAILED' : 'COMPLETED',
         error: res.error ?? null,
@@ -293,8 +293,8 @@ export async function processWaitingRuns(): Promise<number> {
   return resumed;
 }
 
-export function listEvents(workspaceId?: string, limit = 50) {
-  return db
+export async function listEvents(workspaceId?: string, limit = 50) {
+  return await db
     .select()
     .from(domainEvents)
     .where(workspaceId ? eq(domainEvents.workspaceId, workspaceId) : undefined)

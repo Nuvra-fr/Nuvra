@@ -1,12 +1,12 @@
 import { db } from '@/lib/db';
 import { auditLogs } from '@/db/schema';
 
-export function audit(
+export async function audit(
   action: string,
   opts: { actorUserId?: string | null; target?: string | null; meta?: unknown; ip?: string | null } = {},
-): void {
+): Promise<void> {
   try {
-    db.insert(auditLogs)
+    await db.insert(auditLogs)
       .values({
         action,
         actorUserId: opts.actorUserId ?? null,

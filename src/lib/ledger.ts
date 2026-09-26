@@ -32,7 +32,7 @@ export function newGroup(): string {
   return randomUUID();
 }
 
-export function writeEntries(group: string, entries: EntryInput[]): void {
+export async function writeEntries(group: string, entries: EntryInput[]): Promise<void> {
   const now = new Date();
   const rows = entries
     .filter((e) => e.amountCents > 0)
@@ -55,11 +55,11 @@ export function writeEntries(group: string, entries: EntryInput[]): void {
       createdAt: now,
     }));
   if (rows.length === 0) return;
-  db.insert(ledgerEntries).values(rows).run();
+  await db.insert(ledgerEntries).values(rows).run();
 }
 
 /** SALE — credit the seller (creator or reseller) and the platform revenue. */
-export function recordSale(params: {
+export async function recordSale(params: {
   orderId: string;
   workspaceId: string;
   mode: 'LIVE' | 'TEST';
@@ -69,7 +69,7 @@ export function recordSale(params: {
   sellerCents: number;
   platformCents: number;
   description: string;
-}): string {
+}): Promise<string> {
   const group = newGroup();
   const entries: EntryInput[] = [
     {
@@ -100,12 +100,12 @@ export function recordSale(params: {
       mode: params.mode,
     },
   ];
-  writeEntries(group, entries);
+  await writeEntries(group, entries);
   return group;
 }
 
 /** REFUND / REVERSAL — debit seller and platform by the same split. */
-export function recordRefund(params: {
+export async function recordRefund(params: {
   orderId: string;
   workspaceId: string;
   mode: 'LIVE' | 'TEST';
@@ -116,9 +116,9 @@ export function recordRefund(params: {
   sellerReversalCents: number;
   platformReversalCents: number;
   description: string;
-}): string {
+}): Promise<string> {
   const group = newGroup();
-  writeEntries(group, [
+  await writeEntries(group, [
     {
       type: 'REVERSAL',
       account: params.sellerAccount,
@@ -151,16 +151,16 @@ export function recordRefund(params: {
 }
 
 /** COMMISSION — affiliate commission credited to the affiliate. */
-export function recordAffiliateCommission(params: {
+export async function recordAffiliateCommission(params: {
   orderId: string;
   workspaceId: string;
   mode: 'LIVE' | 'TEST';
   affiliateUserId: string;
   commissionCents: number;
   description: string;
-}): string {
+}): Promise<string> {
   const group = newGroup();
-  writeEntries(group, [
+  await writeEntries(group, [
     {
       type: 'COMMISSION',
       account: 'AFFILIATE_PAYABLE',
@@ -179,16 +179,16 @@ export function recordAffiliateCommission(params: {
 }
 
 /** PAYOUT — debit the payable account, credit the clearing account. */
-export function recordPayout(params: {
+export async function recordPayout(params: {
   payoutId: string;
   userId: string;
   account: LedgerAccount;
   amountCents: number;
   mode: 'LIVE' | 'TEST';
   description: string;
-}): string {
+}): Promise<string> {
   const group = newGroup();
-  writeEntries(group, [
+  await writeEntries(group, [
     {
       type: 'PAYOUT',
       account: params.account,
@@ -218,17 +218,17 @@ export function recordPayout(params: {
 }
 
 /** Sum of CREDIT minus DEBIT for a user on one account (optionally LIVE only). */
-export function getBalance(
+export async function getBalance(
   userId: string,
   account: LedgerAccount,
   mode?: 'LIVE' | 'TEST',
-): number {
+): Promise<number> {
   const conditions = [
     eq(ledgerEntries.userId, userId),
     eq(ledgerEntries.account, account),
   ];
   if (mode) conditions.push(eq(ledgerEntries.mode, mode));
-  const rows = db
+  const rows = await db
     .select({
       direction: ledgerEntries.direction,
       total: sql<string>`coalesce(sum(${ledgerEntries.amountCents}), 0)`,
@@ -246,10 +246,10 @@ export function getBalance(
 }
 
 /** Platform revenue (net of reversals) across all workspaces. */
-export function getPlatformRevenue(mode?: 'LIVE' | 'TEST'): number {
+export async function getPlatformRevenue(mode?: 'LIVE' | 'TEST'): Promise<number> {
   const conditions = [eq(ledgerEntries.account, 'PLATFORM_REVENUE')];
   if (mode) conditions.push(eq(ledgerEntries.mode, mode));
-  const rows = db
+  const rows = await db
     .select({
       direction: ledgerEntries.direction,
       total: sql<string>`coalesce(sum(${ledgerEntries.amountCents}), 0)`,
@@ -264,13 +264,13 @@ export function getPlatformRevenue(mode?: 'LIVE' | 'TEST'): number {
 }
 
 /** Workspace creator earnings (CREATOR_PAYABLE, net). */
-export function getWorkspaceEarnings(workspaceId: string, mode?: 'LIVE' | 'TEST'): number {
+export async function getWorkspaceEarnings(workspaceId: string, mode?: 'LIVE' | 'TEST'): Promise<number> {
   const conditions = [
     eq(ledgerEntries.workspaceId, workspaceId),
     eq(ledgerEntries.account, 'CREATOR_PAYABLE'),
   ];
   if (mode) conditions.push(eq(ledgerEntries.mode, mode));
-  const rows = db
+  const rows = await db
     .select({
       direction: ledgerEntries.direction,
       total: sql<string>`coalesce(sum(${ledgerEntries.amountCents}), 0)`,
@@ -284,8 +284,8 @@ export function getWorkspaceEarnings(workspaceId: string, mode?: 'LIVE' | 'TEST'
   return balance;
 }
 
-export function listLedgerForWorkspace(workspaceId: string, limit = 100): LedgerEntry[] {
-  return db
+export async function listLedgerForWorkspace(workspaceId: string, limit = 100): Promise<LedgerEntry[]> {
+  return await db
     .select()
     .from(ledgerEntries)
     .where(eq(ledgerEntries.workspaceId, workspaceId))
@@ -294,8 +294,8 @@ export function listLedgerForWorkspace(workspaceId: string, limit = 100): Ledger
     .all();
 }
 
-export function listLedgerForUser(userId: string, limit = 100): LedgerEntry[] {
-  return db
+export async function listLedgerForUser(userId: string, limit = 100): Promise<LedgerEntry[]> {
+  return await db
     .select()
     .from(ledgerEntries)
     .where(eq(ledgerEntries.userId, userId))
@@ -304,18 +304,18 @@ export function listLedgerForUser(userId: string, limit = 100): LedgerEntry[] {
     .all();
 }
 
-export function ledgerForOrder(orderId: string): LedgerEntry[] {
-  return db.select().from(ledgerEntries).where(eq(ledgerEntries.orderId, orderId)).all();
+export async function ledgerForOrder(orderId: string): Promise<LedgerEntry[]> {
+  return await db.select().from(ledgerEntries).where(eq(ledgerEntries.orderId, orderId)).all();
 }
 
-export function entriesInGroup(group: string): LedgerEntry[] {
-  return db.select().from(ledgerEntries).where(eq(ledgerEntries.group, group)).all();
+export async function entriesInGroup(group: string): Promise<LedgerEntry[]> {
+  return await db.select().from(ledgerEntries).where(eq(ledgerEntries.group, group)).all();
 }
 
 /** Admin: sums by account for reconciliation. */
-export function ledgerSummary(mode?: 'LIVE' | 'TEST') {
+export async function ledgerSummary(mode?: 'LIVE' | 'TEST') {
   const conditions = mode ? [eq(ledgerEntries.mode, mode)] : [];
-  const rows = db
+  const rows = await db
     .select({
       account: ledgerEntries.account,
       direction: ledgerEntries.direction,

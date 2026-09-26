@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Pages' };
 
 export default async function PagesPage() {
   const ctx = await requireUser();
-  const rows = db
+  const rows = await db
     .select()
     .from(pages)
     .where(eq(pages.workspaceId, ctx.workspace.id))

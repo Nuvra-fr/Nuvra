@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import { db, databaseTarget } from '@/lib/db';
 import { paymentsMode } from '@/lib/stripe';
 import { emailProvider } from '@/lib/email';
 import { aiProviderConfigured } from '@/lib/ai';
@@ -18,8 +18,9 @@ const startedAt = Date.now();
  */
 export async function GET(): Promise<Response> {
   let dbStatus: 'ok' | 'error' = 'ok';
+  const target = databaseTarget();
   try {
-    db.run(sql`select 1`);
+    await db.run(sql`select 1`);
   } catch {
     dbStatus = 'error';
   }
@@ -31,6 +32,7 @@ export async function GET(): Promise<Response> {
     env: process.env.NODE_ENV ?? 'development',
     uptimeSec: Math.round((Date.now() - startedAt) / 1000),
     db: dbStatus,
+    database: target.local ? 'file' : 'turso',
     integrations: {
       payments: paymentsMode(), // 'stripe' | 'test'
       email: emailProvider(), // 'RESEND' | 'OUTBOX'

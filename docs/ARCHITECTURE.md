@@ -4,8 +4,10 @@
 
 - **Next.js 15 (App Router)** — React 19, server components by default, server actions for mutations.
 - **TypeScript 5.9 strict** — no `any` in application code without a documented exception.
-- **Drizzle ORM + SQLite** (better-sqlite3) — synchronous, transactional, zero external service.
-  Migrations live in `drizzle/` and are applied with `drizzle-kit migrate`.
+- **Drizzle ORM + libSQL** (`@libsql/client`) — one driver for both a local SQLite file
+  (development, Docker, tests) and a hosted database (Turso on Vercel, where there is no disk).
+  The whole data layer is therefore asynchronous: every query is awaited.
+  Migrations live in `drizzle/`, are applied by `npm run db:migrate` / at server boot.
 - **Zod** — validation at every trust boundary (server actions, API routes).
 - **Stripe** — Checkout + webhooks for payments and subscriptions.
 - **Tailwind CSS** — design tokens in `tailwind.config.ts` (`ink` blacks, `nuvra` blue accent).
@@ -69,6 +71,7 @@ affiliate codes resolve against `affiliates.code`.
 
 ## Concurrency & integrity
 
-- better-sqlite3 is synchronous — single-writer, WAL mode, `foreign_keys = ON`.
+- The database is reached over libSQL: local files get WAL + `foreign_keys = ON`; hosted Turso
+  databases are single-writer too. Transactions go through `db.transaction(async (tx) => …)`.
 - `finalizeOrderPaid` is guarded (`PAID → no-op`), webhook events deduped, order numbers unique-checked.
 - Money is integer cents everywhere; splits guarantee `seller + platform === gross`.

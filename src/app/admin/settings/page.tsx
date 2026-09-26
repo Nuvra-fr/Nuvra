@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Admin — Settings' };
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
-  const cfg = getAllConfig();
+  const cfg = await getAllConfig();
 
   return (
     <div>
@@ -40,13 +40,13 @@ export default async function AdminSettingsPage() {
         />
         <FlagsForm
           flags={{
-            ai: flagEnabled('ai'),
-            marketplace: flagEnabled('marketplace'),
-            affiliates: flagEnabled('affiliates'),
-            customDomains: flagEnabled('customDomains'),
-            templates: flagEnabled('templates'),
-            advancedAnalytics: flagEnabled('advancedAnalytics'),
-            beta: flagEnabled('beta'),
+            ai: await flagEnabled('ai'),
+            marketplace: await flagEnabled('marketplace'),
+            affiliates: await flagEnabled('affiliates'),
+            customDomains: await flagEnabled('customDomains'),
+            templates: await flagEnabled('templates'),
+            advancedAnalytics: await flagEnabled('advancedAnalytics'),
+            beta: await flagEnabled('beta'),
           }}
         />
       </div>

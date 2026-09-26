@@ -22,7 +22,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) return jsonError('Enter a valid email and password.');
 
   const email = parsed.data.email.toLowerCase().trim();
-  const user = db.select().from(users).where(eq(users.email, email)).get();
+  const user = await db.select().from(users).where(eq(users.email, email)).get();
 
   // Constant-shape failure: always verify against something
   const valid = user
@@ -30,7 +30,7 @@ export async function POST(req: Request): Promise<Response> {
     : await verifyPassword(parsed.data.password, '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva');
 
   if (!user || !valid) {
-    audit('auth.login_failed', { target: email, ip });
+    await audit('auth.login_failed', { target: email, ip });
     return jsonError('Invalid email or password.', 401);
   }
   if (user.status !== 'ACTIVE') {
@@ -39,7 +39,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const ua = req.headers.get('user-agent');
   await createSession(user.id, ip, ua);
-  audit('auth.login', { actorUserId: user.id, target: user.id, ip });
+  await audit('auth.login', { actorUserId: user.id, target: user.id, ip });
 
   return jsonOk({ next: '/dashboard', user: { id: user.id, name: user.name, role: user.role } });
 }

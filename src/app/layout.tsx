@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import RefAttribution from '@/components/RefAttribution';
+import { appBaseUrl } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL(appBaseUrl()),
   title: {
     default: 'Nuvra — Create. Sell. Teach. Scale.',
     template: '%s · Nuvra',

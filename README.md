@@ -15,11 +15,13 @@ with a complete double-entry-style ledger, server-side commission splits and an 
 ```bash
 npm install
 cp .env.example .env          # then edit values (see docs/DEPLOYMENT.md)
-npx drizzle-kit generate      # only if schema changed
-npx drizzle-kit migrate       # creates nuvra.db
+npm run db:migrate            # applies drizzle/ migrations (+ first admin if configured)
 npm run db:seed               # demo data + demo accounts (see below)
 npm run dev                   # http://localhost:3000
 ```
+
+No hosted database is required locally: with no `TURSO_DATABASE_URL` the app uses a libSQL
+file (`./nuvra.db`). `npm run db:reset` wipes it, re-migrates and re-seeds.
 
 Demo accounts (created by `npm run db:seed`, clearly-marked demo data):
 
@@ -54,16 +56,23 @@ liveness probe for uptime monitors and load balancers.
 | [docs/BUSINESS-MODEL.md](docs/BUSINESS-MODEL.md) | The 4 money systems, configurable values, ledger rules |
 | [docs/SECURITY.md](docs/SECURITY.md) | Auth, sessions, RBAC, multi-tenancy, rate limits, secrets |
 | [docs/API.md](docs/API.md) | HTTP endpoints + server-action contracts |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Env vars, Stripe setup, cron, Vercel deploy |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel + Turso, Docker/Railway, env vars, Stripe, cron |
+| [docs/VERCEL.fr.md](docs/VERCEL.fr.md) | Déployer sur Vercel + Turso, guide en français |
 | [docs/TESTING.md](docs/TESTING.md) | Test strategy and how to run each suite |
 
 ## Deploy
 
-Nuvra runs as **one container with a persistent volume** for its SQLite database — migrations
-and the first administrator (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) are applied automatically at boot.
-**Railway** (Dockerfile + `/data` volume, ~5 minutes) is the recommended host; Fly.io, Render or
-any Docker host work the same way. Serverless platforms (Vercel, Netlify) are **not** supported
-with SQLite. Step-by-step guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Nuvra stores everything in **libSQL**, so there are two supported shapes:
+
+**Vercel + Turso (recommended, no disk needed).** Add the Turso integration from
+Vercel → Storage → Marketplace (or set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` yourself),
+plus `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `CRON_SECRET`, then deploy. The build runs
+`npm run db:migrate && npm run build` (`vercel.json`), so migrations and the first administrator
+are applied to Turso before the app is built. `vercel.json` also registers the daily cron that
+drives scheduled emails and automations.
+
+**Docker / Railway / Fly.io / VPS (persistent volume).** Migrations and the first administrator
+are applied at boot instead:
 
 ```bash
 docker build -t nuvra . && docker run -p 3000:3000 -v nuvra-data:/data \
@@ -71,13 +80,17 @@ docker build -t nuvra . && docker run -p 3000:3000 -v nuvra-data:/data \
   -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD='a-long-passphrase' -e CRON_SECRET=… nuvra
 ```
 
+Step-by-step guides: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) ·
+[docs/VERCEL.fr.md](docs/VERCEL.fr.md) (français).
+
 ## Environment
 
 | Variable | Purpose |
 |---|---|
-| `DATABASE_URL` | SQLite file path (default `./nuvra.db`; production: `/data/nuvra.db` on a volume) |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | First administrator, provisioned at boot while no admin exists |
-| `APP_URL` / `NEXT_PUBLIC_APP_URL` | Canonical URL (links, Stripe redirects) |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Hosted libSQL database — required on Vercel. Aliases `DATABASE_URL` / `DATABASE_AUTH_TOKEN`; Vercel Marketplace names (`STORAGE_TURSO_*`) are auto-detected |
+| `DATABASE_URL` | Local database file (default `./nuvra.db`; Docker: `/data/nuvra.db`); `:memory:` supported |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | First administrator, provisioned while no admin exists (at build time on Vercel, at boot elsewhere). Password ≥ 12 characters |
+| `NEXT_PUBLIC_APP_URL` | Canonical URL (links, Stripe redirects, emails); falls back to Vercel's `VERCEL_PROJECT_PRODUCTION_URL` / `VERCEL_URL` |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Live payments (absent ⇒ labeled TEST mode) |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | Recurring subscription price IDs |
 | `RESEND_API_KEY` | Transactional email (absent ⇒ local outbox log) |

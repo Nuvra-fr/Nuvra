@@ -19,7 +19,7 @@ export default async function CustomersPage({
   const ctx = await requireUser();
   const sp = await searchParams;
 
-  const rows = db
+  const rows = await db
     .select()
     .from(contacts)
     .where(eq(contacts.workspaceId, ctx.workspace.id))
@@ -29,7 +29,7 @@ export default async function CustomersPage({
   const customers = rows.filter((c) => c.status !== 'LEAD');
   const selected = sp.contact ? rows.find((r) => r.id === sp.contact) ?? null : null;
   const activities = selected
-    ? db
+    ? await db
         .select()
         .from(contactActivities)
         .where(eq(contactActivities.contactId, selected.id))
@@ -38,7 +38,7 @@ export default async function CustomersPage({
         .all()
     : [];
   const contactOrders = selected
-    ? db.select().from(orders).where(eq(orders.contactId, selected.id)).orderBy(desc(orders.createdAt)).all()
+    ? await db.select().from(orders).where(eq(orders.contactId, selected.id)).orderBy(desc(orders.createdAt)).all()
     : [];
 
   return (

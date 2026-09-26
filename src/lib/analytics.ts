@@ -15,11 +15,11 @@ export interface RevenuePoint {
 }
 
 /** Paid orders per day for the last `days` days (respects order mode). */
-export function revenueSeries(days = 14, mode?: 'LIVE' | 'TEST'): RevenuePoint[] {
+export async function revenueSeries(days = 14, mode?: 'LIVE' | 'TEST'): Promise<RevenuePoint[]> {
   const since = daysAgo(days - 1);
   const conditions = [gte(orders.paidAt, since), eq(orders.status, 'PAID')];
   if (mode) conditions.push(eq(orders.mode, mode));
-  const rows = db
+  const rows = await db
     .select({ paidAt: orders.paidAt, totalCents: orders.totalCents })
     .from(orders)
     .where(and(...conditions))
@@ -41,17 +41,17 @@ export function revenueSeries(days = 14, mode?: 'LIVE' | 'TEST'): RevenuePoint[]
   }));
 }
 
-export function workspaceStats(workspaceId: string, mode?: 'LIVE' | 'TEST') {
+export async function workspaceStats(workspaceId: string, mode?: 'LIVE' | 'TEST') {
   const since30 = daysAgo(30);
   const orderConds = [eq(orders.workspaceId, workspaceId), eq(orders.status, 'PAID')];
   if (mode) orderConds.push(eq(orders.mode, mode));
 
-  const paid = db
+  const paid = await db
     .select({ totalCents: orders.totalCents, id: orders.id })
     .from(orders)
     .where(and(...orderConds))
     .all();
-  const paidSince30 = db
+  const paidSince30 = await db
     .select({ totalCents: orders.totalCents })
     .from(orders)
     .where(and(...orderConds, gte(orders.paidAt, since30)))
@@ -59,57 +59,57 @@ export function workspaceStats(workspaceId: string, mode?: 'LIVE' | 'TEST') {
 
   const revenue = paid.reduce((s, o) => s + o.totalCents, 0);
   const revenue30 = paidSince30.reduce((s, o) => s + o.totalCents, 0);
-  const platformFees = db
+  const platformFees = (await db
     .select({ platformFeeCents: orders.platformFeeCents })
     .from(orders)
     .where(and(...orderConds))
-    .all()
+    .all())
     .reduce((s, o) => s + o.platformFeeCents, 0);
 
-  const customerCount = db
+  const customerCount = await db
     .select({ email: orders.buyerEmail })
     .from(orders)
     .where(and(...orderConds))
     .all();
   const uniqueCustomers = new Set(customerCount.map((c) => c.email)).size;
 
-  const leads = db
+  const leads = (await db
     .select({ id: contacts.id })
     .from(contacts)
     .where(and(eq(contacts.workspaceId, workspaceId), eq(contacts.status, 'LEAD')))
-    .all().length;
+    .all()).length;
 
-  const students = db
+  const students = (await db
     .select({ id: enrollments.id })
     .from(enrollments)
     .innerJoin(courses, eq(enrollments.courseId, courses.id))
     .where(eq(courses.workspaceId, workspaceId))
-    .all().length;
+    .all()).length;
 
-  const productCount = db
+  const productCount = (await db
     .select({ id: products.id })
     .from(products)
     .where(eq(products.workspaceId, workspaceId))
-    .all().length;
+    .all()).length;
 
-  const courseCount = db
+  const courseCount = (await db
     .select({ id: courses.id })
     .from(courses)
     .where(eq(courses.workspaceId, workspaceId))
-    .all().length;
+    .all()).length;
 
-  const pageRows = db
+  const pageRows = await db
     .select({ id: pages.id, views: pages.views })
     .from(pages)
     .where(eq(pages.workspaceId, workspaceId))
     .all();
   const totalViews = pageRows.reduce((s, p) => s + p.views, 0);
 
-  const checkoutStarts = db
+  const checkoutStarts = (await db
     .select({ id: orders.id })
     .from(orders)
     .where(eq(orders.workspaceId, workspaceId))
-    .all().length;
+    .all()).length;
   const conversion = checkoutStarts > 0 ? Math.round((paid.length / checkoutStarts) * 1000) / 10 : 0;
 
   return {
@@ -134,10 +134,10 @@ export interface FunnelAnalytics {
   overallConversion: number;
 }
 
-export function funnelAnalytics(funnelId: string): FunnelAnalytics | null {
-  const funnel = db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
+export async function funnelAnalytics(funnelId: string): Promise<FunnelAnalytics | null> {
+  const funnel = await db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
   if (!funnel) return null;
-  const steps = db
+  const steps = await db
     .select({ step: funnelSteps, page: pages })
     .from(funnelSteps)
     .innerJoin(pages, eq(funnelSteps.pageId, pages.id))
@@ -147,12 +147,12 @@ export function funnelAnalytics(funnelId: string): FunnelAnalytics | null {
 
   let prev: number | null = null;
   let first: number | null = null;
-  const out = steps.map((s) => {
-    const views = db
+  const out = await Promise.all(steps.map(async (s) => {
+    const views = (await db
       .select({ id: pageViews.id })
       .from(pageViews)
       .where(eq(pageViews.pageId, s.page.id))
-      .all().length;
+      .all()).length;
     if (first === null) first = views;
     const conversion = prev !== null && prev > 0 ? Math.round((views / prev) * 1000) / 10 : null;
     prev = views;
@@ -163,7 +163,7 @@ export function funnelAnalytics(funnelId: string): FunnelAnalytics | null {
       views,
       conversionFromPrev: conversion,
     };
-  });
+  }));
 
   const last = out.length ? out[out.length - 1]!.views : 0;
   const overall = out.length && out[0]!.views > 0 ? Math.round((last / out[0]!.views) * 1000) / 10 : 0;
@@ -171,8 +171,8 @@ export function funnelAnalytics(funnelId: string): FunnelAnalytics | null {
   return { funnelId, name: funnel.name, steps: out, overallConversion: overall };
 }
 
-export function topPages(workspaceId: string, limit = 5) {
-  return db
+export async function topPages(workspaceId: string, limit = 5) {
+  return await db
     .select()
     .from(pages)
     .where(eq(pages.workspaceId, workspaceId))
@@ -181,8 +181,8 @@ export function topPages(workspaceId: string, limit = 5) {
     .all();
 }
 
-export function recentPaidOrders(workspaceId: string, limit = 8) {
-  return db
+export async function recentPaidOrders(workspaceId: string, limit = 8) {
+  return await db
     .select()
     .from(orders)
     .where(and(eq(orders.workspaceId, workspaceId), eq(orders.status, 'PAID')))

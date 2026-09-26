@@ -14,17 +14,17 @@ export const metadata: Metadata = { title: 'Analytics' };
 export default async function AnalyticsPage() {
   const ctx = await requireUser();
   const ws = ctx.workspace.id;
-  const stats = workspaceStats(ws);
-  const series = revenueSeries(30);
-  const tops = topPages(ws, 6);
-  const funnelRows = db.select().from(funnels).where(eq(funnels.workspaceId, ws)).all();
+  const stats = await workspaceStats(ws);
+  const series = await revenueSeries(30);
+  const tops = await topPages(ws, 6);
+  const funnelRows = await db.select().from(funnels).where(eq(funnels.workspaceId, ws)).all();
   const testMode = paymentsMode() === 'test';
 
-  const courseRows = db.select().from(courses).where(eq(courses.workspaceId, ws)).all();
-  const courseStats = courseRows.map((c) => {
-    const students = db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, c.id)).all().length;
+  const courseRows = await db.select().from(courses).where(eq(courses.workspaceId, ws)).all();
+  const courseStats = await Promise.all(courseRows.map(async (c) => {
+    const students = (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, c.id)).all()).length;
     return { ...c, students };
-  });
+  }));
 
   return (
     <div>
@@ -38,7 +38,7 @@ export default async function AnalyticsPage() {
         }
       />
 
-      {!flagEnabled('advancedAnalytics') ? (
+      {!await flagEnabled('advancedAnalytics') ? (
         <div className="mb-5">
           <InlineAlert tone="warning">
             Advanced analytics are disabled by an administrator (feature flag).
@@ -90,8 +90,8 @@ export default async function AnalyticsPage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {funnelRows.map((f) => {
-                const a = funnelAnalytics(f.id);
+              {await Promise.all(funnelRows.map(async (f) => {
+                const a = await funnelAnalytics(f.id);
                 return (
                   <div key={f.id} className="rounded-lg border border-white/[0.07] p-3.5">
                     <div className="flex items-center justify-between">
@@ -110,7 +110,7 @@ export default async function AnalyticsPage() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           )}
         </Card>

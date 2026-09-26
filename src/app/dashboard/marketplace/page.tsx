@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: 'Marketplace' };
 export default async function MarketplaceDashboard() {
   const ctx = await requireUser();
 
-  if (!flagEnabled('marketplace')) {
+  if (!await flagEnabled('marketplace')) {
     return (
       <div>
         <PageHeader title="Marketplace" />
@@ -27,18 +27,18 @@ export default async function MarketplaceDashboard() {
     );
   }
 
-  const listings = db
+  const listings = await db
     .select()
     .from(marketplaceListings)
     .where(eq(marketplaceListings.workspaceId, ctx.workspace.id))
     .orderBy(desc(marketplaceListings.createdAt))
     .all();
 
-  const publishedCourses = db
+  const publishedCourses = (await db
     .select()
     .from(courses)
     .where(eq(courses.workspaceId, ctx.workspace.id))
-    .all()
+    .all())
     .filter((c) => c.status === 'PUBLISHED' && !c.isAcademy && !listings.some((l) => l.courseId === c.id));
 
   return (

@@ -27,7 +27,7 @@ export async function saveOnboardingStep(input: {
   if (input.username) {
     const clean = input.username.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
     if (clean.length >= 3) {
-      const existing = db
+      const existing = await db
         .select({ id: profiles.id })
         .from(profiles)
         .where(eq(profiles.username, clean))
@@ -38,22 +38,22 @@ export async function saveOnboardingStep(input: {
 
   if (Object.keys(updates).length > 0) {
     if (ctx.profile) {
-      db.update(profiles).set(updates).where(eq(profiles.id, ctx.profile.id)).run();
+      await db.update(profiles).set(updates).where(eq(profiles.id, ctx.profile.id)).run();
     } else {
-      db.insert(profiles)
+      await db.insert(profiles)
         .values({ userId: ctx.user.id, username: updates.username ?? 'creator', ...updates })
         .run();
     }
   }
 
   if (input.workspaceName && input.workspaceName.trim().length >= 2) {
-    db.update(workspaces)
+    await db.update(workspaces)
       .set({ name: input.workspaceName.trim().slice(0, 60), updatedAt: new Date() })
       .where(eq(workspaces.id, ctx.workspace.id))
       .run();
   }
 
-  audit('onboarding.step', { actorUserId: ctx.user.id, target: String(input.step) });
+  await audit('onboarding.step', { actorUserId: ctx.user.id, target: String(input.step) });
   revalidatePath('/onboarding');
   revalidatePath('/dashboard');
   return { ok: true };

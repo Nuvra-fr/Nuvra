@@ -31,8 +31,8 @@ const MODULES = [
 ];
 
 export default async function AcademyPage() {
-  const price = academyPriceCents();
-  const cfg = getAllConfig();
+  const price = await academyPriceCents();
+  const cfg = await getAllConfig();
   const bps = Number(cfg['commission.resellerBps'] ?? 9000);
   const resellerPct = bps / 100;
   const nuvraPct = 100 - resellerPct;

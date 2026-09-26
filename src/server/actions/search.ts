@@ -20,7 +20,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
   const likeQ = `%${query}%`;
   const hits: SearchHit[] = [];
 
-  for (const p of db
+  for (const p of await db
     .select()
     .from(pages)
     .where(sql`${pages.workspaceId} = ${ws} AND (${pages.title} LIKE ${likeQ} OR ${pages.slug} LIKE ${likeQ})`)
@@ -28,7 +28,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
     .all()) {
     hits.push({ label: p.title, sublabel: `/p/${ctx.workspace.slug}/${p.slug}`, href: `/dashboard/pages/${p.id}`, kind: 'Page' });
   }
-  for (const p of db
+  for (const p of await db
     .select()
     .from(products)
     .where(sql`${products.workspaceId} = ${ws} AND ${products.name} LIKE ${likeQ}`)
@@ -36,7 +36,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
     .all()) {
     hits.push({ label: p.name, sublabel: `${(p.priceCents / 100).toFixed(2)} · ${p.status}`, href: `/dashboard/products?edit=${p.id}`, kind: 'Product' });
   }
-  for (const c of db
+  for (const c of await db
     .select()
     .from(courses)
     .where(sql`${courses.workspaceId} = ${ws} AND ${courses.title} LIKE ${likeQ}`)
@@ -44,7 +44,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
     .all()) {
     hits.push({ label: c.title, sublabel: `${(c.priceCents / 100).toFixed(2)} · ${c.status}`, href: `/dashboard/courses/${c.id}`, kind: 'Course' });
   }
-  for (const f of db
+  for (const f of await db
     .select()
     .from(funnels)
     .where(sql`${funnels.workspaceId} = ${ws} AND ${funnels.name} LIKE ${likeQ}`)
@@ -52,7 +52,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
     .all()) {
     hits.push({ label: f.name, sublabel: 'Funnel', href: `/dashboard/funnels/${f.id}`, kind: 'Funnel' });
   }
-  for (const c of db
+  for (const c of await db
     .select()
     .from(contacts)
     .where(sql`${contacts.workspaceId} = ${ws} AND (${contacts.email} LIKE ${likeQ} OR ${contacts.name} LIKE ${likeQ})`)
@@ -60,7 +60,7 @@ export async function globalSearch(q: string): Promise<SearchHit[]> {
     .all()) {
     hits.push({ label: c.name ?? c.email, sublabel: c.email, href: `/dashboard/customers?contact=${c.id}`, kind: 'Contact' });
   }
-  for (const o of db
+  for (const o of await db
     .select()
     .from(orders)
     .where(sql`${orders.workspaceId} = ${ws} AND (${orders.number} LIKE ${likeQ} OR ${orders.buyerEmail} LIKE ${likeQ})`)

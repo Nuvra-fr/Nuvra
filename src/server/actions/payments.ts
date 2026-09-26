@@ -16,17 +16,17 @@ export async function refundOrderAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const order = db.select().from(orders).where(eq(orders.id, orderId)).get();
+    const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
     if (!order) return { ok: false, error: 'Order not found' };
     // Only the seller workspace owner or an admin can refund
-    const seller = db.select().from(workspaces).where(eq(workspaces.id, order.workspaceId)).get();
+    const seller = await db.select().from(workspaces).where(eq(workspaces.id, order.workspaceId)).get();
     if (!seller) return { ok: false, error: 'Seller not found' };
     const isSellerOwner = ctx.membership.workspaceId === order.workspaceId;
     if (!isSellerOwner && ctx.user.role !== 'ADMIN') {
       return { ok: false, error: 'Not authorized to refund this order' };
     }
-    refundOrder(orderId, { reason: reason ?? 'manual refund' });
-    audit('order.refund_requested', { actorUserId: ctx.user.id, target: orderId });
+    await refundOrder(orderId, { reason: reason ?? 'manual refund' });
+    await audit('order.refund_requested', { actorUserId: ctx.user.id, target: orderId });
     revalidatePath('/dashboard/payments');
     revalidatePath('/admin/orders');
     return { ok: true };
@@ -41,7 +41,7 @@ export async function requestPayoutAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    requestPayout(ctx.user.id, account, mode);
+    await requestPayout(ctx.user.id, account, mode);
     revalidatePath('/dashboard/payments');
     return { ok: true };
   } catch (e) {

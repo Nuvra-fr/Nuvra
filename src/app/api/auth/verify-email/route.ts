@@ -18,7 +18,7 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return jsonError('Invalid token.');
 
-  const row = db
+  const row = await db
     .select()
     .from(emailVerificationTokens)
     .where(
@@ -31,9 +31,9 @@ export async function POST(req: Request): Promise<Response> {
     .get();
   if (!row) return jsonError('This verification link is invalid or has expired.', 400);
 
-  db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, row.userId)).run();
-  db.update(emailVerificationTokens).set({ usedAt: new Date() }).where(eq(emailVerificationTokens.id, row.id)).run();
-  audit('auth.email_verified', { actorUserId: row.userId, target: row.userId, ip });
+  await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, row.userId)).run();
+  await db.update(emailVerificationTokens).set({ usedAt: new Date() }).where(eq(emailVerificationTokens.id, row.id)).run();
+  await audit('auth.email_verified', { actorUserId: row.userId, target: row.userId, ip });
 
   return jsonOk({ message: 'Email verified.' });
 }

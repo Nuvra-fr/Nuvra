@@ -10,6 +10,7 @@ import { hashPassword } from '@/lib/auth';
 import { createOrder, finalizeOrderPaid } from '@/lib/orders';
 import { ensurePlans } from '@/lib/billing';
 import { setConfig } from '@/lib/config';
+import { bootstrapDatabase } from '@/lib/startup';
 import { emitEvent } from '@/lib/events';
 import { randomCode } from '@/lib/utils';
 import { PAGE_BLOCK_TEMPLATES } from '@/lib/constants';
@@ -17,10 +18,13 @@ import { PAGE_BLOCK_TEMPLATES } from '@/lib/constants';
 async function main() {
   console.log('🌱 Seeding Nuvra demo data…');
 
-  // Config defaults (only if never set)
-  setConfig('academy.name', 'Nuvra Academy');
+  // Safe on a brand-new file/database: applies pending migrations first.
+  await bootstrapDatabase();
 
-  ensurePlans();
+  // Config defaults (only if never set)
+  await setConfig('academy.name', 'Nuvra Academy');
+
+  await ensurePlans();
 
   // ── Users ──────────────────────────────────────────
   const adminHash = await hashPassword('admin2026!');
@@ -28,46 +32,46 @@ async function main() {
   const resellerHash = await hashPassword('reseller2026!');
   const studentHash = await hashPassword('student2026!');
 
-  function upsertUser(email: string, name: string, passwordHash: string, role: 'USER' | 'ADMIN') {
-    const existing = db.select().from(users).where(eq(users.email, email)).get();
+  async function upsertUser(email: string, name: string, passwordHash: string, role: 'USER' | 'ADMIN') {
+    const existing = await db.select().from(users).where(eq(users.email, email)).get();
     if (existing) return existing;
-    const u = db
+    const u = await db
       .insert(users)
       .values({ email, name, passwordHash, role, status: 'ACTIVE', emailVerifiedAt: new Date() })
       .returning()
       .get();
-    db.insert(profiles)
+    await db.insert(profiles)
       .values({ userId: u.id, username: email.split('@')[0]!.replace(/[^a-z0-9]/g, ''), onboardingStep: 5 })
       .onConflictDoNothing()
       .run();
     return u;
   }
 
-  const admin = upsertUser('admin@nuvra.app', 'Nuvra Admin', adminHash, 'ADMIN');
-  const creator = upsertUser('creator@nuvra.app', 'Camille Creator', creatorHash, 'USER');
-  const resellerUser = upsertUser('reseller@nuvra.app', 'Rita Reseller', resellerHash, 'USER');
-  const student = upsertUser('student@nuvra.app', 'Sam Student', studentHash, 'USER');
+  const admin = await upsertUser('admin@nuvra.app', 'Nuvra Admin', adminHash, 'ADMIN');
+  const creator = await upsertUser('creator@nuvra.app', 'Camille Creator', creatorHash, 'USER');
+  const resellerUser = await upsertUser('reseller@nuvra.app', 'Rita Reseller', resellerHash, 'USER');
+  const student = await upsertUser('student@nuvra.app', 'Sam Student', studentHash, 'USER');
 
   // ── Workspaces ─────────────────────────────────────
-  function upsertWorkspace(slug: string, name: string, ownerId: string, plan: string, isPlatform = false) {
-    const existing = db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
+  async function upsertWorkspace(slug: string, name: string, ownerId: string, plan: string, isPlatform = false) {
+    const existing = await db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
     if (existing) return existing;
-    const ws = db
+    const ws = await db
       .insert(workspaces)
       .values({ slug, name, ownerId, plan, isPlatform })
       .returning()
       .get();
-    db.insert(memberships)
+    await db.insert(memberships)
       .values({ userId: ownerId, workspaceId: ws.id, role: 'OWNER' })
       .onConflictDoNothing()
       .run();
     return ws;
   }
 
-  const platformWs = upsertWorkspace('nuvra', 'Nuvra (Platform)', admin.id, 'PRO', true);
-  const creatorWs = upsertWorkspace('camille-studio', 'Camille Studio', creator.id, 'FREE');
-  upsertWorkspace('rita-resells', 'Rita Resells', resellerUser.id, 'FREE');
-  upsertWorkspace('sam-space', "Sam's space", student.id, 'FREE');
+  const platformWs = await upsertWorkspace('nuvra', 'Nuvra (Platform)', admin.id, 'PRO', true);
+  const creatorWs = await upsertWorkspace('camille-studio', 'Camille Studio', creator.id, 'FREE');
+  await upsertWorkspace('rita-resells', 'Rita Resells', resellerUser.id, 'FREE');
+  await upsertWorkspace('sam-space', "Sam's space", student.id, 'FREE');
 
   // ── Nuvra Academy (platform course) ────────────────
   const ACADEMY_MODULES = [
@@ -75,9 +79,9 @@ async function main() {
     'Copywriting', 'Acquisition', 'Email marketing', 'Automations', 'Création de formation',
     'Vente', 'Analytics', 'Scaling', 'Reseller system', 'Nuvra avancé',
   ];
-  let academy = db.select().from(courses).where(eq(courses.slug, 'nuvra-academy')).get();
+  let academy = await db.select().from(courses).where(eq(courses.slug, 'nuvra-academy')).get();
   if (!academy) {
-    academy = db
+    academy = await db
       .insert(courses)
       .values({
         workspaceId: platformWs.id,
@@ -95,13 +99,13 @@ async function main() {
       })
       .returning()
       .get();
-    ACADEMY_MODULES.forEach((title, i) => {
-      const mod = db
+    for (const [i, title] of ACADEMY_MODULES.entries()) {
+      const mod = await db
         .insert(courseModules)
         .values({ courseId: academy!.id, title, position: i })
         .returning()
         .get();
-      db.insert(lessons)
+      await db.insert(lessons)
         .values({
           courseId: academy!.id,
           moduleId: mod.id,
@@ -113,7 +117,7 @@ async function main() {
           durationMin: 15,
         })
         .run();
-      db.insert(lessons)
+      await db.insert(lessons)
         .values({
           courseId: academy!.id,
           moduleId: mod.id,
@@ -124,12 +128,12 @@ async function main() {
           durationMin: 25,
         })
         .run();
-    });
+    };
   }
 
   // ── Creator products & courses ─────────────────────
-  if (db.select({ id: products.id }).from(products).where(eq(products.workspaceId, creatorWs.id)).all().length === 0) {
-    db.insert(products)
+  if ((await db.select({ id: products.id }).from(products).where(eq(products.workspaceId, creatorWs.id)).all()).length === 0) {
+    await db.insert(products)
       .values({
         workspaceId: creatorWs.id,
         name: 'Content OS — Notion template',
@@ -141,7 +145,7 @@ async function main() {
         downloadUrl: 'https://example.com/download/content-os',
       })
       .run();
-    db.insert(products)
+    await db.insert(products)
       .values({
         workspaceId: creatorWs.id,
         name: 'Audit express (30 min)',
@@ -154,9 +158,9 @@ async function main() {
       .run();
   }
 
-  let paidCourse = db.select().from(courses).where(eq(courses.slug, 'email-marketing-that-converts')).get();
+  let paidCourse = await db.select().from(courses).where(eq(courses.slug, 'email-marketing-that-converts')).get();
   if (!paidCourse) {
-    paidCourse = db
+    paidCourse = await db
       .insert(courses)
       .values({
         workspaceId: creatorWs.id,
@@ -171,13 +175,13 @@ async function main() {
       })
       .returning()
       .get();
-    ['Foundations', 'List building', 'Sequences', 'Broadcasts'].forEach((t, i) => {
-      const mod = db
+    for (const [i, t] of ['Foundations', 'List building', 'Sequences', 'Broadcasts'].entries()) {
+      const mod = await db
         .insert(courseModules)
         .values({ courseId: paidCourse!.id, title: t, position: i })
         .returning()
         .get();
-      db.insert(lessons)
+      await db.insert(lessons)
         .values({
           courseId: paidCourse!.id,
           moduleId: mod.id,
@@ -188,12 +192,12 @@ async function main() {
           isPreview: i === 0,
         })
         .run();
-    });
+    };
   }
 
-  let freeCourse = db.select().from(courses).where(eq(courses.slug, 'launch-in-a-weekend')).get();
+  let freeCourse = await db.select().from(courses).where(eq(courses.slug, 'launch-in-a-weekend')).get();
   if (!freeCourse) {
-    const insertedFree = db
+    const insertedFree = await db
       .insert(courses)
       .values({
         workspaceId: creatorWs.id,
@@ -210,21 +214,21 @@ async function main() {
       .get();
     if (!insertedFree) throw new Error('Failed to insert free demo course');
     freeCourse = insertedFree;
-    const mod = db
+    const mod = await db
       .insert(courseModules)
       .values({ courseId: insertedFree.id, title: 'Weekend sprint', position: 0 })
       .returning()
       .get();
-    ['Pick the offer', 'Build the page', 'Open the cart'].forEach((t, i) => {
-      db.insert(lessons)
+    for (const [i, t] of ['Pick the offer', 'Build the page', 'Open the cart'].entries()) {
+      await db.insert(lessons)
         .values({ courseId: insertedFree.id, moduleId: mod.id, title: t, type: 'text', content: `${t}.`, position: i, isPreview: true })
         .run();
-    });
+    };
   }
 
   // ── Page & funnel ──────────────────────────────────
-  if (db.select({ id: pages.id }).from(pages).where(eq(pages.workspaceId, creatorWs.id)).all().length === 0) {
-    const landing = db
+  if ((await db.select({ id: pages.id }).from(pages).where(eq(pages.workspaceId, creatorWs.id)).all()).length === 0) {
+    const landing = await db
       .insert(pages)
       .values({
         workspaceId: creatorWs.id,
@@ -245,18 +249,18 @@ async function main() {
       })
       .returning()
       .get();
-    db.update(pages).set({ views: 128 }).where(eq(pages.id, landing.id)).run();
+    await db.update(pages).set({ views: 128 }).where(eq(pages.id, landing.id)).run();
 
-    const funnel = db
+    const funnel = await db
       .insert(funnels)
       .values({ workspaceId: creatorWs.id, name: 'Course launch funnel', status: 'PUBLISHED' })
       .returning()
       .get();
-    db.insert(funnelSteps)
+    await db.insert(funnelSteps)
       .values({ funnelId: funnel.id, pageId: landing.id, stepType: 'LANDING', position: 0 })
       .run();
 
-    const thanks = db
+    const thanks = await db
       .insert(pages)
       .values({
         workspaceId: creatorWs.id,
@@ -274,20 +278,20 @@ async function main() {
       })
       .returning()
       .get();
-    db.insert(funnelSteps)
+    await db.insert(funnelSteps)
       .values({ funnelId: funnel.id, pageId: thanks.id, stepType: 'THANKYOU', position: 1 })
       .run();
   }
 
   // ── Reseller activation (demo: Rita bought Academy) ─
-  const academyOrder = db
+  const academyOrder = (await db
     .select()
     .from(orders)
-    .all()
+    .all())
     .find((o) => o.kind === 'ACADEMY_SALE' && o.buyerEmail === resellerUser.email);
   if (!academyOrder) {
     // Real pipeline: order → paid → finalize activates the reseller profile (90/10 onward)
-    const order = createOrder({
+    const order = await createOrder({
       workspaceId: platformWs.id,
       kind: 'ACADEMY_SALE',
       items: [{ kind: 'ACADEMY', courseId: academy.id, title: 'Nuvra Academy', priceCents: 19700 }],
@@ -296,24 +300,24 @@ async function main() {
       buyerUserId: resellerUser.id,
       mode: 'TEST',
     });
-    finalizeOrderPaid(order.id, { provider: 'test', reference: 'seed_academy' });
+    await finalizeOrderPaid(order.id, { provider: 'test', reference: 'seed_academy' });
     console.log('  + Academy sale → reseller ACTIVE:', order.number);
   }
 
   // ── Academy sale attributed to the reseller (real 90/10 split) ──
-  const resellerSale = db
+  const resellerSale = (await db
     .select()
     .from(orders)
-    .all()
+    .all())
     .find((o) => o.kind === 'ACADEMY_SALE' && !!o.resellerId);
   if (!resellerSale) {
-    const rp = db
+    const rp = await db
       .select()
       .from(resellerProfiles)
       .where(eq(resellerProfiles.userId, resellerUser.id))
       .get();
     if (rp && rp.status === 'ACTIVE') {
-      const o = createOrder({
+      const o = await createOrder({
         workspaceId: platformWs.id,
         kind: 'ACADEMY_SALE',
         items: [{ kind: 'ACADEMY', courseId: academy.id, title: 'Nuvra Academy', priceCents: academy.priceCents }],
@@ -323,19 +327,19 @@ async function main() {
         resellerId: rp.id,
         mode: 'TEST',
       });
-      finalizeOrderPaid(o.id, { provider: 'test', reference: 'seed_academy_reseller' });
+      await finalizeOrderPaid(o.id, { provider: 'test', reference: 'seed_academy_reseller' });
       console.log('  + Academy sale via reseller (90/10):', o.number);
     }
   }
 
   // ── Creator sale (Free plan → 10 % commission) ─────
-  const existingCreatorSale = db
+  const existingCreatorSale = (await db
     .select()
     .from(orders)
-    .all()
+    .all())
     .find((o) => o.workspaceId === creatorWs.id && o.status === 'PAID');
   if (!existingCreatorSale) {
-    const o1 = createOrder({
+    const o1 = await createOrder({
       workspaceId: creatorWs.id,
       items: [{ kind: 'COURSE', courseId: paidCourse.id, title: paidCourse.title, priceCents: 4900 }],
       buyerEmail: student.email,
@@ -343,25 +347,25 @@ async function main() {
       buyerUserId: student.id,
       mode: 'TEST',
     });
-    finalizeOrderPaid(o1.id, { provider: 'test', reference: 'seed_c1' });
+    await finalizeOrderPaid(o1.id, { provider: 'test', reference: 'seed_c1' });
     console.log('  + Creator sale 49.00 (Free: 10% fee):', o1.number);
 
-    const product = db.select().from(products).where(eq(products.slug, 'content-os')).get();
+    const product = await db.select().from(products).where(eq(products.slug, 'content-os')).get();
     if (product) {
-      const o2 = createOrder({
+      const o2 = await createOrder({
         workspaceId: creatorWs.id,
         items: [{ kind: 'PRODUCT', productId: product.id, title: product.name, priceCents: product.priceCents }],
         buyerEmail: 'buyer@example.com',
         buyerName: 'Demo Buyer',
         mode: 'TEST',
       });
-      finalizeOrderPaid(o2.id, { provider: 'test', reference: 'seed_c2' });
+      await finalizeOrderPaid(o2.id, { provider: 'test', reference: 'seed_c2' });
       console.log('  + Creator sale 19.00 (product):', o2.number);
     }
   }
 
   // ── CRM contacts ───────────────────────────────────
-  const contactCount = db.select({ id: contacts.id }).from(contacts).where(eq(contacts.workspaceId, creatorWs.id)).all().length;
+  const contactCount = (await db.select({ id: contacts.id }).from(contacts).where(eq(contacts.workspaceId, creatorWs.id)).all()).length;
   if (contactCount === 0) {
     const leads: [string, string, string[]][] = [
       ['lea@example.com', 'Lea', ['newsletter']],
@@ -371,12 +375,12 @@ async function main() {
       ['marie@example.com', 'Marie', ['newsletter', 'vip']],
     ];
     for (const [email, name, tags] of leads) {
-      db.insert(contacts)
+      await db.insert(contacts)
         .values({ workspaceId: creatorWs.id, email, name, status: 'LEAD', source: 'funnel', tags: JSON.stringify(tags) })
         .onConflictDoNothing()
         .run();
     }
-    db.insert(contacts)
+    await db.insert(contacts)
       .values({ workspaceId: creatorWs.id, email: student.email, name: student.name, status: 'CUSTOMER', source: 'purchase', userId: student.id })
       .onConflictDoNothing()
       .run();
@@ -384,9 +388,9 @@ async function main() {
   }
 
   // ── Active automation (welcome) ────────────────────
-  const autoCount = db.select({ id: automations.id }).from(automations).where(eq(automations.workspaceId, creatorWs.id)).all().length;
+  const autoCount = (await db.select({ id: automations.id }).from(automations).where(eq(automations.workspaceId, creatorWs.id)).all()).length;
   if (autoCount === 0) {
-    const auto = db
+    const auto = await db
       .insert(automations)
       .values({
         workspaceId: creatorWs.id,
@@ -397,7 +401,7 @@ async function main() {
       })
       .returning({ id: automations.id })
       .get();
-    db.insert(automationActions)
+    await db.insert(automationActions)
       .values({
         automationId: auto.id,
         type: 'send_email',
@@ -412,26 +416,26 @@ async function main() {
   }
 
   // ── Active sequence (purchase follow-up) ───────────
-  const seqCount = db.select({ id: emailSequences.id }).from(emailSequences).where(eq(emailSequences.workspaceId, creatorWs.id)).all().length;
+  const seqCount = (await db.select({ id: emailSequences.id }).from(emailSequences).where(eq(emailSequences.workspaceId, creatorWs.id)).all()).length;
   if (seqCount === 0) {
-    const seq = db
+    const seq = await db
       .insert(emailSequences)
       .values({ workspaceId: creatorWs.id, name: 'Post-purchase drip', triggerEvent: 'purchase.completed', active: true })
       .returning({ id: emailSequences.id })
       .get();
-    db.insert(emailSequenceSteps)
+    await db.insert(emailSequenceSteps)
       .values({ sequenceId: seq.id, delayHours: 0, subject: 'Your purchase is confirmed 🎉', body: 'Thanks! Start with module 1.', position: 0 })
       .run();
-    db.insert(emailSequenceSteps)
+    await db.insert(emailSequenceSteps)
       .values({ sequenceId: seq.id, delayHours: 24, subject: 'How is it going?', body: 'A quick check-in — reply to this email with questions.', position: 1 })
       .run();
     console.log('  + Active sequence: purchase.completed (0h + 24h)');
   }
 
   // ── Marketplace listing (approved + one pending) ───
-  const listingCount = db.select({ id: marketplaceListings.id }).from(marketplaceListings).all().length;
+  const listingCount = (await db.select({ id: marketplaceListings.id }).from(marketplaceListings).all()).length;
   if (listingCount === 0) {
-    db.insert(marketplaceListings)
+    await db.insert(marketplaceListings)
       .values({
         courseId: paidCourse.id,
         workspaceId: creatorWs.id,
@@ -448,7 +452,7 @@ async function main() {
       })
       .onConflictDoNothing()
       .run();
-    db.insert(marketplaceListings)
+    await db.insert(marketplaceListings)
       .values({
         courseId: academy.id,
         workspaceId: platformWs.id,
@@ -470,23 +474,23 @@ async function main() {
   }
 
   // ── Affiliate program (demo) ───────────────────────
-  const progCount = db.select({ id: affiliatePrograms.id }).from(affiliatePrograms).where(eq(affiliatePrograms.workspaceId, creatorWs.id)).all().length;
+  const progCount = (await db.select({ id: affiliatePrograms.id }).from(affiliatePrograms).where(eq(affiliatePrograms.workspaceId, creatorWs.id)).all()).length;
   if (progCount === 0) {
-    const prog = db
+    const prog = await db
       .insert(affiliatePrograms)
       .values({ workspaceId: creatorWs.id, name: 'Course partners', commissionBps: 3000, active: true })
       .returning({ id: affiliatePrograms.id })
       .get();
-    db.insert(affiliates)
+    await db.insert(affiliates)
       .values({ programId: prog.id, code: 'demo-aff', name: 'Demo affiliate', userId: student.id })
       .run();
     console.log('  + Affiliate program with link /?aff=demo-aff');
   }
 
   // ── Templates ──────────────────────────────────────
-  const tplCount = db.select({ id: templates.id }).from(templates).all().length;
+  const tplCount = (await db.select({ id: templates.id }).from(templates).all()).length;
   if (tplCount === 0) {
-    db.insert(templates)
+    await db.insert(templates)
       .values([
         { kind: 'PAGE', name: 'Classic landing', category: 'SaaS', description: 'Hero + features + CTA + FAQ', content: JSON.stringify({ blocks: [PAGE_BLOCK_TEMPLATES.hero, PAGE_BLOCK_TEMPLATES.features, PAGE_BLOCK_TEMPLATES.cta, PAGE_BLOCK_TEMPLATES.faq] }), premium: false },
         { kind: 'PAGE', name: 'Lead magnet', category: 'Growth', description: 'Form-first page', content: JSON.stringify({ blocks: [PAGE_BLOCK_TEMPLATES.hero, PAGE_BLOCK_TEMPLATES.form, PAGE_BLOCK_TEMPLATES.social_proof] }), premium: false },

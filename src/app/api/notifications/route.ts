@@ -5,7 +5,7 @@ import { listNotifications, markAllRead } from '@/lib/notifications';
 export async function GET(): Promise<Response> {
   const ctx = await getSession();
   if (!ctx) return NextResponse.json({ ok: false, error: 'Unauthenticated' }, { status: 401 });
-  const items = listNotifications(ctx.user.id, 15).map((n) => ({
+  const items = (await listNotifications(ctx.user.id, 15)).map((n) => ({
     id: n.id,
     title: n.title,
     body: n.body,
@@ -19,6 +19,6 @@ export async function GET(): Promise<Response> {
 export async function POST(): Promise<Response> {
   const ctx = await getSession();
   if (!ctx) return NextResponse.json({ ok: false, error: 'Unauthenticated' }, { status: 401 });
-  markAllRead(ctx.user.id);
+  await markAllRead(ctx.user.id);
   return NextResponse.json({ ok: true });
 }

@@ -21,7 +21,7 @@ export default async function PublicMarketplace({
 }) {
   const sp = await searchParams;
 
-  if (!flagEnabled('marketplace')) {
+  if (!await flagEnabled('marketplace')) {
     return (
       <div className="min-h-screen bg-ink-950">
         <main className="mx-auto max-w-3xl px-5 py-20 text-center">
@@ -31,7 +31,7 @@ export default async function PublicMarketplace({
     );
   }
 
-  let listings = db
+  let listings = await db
     .select()
     .from(marketplaceListings)
     .where(eq(marketplaceListings.status, 'APPROVED'))
@@ -50,11 +50,11 @@ export default async function PublicMarketplace({
 
   const categories = Array.from(
     new Set(
-      db
+      (await db
         .select({ category: marketplaceListings.category })
         .from(marketplaceListings)
         .where(eq(marketplaceListings.status, 'APPROVED'))
-        .all()
+        .all())
         .map((l) => l.category)
         .filter(Boolean),
     ),
@@ -113,11 +113,11 @@ export default async function PublicMarketplace({
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {listings.map((l) => {
+            {await Promise.all(listings.map(async (l) => {
               const students = l.courseId
-                ? db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, l.courseId)).all().length
+                ? (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, l.courseId)).all()).length
                 : 0;
-              const ratingRows = db.select().from(reviews).where(eq(reviews.listingId, l.id)).all();
+              const ratingRows = await db.select().from(reviews).where(eq(reviews.listingId, l.id)).all();
               const avg =
                 ratingRows.length > 0
                   ? Math.round((ratingRows.reduce((s, r) => s + r.rating, 0) / ratingRows.length) * 10) / 10
@@ -145,7 +145,7 @@ export default async function PublicMarketplace({
                   </div>
                 </Link>
               );
-            })}
+            }))}
           </div>
         )}
       </main>

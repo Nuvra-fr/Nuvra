@@ -19,14 +19,14 @@ export default async function AdminOrdersPage({
   await requireAdmin();
   const sp = await searchParams;
 
-  let rows = db.select().from(orders).orderBy(desc(orders.createdAt)).limit(300).all();
+  let rows = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(300).all();
   const statusFilter = sp.status?.toUpperCase();
   if (statusFilter) rows = rows.filter((o) => o.status === statusFilter);
 
-  const withSeller = rows.map((o) => {
-    const ws = db.select().from(workspaces).where(eq(workspaces.id, o.workspaceId)).get();
+  const withSeller = await Promise.all(rows.map(async (o) => {
+    const ws = await db.select().from(workspaces).where(eq(workspaces.id, o.workspaceId)).get();
     return { order: o, seller: ws };
-  });
+  }));
 
   const totals = {
     paid: rows.filter((r) => r.status === 'PAID').length,

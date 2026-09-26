@@ -11,18 +11,18 @@ import { audit } from '@/lib/audit';
 
 class ActionError extends Error {}
 
-function ownedPage(ctx: AuthContext, id: string): Page {
-  const page = db.select().from(pages).where(eq(pages.id, id)).get();
+async function ownedPage(ctx: AuthContext, id: string): Promise<Page> {
+  const page = await db.select().from(pages).where(eq(pages.id, id)).get();
   if (!page) throw new ActionError('Page not found');
   if (page.workspaceId !== ctx.workspace.id) throw new ActionError('Not authorized');
   return page;
 }
 
-function uniquePageSlug(ctx: AuthContext, base: string): string {
+async function uniquePageSlug(ctx: AuthContext, base: string): Promise<string> {
   const root = slugify(base) || 'page';
   let slug = root;
   for (let i = 0; i < 30; i++) {
-    const existing = db
+    const existing = await db
       .select({ id: pages.id })
       .from(pages)
       .where(and(eq(pages.workspaceId, ctx.workspace.id), eq(pages.slug, slug)))
@@ -86,19 +86,19 @@ export async function createPageAction(input: {
     const ctx = await requireUser();
     const title = input.title.trim().slice(0, 80) || 'Untitled page';
     const type = input.type ?? 'LANDING';
-    const page = db
+    const page = await db
       .insert(pages)
       .values({
         workspaceId: ctx.workspace.id,
         title,
-        slug: uniquePageSlug(ctx, title),
+        slug: await uniquePageSlug(ctx, title),
         type,
         status: 'DRAFT',
         content: defaultBlocks(type),
       })
       .returning({ id: pages.id })
       .get();
-    audit('page.created', { actorUserId: ctx.user.id, target: page.id, meta: { title } });
+    await audit('page.created', { actorUserId: ctx.user.id, target: page.id, meta: { title } });
     revalidatePath('/dashboard/pages');
     return { ok: true, id: page.id };
   } catch (e) {
@@ -119,7 +119,7 @@ export async function savePageAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const page = ownedPage(ctx, id);
+    const page = await ownedPage(ctx, id);
     const updates: Partial<typeof pages.$inferInsert> = { updatedAt: new Date() };
     if (input.title !== undefined) updates.title = input.title.trim().slice(0, 120) || page.title;
     if (input.content !== undefined) {
@@ -135,7 +135,7 @@ export async function savePageAction(
     if (input.slug !== undefined) {
       const clean = slugify(input.slug);
       if (clean.length < 2) return { ok: false, error: 'Invalid slug' };
-      const clash = db
+      const clash = await db
         .select({ id: pages.id })
         .from(pages)
         .where(
@@ -152,7 +152,7 @@ export async function savePageAction(
     if (input.seoTitle !== undefined) updates.seoTitle = input.seoTitle.slice(0, 120);
     if (input.seoDescription !== undefined) updates.seoDescription = input.seoDescription.slice(0, 300);
 
-    db.update(pages).set(updates).where(eq(pages.id, id)).run();
+    await db.update(pages).set(updates).where(eq(pages.id, id)).run();
     revalidatePath('/dashboard/pages');
     revalidatePath(`/dashboard/pages/${id}`);
     revalidatePath(`/p/${ctx.workspace.slug}/${page.slug}`);
@@ -165,9 +165,9 @@ export async function savePageAction(
 export async function deletePageAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    ownedPage(ctx, id);
-    db.delete(pages).where(eq(pages.id, id)).run();
-    audit('page.deleted', { actorUserId: ctx.user.id, target: id });
+    await ownedPage(ctx, id);
+    await db.delete(pages).where(eq(pages.id, id)).run();
+    await audit('page.deleted', { actorUserId: ctx.user.id, target: id });
     revalidatePath('/dashboard/pages');
     return { ok: true };
   } catch (e) {
@@ -191,21 +191,21 @@ export async function createFunnelAction(input: {
   try {
     const ctx = await requireUser();
     const name = input.name.trim().slice(0, 80) || 'My funnel';
-    const funnel = db
+    const funnel = await db
       .insert(funnels)
       .values({ workspaceId: ctx.workspace.id, name, status: 'DRAFT' })
       .returning({ id: funnels.id })
       .get();
 
     const steps = input.skeleton === false ? [] : DEFAULT_STEPS;
-    steps.forEach((s, i) => {
-      const page = db
+    for (const [i, s] of steps.entries()) {
+      const page = await db
         .insert(pages)
         .values({
           workspaceId: ctx.workspace.id,
           funnelId: funnel.id,
           title: s.title,
-          slug: uniquePageSlug(ctx, `${name}-${s.stepType.toLowerCase()}`),
+          slug: await uniquePageSlug(ctx, `${name}-${s.stepType.toLowerCase()}`),
           type: s.stepType === 'THANKYOU' ? 'THANKYOU' : 'LANDING',
           status: 'DRAFT',
           position: i,
@@ -213,12 +213,12 @@ export async function createFunnelAction(input: {
         })
         .returning({ id: pages.id })
         .get();
-      db.insert(funnelSteps)
+      await db.insert(funnelSteps)
         .values({ funnelId: funnel.id, pageId: page.id, stepType: s.stepType, position: i })
         .run();
-    });
+    };
 
-    audit('funnel.created', { actorUserId: ctx.user.id, target: funnel.id, meta: { name } });
+    await audit('funnel.created', { actorUserId: ctx.user.id, target: funnel.id, meta: { name } });
     revalidatePath('/dashboard/funnels');
     return { ok: true, id: funnel.id };
   } catch (e) {
@@ -232,13 +232,13 @@ export async function setFunnelStatusAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const funnel = db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
+    const funnel = await db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
     if (!funnel || funnel.workspaceId !== ctx.workspace.id) throw new ActionError('Funnel not found');
-    db.update(funnels).set({ status, updatedAt: new Date() }).where(eq(funnels.id, funnelId)).run();
+    await db.update(funnels).set({ status, updatedAt: new Date() }).where(eq(funnels.id, funnelId)).run();
     if (status === 'PUBLISHED') {
       // publishing a funnel publishes its steps
-      const steps = db.select().from(funnelSteps).where(eq(funnelSteps.funnelId, funnelId)).all();
-      db.update(pages)
+      const steps = await db.select().from(funnelSteps).where(eq(funnelSteps.funnelId, funnelId)).all();
+      await db.update(pages)
         .set({ status: 'PUBLISHED', updatedAt: new Date() })
         .where(
           inArray(
@@ -263,23 +263,23 @@ export async function addFunnelStepAction(
 ): Promise<{ ok: true; pageId: string } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const funnel = db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
+    const funnel = await db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
     if (!funnel || funnel.workspaceId !== ctx.workspace.id) throw new ActionError('Funnel not found');
-    const count = db.select({ id: funnelSteps.id }).from(funnelSteps).where(eq(funnelSteps.funnelId, funnelId)).all().length;
-    const page = db
+    const count = (await db.select({ id: funnelSteps.id }).from(funnelSteps).where(eq(funnelSteps.funnelId, funnelId)).all()).length;
+    const page = await db
       .insert(pages)
       .values({
         workspaceId: ctx.workspace.id,
         funnelId,
         title: title.trim().slice(0, 80) || stepType,
-        slug: uniquePageSlug(ctx, `${funnel.name}-${stepType.toLowerCase()}`),
+        slug: await uniquePageSlug(ctx, `${funnel.name}-${stepType.toLowerCase()}`),
         status: 'DRAFT',
         position: count,
         content: defaultBlocks('LANDING'),
       })
       .returning({ id: pages.id })
       .get();
-    db.insert(funnelSteps)
+    await db.insert(funnelSteps)
       .values({ funnelId, pageId: page.id, stepType, position: count })
       .run();
     revalidatePath(`/dashboard/funnels/${funnelId}`);
@@ -292,9 +292,9 @@ export async function addFunnelStepAction(
 export async function deleteFunnelAction(funnelId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const funnel = db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
+    const funnel = await db.select().from(funnels).where(eq(funnels.id, funnelId)).get();
     if (!funnel || funnel.workspaceId !== ctx.workspace.id) throw new ActionError('Funnel not found');
-    db.delete(funnels).where(eq(funnels.id, funnelId)).run();
+    await db.delete(funnels).where(eq(funnels.id, funnelId)).run();
     revalidatePath('/dashboard/funnels');
     return { ok: true };
   } catch (e) {

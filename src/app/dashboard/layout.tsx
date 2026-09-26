@@ -18,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         slug: ctx.workspace.slug,
         plan: ctx.workspace.plan,
       }}
-      unread={unreadCount(ctx.user.id)}
+      unread={await unreadCount(ctx.user.id)}
       testMode={paymentsMode() === 'test'}
     >
       {children}

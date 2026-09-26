@@ -34,9 +34,9 @@ export interface CheckoutItemInfo {
 export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInfo | null> {
   if (item === 'academy') {
     const platform =
-      db.select().from(workspaces).where(eq(workspaces.isPlatform, true)).get() ??
-      db.select().from(workspaces).where(eq(workspaces.slug, 'nuvra')).get();
-    const academyCourse = db
+      await db.select().from(workspaces).where(eq(workspaces.isPlatform, true)).get() ??
+      await db.select().from(workspaces).where(eq(workspaces.slug, 'nuvra')).get();
+    const academyCourse = await db
       .select()
       .from(courses)
       .where(and(eq(courses.isAcademy, true), eq(courses.status, 'PUBLISHED')))
@@ -45,8 +45,8 @@ export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInf
     return {
       kind: 'academy',
       id: academyCourse?.id ?? null,
-      title: (getConfig<string>('academy.name') as string) || 'Nuvra Academy',
-      priceCents: academyPriceCents(),
+      title: (await getConfig<string>('academy.name')) || 'Nuvra Academy',
+      priceCents: await academyPriceCents(),
       workspaceId: platform.id,
       requiresAccount: true,
     };
@@ -54,7 +54,7 @@ export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInf
   const [type, id] = item.split(':');
   if (!type || !id) return null;
   if (type === 'course') {
-    const c = db.select().from(courses).where(eq(courses.id, id)).get();
+    const c = await db.select().from(courses).where(eq(courses.id, id)).get();
     if (!c || c.status === 'ARCHIVED') return null;
     return {
       kind: 'course',
@@ -66,7 +66,7 @@ export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInf
     };
   }
   if (type === 'product') {
-    const p = db.select().from(products).where(eq(products.id, id)).get();
+    const p = await db.select().from(products).where(eq(products.id, id)).get();
     if (!p || p.status === 'ARCHIVED') return null;
     return {
       kind: 'product',
@@ -115,7 +115,7 @@ export async function startCheckoutAction(input: {
         (c): c is string => !!c,
       );
       for (const code of candidates) {
-        const rp = db
+        const rp = await db
           .select()
           .from(resellerProfiles)
           .where(eq(resellerProfiles.code, code))
@@ -132,7 +132,7 @@ export async function startCheckoutAction(input: {
 
     // Free item → instant enroll/order at 0 €
     const mode = paymentsMode();
-    const order = createOrder({
+    const order = await createOrder({
       workspaceId: item.workspaceId,
       kind: item.kind === 'academy' ? 'ACADEMY_SALE' : 'CREATOR_SALE',
       items: [
@@ -154,7 +154,7 @@ export async function startCheckoutAction(input: {
     });
 
     if (order.totalCents === 0) {
-      finalizeOrderPaid(order.id, { provider: 'test', reference: 'zero-amount' });
+      await finalizeOrderPaid(order.id, { provider: 'test', reference: 'zero-amount' });
       redirect(`/checkout/success?order=${order.id}`);
     }
 
@@ -184,15 +184,15 @@ export async function startCheckoutAction(input: {
 export async function confirmTestPurchaseAction(orderId: string): Promise<void> {
   if (paymentsMode() === 'stripe') throw new Error('Test mode disabled while Stripe is configured');
   const ctx = await getSession();
-  const order = db.select().from(orders).where(eq(orders.id, orderId)).get();
+  const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
   if (!order) throw new Error('Order not found');
   if (order.mode !== 'TEST') throw new Error('Not a test order');
   if (order.status === 'PAID') {
     redirect(`/checkout/success?order=${orderId}`);
     return;
   }
-  finalizeOrderPaid(orderId, { provider: 'test', reference: `test_${orderId.slice(0, 8)}` });
-  audit('checkout.test_confirmed', { actorUserId: ctx?.user.id ?? null, target: orderId });
+  await finalizeOrderPaid(orderId, { provider: 'test', reference: `test_${orderId.slice(0, 8)}` });
+  await audit('checkout.test_confirmed', { actorUserId: ctx?.user.id ?? null, target: orderId });
   redirect(`/checkout/success?order=${orderId}`);
 }
 
@@ -202,17 +202,17 @@ export async function enrollFreeAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const course = db.select().from(courses).where(eq(courses.id, courseId)).get();
+    const course = await db.select().from(courses).where(eq(courses.id, courseId)).get();
     if (!course || course.status !== 'PUBLISHED') return { ok: false, error: 'Course unavailable' };
     if (course.priceCents > 0) return { ok: false, error: 'This course is not free' };
     const { enrollments } = await import('@/db/schema');
-    const existing = db
+    const existing = await db
       .select({ id: enrollments.id })
       .from(enrollments)
       .where(and(eq(enrollments.userId, ctx.user.id), eq(enrollments.courseId, courseId)))
       .get();
     if (existing) return { ok: true };
-    db.insert(enrollments)
+    await db.insert(enrollments)
       .values({ userId: ctx.user.id, courseId, source: 'FREE' })
       .run();
     revalidatePath(`/dashboard/learn/${courseId}`);

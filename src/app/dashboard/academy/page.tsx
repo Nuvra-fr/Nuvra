@@ -12,6 +12,7 @@ import {
   resellerProfiles,
 } from '@/db/schema';
 import { formatCents } from '@/lib/money';
+import { appBaseUrl } from '@/lib/utils';
 import { academyPriceCents, resellerBps } from '@/lib/config';
 import { Badge, PageHeader, Stat, StatusBadge, Tabs } from '@/components/ui';
 import CopyButton from './CopyButton';
@@ -27,20 +28,20 @@ export default async function AcademyDashboard({
   const sp = await searchParams;
   const tab = sp.tab === 'reseller' ? 'reseller' : 'learn';
 
-  const reseller = db
+  const reseller = await db
     .select()
     .from(resellerProfiles)
     .where(eq(resellerProfiles.userId, ctx.user.id))
     .get();
 
-  const hasAcademy = !!db
+  const hasAcademy = !!await db
     .select({ id: enrollments.id })
     .from(enrollments)
     .innerJoin(courses, eq(enrollments.courseId, courses.id))
     .where(and(eq(enrollments.userId, ctx.user.id), eq(courses.isAcademy, true)))
     .get();
 
-  const myEnrollments = db
+  const myEnrollments = await db
     .select({ enrollment: enrollments, course: courses })
     .from(enrollments)
     .innerJoin(courses, eq(enrollments.courseId, courses.id))
@@ -50,19 +51,18 @@ export default async function AcademyDashboard({
 
   // Reseller stats (platform sales attributed to this reseller)
   const resellerSales = reseller
-    ? db
+    ? await db
         .select()
         .from(orders)
         .where(and(eq(orders.resellerId, reseller.id), eq(orders.status, 'PAID')))
         .all()
     : [];
   const gross = resellerSales.reduce((s, o) => s + o.totalCents, 0);
-  const bps = resellerBps();
+  const bps = await resellerBps();
   const yourCut = resellerSales.reduce((s, o) => s + (o.totalCents - o.platformFeeCents), 0);
   const nuvraCut = resellerSales.reduce((s, o) => s + o.platformFeeCents, 0);
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
-  const resellerLink = reseller ? `${appUrl}/checkout?item=academy&reseller=${reseller.code}` : null;
+  const resellerLink = reseller ? `${appBaseUrl()}/checkout?item=academy&reseller=${reseller.code}` : null;
 
   return (
     <div>
@@ -72,7 +72,7 @@ export default async function AcademyDashboard({
         actions={
           !hasAcademy ? (
             <Link href={`/checkout?item=academy`} className="btn-primary">
-              Get Academy — {formatCents(academyPriceCents())}
+              Get Academy — {formatCents(await academyPriceCents())}
             </Link>
           ) : null
         }
@@ -116,8 +116,8 @@ export default async function AcademyDashboard({
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {myEnrollments.map(({ enrollment, course }) => {
-                const cert = db
+              {await Promise.all(myEnrollments.map(async ({ enrollment, course }) => {
+                const cert = await db
                   .select({ code: certificates.code })
                   .from(certificates)
                   .where(eq(certificates.enrollmentId, enrollment.id))
@@ -156,7 +156,7 @@ export default async function AcademyDashboard({
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           )}
         </div>
@@ -174,7 +174,7 @@ export default async function AcademyDashboard({
               </p>
               {!hasAcademy ? (
                 <Link href="/checkout?item=academy" className="btn-primary mt-4 inline-flex">
-                  Get Academy — {formatCents(academyPriceCents())}
+                  Get Academy — {formatCents(await academyPriceCents())}
                 </Link>
               ) : (
                 <Badge tone="amber" className="mt-4">

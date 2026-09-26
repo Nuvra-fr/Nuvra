@@ -19,13 +19,13 @@ export default async function BillingPage({
   searchParams: Promise<{ upgraded?: string; canceled?: string }>;
 }) {
   const ctx = await requireUser();
-  ensurePlans();
+  await ensurePlans();
   const sp = await searchParams;
-  const sub = getSubscription(ctx.workspace.id);
+  const sub = await getSubscription(ctx.workspace.id);
   const mode = paymentsMode();
-  const proPrice = Number(getConfig<number>('pro.priceCents') ?? 2900);
-  const businessPrice = Number(getConfig<number>('business.priceCents') ?? 9900);
-  const commissionBps = ctx.workspace.plan === 'FREE' ? freeCommissionBps() : 0;
+  const proPrice = Number(await getConfig<number>('pro.priceCents') ?? 2900);
+  const businessPrice = Number(await getConfig<number>('business.priceCents') ?? 9900);
+  const commissionBps = ctx.workspace.plan === 'FREE' ? await freeCommissionBps() : 0;
 
   return (
     <div>
@@ -154,7 +154,7 @@ export default async function BillingPage({
             <div className="mt-1 text-zinc-300">
               Same 1 000 € in sales → Nuvra fee <strong className="text-emerald-300">0 €</strong>. If Pro
               costs {formatCents(proPrice)}/mo, it pays for itself below{' '}
-              {formatCents(Math.ceil(proPrice / Math.max(1, freeCommissionBps()) * 10000))} of monthly sales.
+              {formatCents(Math.ceil(proPrice / Math.max(1, await freeCommissionBps()) * 10000))} of monthly sales.
             </div>
           </div>
         </div>
