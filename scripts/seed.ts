@@ -55,13 +55,18 @@ async function main() {
   // ── Workspaces ─────────────────────────────────────
   async function upsertWorkspace(slug: string, name: string, ownerId: string, plan: string, isPlatform = false) {
     const existing = await db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
-    if (existing) return existing;
-    const ws = await db
-      .insert(workspaces)
-      .values({ slug, name, ownerId, plan, isPlatform })
-      .returning()
-      .get();
-    await db.insert(memberships)
+    const ws =
+      existing ??
+      (await db
+        .insert(workspaces)
+        .values({ slug, name, ownerId, plan, isPlatform })
+        .returning()
+        .get());
+    // Always (re)assert the OWNER membership: the workspace may already exist
+    // — e.g. the platform one, created by the admin bootstrap — while this
+    // demo account is not a member yet.
+    await db
+      .insert(memberships)
       .values({ userId: ownerId, workspaceId: ws.id, role: 'OWNER' })
       .onConflictDoNothing()
       .run();
