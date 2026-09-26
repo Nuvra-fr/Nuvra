@@ -84,7 +84,8 @@ C'est tout. Les déploiements suivants appliquent automatiquement les nouvelles 
 | `/api/health` renvoie `"db":"error"` ou 503 | URL/jeton Turso invalides, ou base supprimée | `turso db show <db> --url`, `turso db tokens create <db>` puis mettez à jour les variables et redéployez |
 | `/api/health` renvoie `"database":"file"` en production | Turso n'est pas branché, la base est un fichier éphémère | Refaites l'étape 1 — vos données disparaîtraient à chaque déploiement |
 | Le build échoue : `ADMIN_PASSWORD must be at least 12 characters` | Mot de passe trop court | Utilisez 12 caractères ou plus, puis redéployez |
-| `[nuvra:db] migration failed: …` : `401`/`403` | Jeton Turso expiré ou révoqué | Créez un jeton (`turso db tokens create <db>`) et mettez `TURSO_AUTH_TOKEN` à jour |
+| `[nuvra:db] migration failed: … 401`/`403` | Jeton Turso expiré ou révoqué | Créez un jeton (`turso db tokens create <db>`) et mettez `TURSO_AUTH_TOKEN` à jour |
+| `[nuvra:db] migration failed: … fetch failed` | URL Turso erronée ou injoignable (l'erreur complète est affichée dans le build) | Vérifiez `TURSO_DATABASE_URL` (`turso db show <db> --url`, schéma `libsql://` compris) |
 | Connexion impossible avec `ADMIN_EMAIL` après la mise en ligne | Administrateur créé lors d'un premier déploiement avec un autre mot de passe | Supprimez l'utilisateur dans Turso (`turso db shell <db> "delete from users where role='ADMIN'"`) puis redéployez |
 | Les e-mails programmés ne partent pas | Cron non déclenché ou `CRON_SECRET` absent | Vérifiez l'onglet *Cron Jobs* du projet et que `CRON_SECRET` est défini (sinon l'endpoint répond 503 en production) |
 | Les liens des e-mails pointent vers `localhost` | `NEXT_PUBLIC_APP_URL` absent | Renseignez le domaine de production, puis redéployez |
