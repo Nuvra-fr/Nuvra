@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Nuvra — Create. Sell. Teach. Scale. The all-in-one operating system for digital business.",
+  "engines": {
+    "node": ">=22.14"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",

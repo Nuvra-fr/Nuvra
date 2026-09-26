@@ -1,5 +1,12 @@
 # Nuvra — Deployment
 
+## 0 — Runtime
+
+**Node.js ≥ 22.14** (declared in `package.json` → `engines`; Vercel, Railway, Render, Fly…
+read it to pick the runtime). `better-sqlite3@13` ships an N-API 10 prebuilt binary, which does
+not load on Node 18/20 — a project pinned to an older Node fails at build time while
+generating static pages.
+
 ## 1 — Environment
 
 Copy `.env.example` → `.env` (local) or configure in your host (Vercel → Project → Settings).
