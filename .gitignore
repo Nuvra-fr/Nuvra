@@ -27,12 +27,11 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# database
-/nuvra.db
-/nuvra.db-journal
-/nuvra.db-wal
-/nuvra.db-shm
+# database — libSQL/SQLite files and their WAL side-cars
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # tests
 /coverage
