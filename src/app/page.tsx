@@ -94,8 +94,8 @@ const FAQ = [
 ];
 
 export default async function LandingPage() {
-  const academyPrice = academyPriceCents();
-  const proPrice = proPriceCents();
+  const academyPrice = await academyPriceCents();
+  const proPrice = await proPriceCents();
 
   return (
     <div className="min-h-screen bg-ink-950">

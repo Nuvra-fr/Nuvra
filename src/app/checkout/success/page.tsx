@@ -21,7 +21,7 @@ export default async function CheckoutSuccessPage({
   const sp = await searchParams;
   if (!sp.order) notFound();
 
-  const order = db.select().from(orders).where(eq(orders.id, sp.order)).get();
+  const order = await db.select().from(orders).where(eq(orders.id, sp.order)).get();
   if (!order) notFound();
 
   // If Stripe returned here with a session, verify + finalize server-side (idempotent).
@@ -33,7 +33,7 @@ export default async function CheckoutSuccessPage({
         const session = await stripe.checkout.sessions.retrieve(sp.session_id);
         if (session.payment_status === 'paid') {
           const { finalizeOrderPaid } = await import('@/lib/orders');
-          finalizeOrderPaid(order.id, {
+          await finalizeOrderPaid(order.id, {
             provider: 'stripe',
             reference: session.id,
             raw: { payment_status: session.payment_status },
@@ -45,10 +45,10 @@ export default async function CheckoutSuccessPage({
     }
   }
 
-  const fresh = db.select().from(orders).where(eq(orders.id, sp.order)).get()!;
-  const items = db.select().from(orderItems).where(eq(orderItems.orderId, fresh.id)).all();
-  const seller = db.select().from(workspaces).where(eq(workspaces.id, fresh.workspaceId)).get();
-  const entries = db.select().from(ledgerEntries).where(eq(ledgerEntries.orderId, fresh.id)).all();
+  const fresh = (await db.select().from(orders).where(eq(orders.id, sp.order)).get())!;
+  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, fresh.id)).all();
+  const seller = await db.select().from(workspaces).where(eq(workspaces.id, fresh.workspaceId)).get();
+  const entries = await db.select().from(ledgerEntries).where(eq(ledgerEntries.orderId, fresh.id)).all();
   const ctx = await getSession();
 
   const split =
@@ -58,9 +58,9 @@ export default async function CheckoutSuccessPage({
           platform: fresh.platformFeeCents,
           label: fresh.resellerId ? 'Reseller (90/10 program)' : 'Nuvra (direct)',
         }
-      : (() => {
+      : await (async () => {
           const plan = seller?.plan ?? 'FREE';
-          const s = creatorSplit(fresh.totalCents, plan as 'FREE' | 'PRO', freeCommissionBps());
+          const s = creatorSplit(fresh.totalCents, plan as 'FREE' | 'PRO', await freeCommissionBps());
           return { seller: s.sellerCents, platform: s.platformCents, label: `Creator (${plan})` };
         })();
 

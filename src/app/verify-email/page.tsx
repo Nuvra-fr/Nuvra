@@ -17,7 +17,7 @@ export default async function VerifyEmailPage({
   let status: 'ok' | 'invalid' | 'missing' = 'missing';
 
   if (token) {
-    const row = db
+    const row = await db
       .select()
       .from(emailVerificationTokens)
       .where(
@@ -29,8 +29,8 @@ export default async function VerifyEmailPage({
       )
       .get();
     if (row) {
-      db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, row.userId)).run();
-      db.update(emailVerificationTokens)
+      await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, row.userId)).run();
+      await db.update(emailVerificationTokens)
         .set({ usedAt: new Date() })
         .where(eq(emailVerificationTokens.id, row.id))
         .run();

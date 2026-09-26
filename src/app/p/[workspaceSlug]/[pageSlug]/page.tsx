@@ -14,9 +14,9 @@ interface Props {
 }
 
 async function load(workspaceSlug: string, pageSlug: string) {
-  const ws = db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug)).get();
+  const ws = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug)).get();
   if (!ws) return null;
-  const page = db
+  const page = await db
     .select()
     .from(pages)
     .where(and(eq(pages.workspaceId, ws.id), eq(pages.slug, pageSlug)))
@@ -48,7 +48,7 @@ export default async function PublicPage({ params, searchParams }: Props) {
   const visitorId =
     typeof sp.ref === 'string' && sp.ref.length < 80 ? sp.ref : null;
   try {
-    db.insert(pageViews)
+    await db.insert(pageViews)
       .values({
         pageId: page.id,
         visitorId,
@@ -56,7 +56,7 @@ export default async function PublicPage({ params, searchParams }: Props) {
         path: `/p/${workspaceSlug}/${pageSlug}`,
       })
       .run();
-    db.update(pages).set({ views: sql`${pages.views} + 1` }).where(eq(pages.id, page.id)).run();
+    await db.update(pages).set({ views: sql`${pages.views} + 1` }).where(eq(pages.id, page.id)).run();
   } catch {
     // tracking must never break rendering
   }
@@ -65,9 +65,9 @@ export default async function PublicPage({ params, searchParams }: Props) {
   if (typeof sp.aff === 'string' && sp.aff.length <= 64) {
     try {
       const { affiliates, affiliateClicks } = await import('@/db/schema');
-      const aff = db.select().from(affiliates).where(eq(affiliates.code, sp.aff)).get();
+      const aff = await db.select().from(affiliates).where(eq(affiliates.code, sp.aff)).get();
       if (aff) {
-        db.insert(affiliateClicks)
+        await db.insert(affiliateClicks)
           .values({ affiliateId: aff.id, visitorId, path: `/p/${workspaceSlug}/${pageSlug}` })
           .run();
       }

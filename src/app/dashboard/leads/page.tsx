@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Leads' };
 
 export default async function LeadsPage() {
   const ctx = await requireUser();
-  const rows = db
+  const rows = await db
     .select()
     .from(contacts)
     .where(eq(contacts.workspaceId, ctx.workspace.id))

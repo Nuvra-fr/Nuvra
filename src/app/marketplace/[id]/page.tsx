@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const l = db.select().from(marketplaceListings).where(eq(marketplaceListings.id, id)).get();
+  const l = await db.select().from(marketplaceListings).where(eq(marketplaceListings.id, id)).get();
   return { title: l ? l.title : 'Marketplace' };
 }
 
@@ -22,23 +22,23 @@ export default async function ListingDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const listing = db.select().from(marketplaceListings).where(eq(marketplaceListings.id, id)).get();
+  const listing = await db.select().from(marketplaceListings).where(eq(marketplaceListings.id, id)).get();
   if (!listing || listing.status !== 'APPROVED') notFound();
 
-  const course = listing.courseId ? db.select().from(courses).where(eq(courses.id, listing.courseId)).get() : null;
-  const ws = course ? db.select().from(workspaces).where(eq(workspaces.id, course.workspaceId)).get() : null;
+  const course = listing.courseId ? await db.select().from(courses).where(eq(courses.id, listing.courseId)).get() : null;
+  const ws = course ? await db.select().from(workspaces).where(eq(workspaces.id, course.workspaceId)).get() : null;
   const mods = course
-    ? db.select().from(courseModules).where(eq(courseModules.courseId, course.id)).all()
+    ? await db.select().from(courseModules).where(eq(courseModules.courseId, course.id)).all()
     : [];
-  const ratingRows = db.select().from(reviews).where(eq(reviews.listingId, id)).all();
+  const ratingRows = await db.select().from(reviews).where(eq(reviews.listingId, id)).all();
   const avg = ratingRows.length ? Math.round((ratingRows.reduce((s, r) => s + r.rating, 0) / ratingRows.length) * 10) / 10 : null;
   const students = course
-    ? db.select({ x: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, course.id)).all().length
+    ? (await db.select({ x: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, course.id)).all()).length
     : 0;
 
   // track listing view
   try {
-    db.update(marketplaceListings)
+    await db.update(marketplaceListings)
       .set({ views: listing.views + 1 })
       .where(eq(marketplaceListings.id, id))
       .run();

@@ -32,8 +32,8 @@ export function monthStart(): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-export function creditsUsedThisMonth(workspaceId: string): number {
-  const rows = db
+export async function creditsUsedThisMonth(workspaceId: string): Promise<number> {
+  const rows = await db
     .select({ creditsUsed: aiUsage.creditsUsed })
     .from(aiUsage)
     .where(and(eq(aiUsage.workspaceId, workspaceId), gte(aiUsage.createdAt, monthStart())))
@@ -41,8 +41,8 @@ export function creditsUsedThisMonth(workspaceId: string): number {
   return rows.reduce((s, r) => s + r.creditsUsed, 0);
 }
 
-export function creditQuota(plan: string): number {
-  return aiCreditsForPlan(plan);
+export async function creditQuota(plan: string): Promise<number> {
+  return await aiCreditsForPlan(plan);
 }
 
 export interface AIGenerateInput {
@@ -71,15 +71,15 @@ const SYSTEM_PROMPTS: Record<AIFeature, string> = {
 };
 
 export async function aiGenerate(input: AIGenerateInput): Promise<AIGenerateResult> {
-  if (!flagEnabled('ai')) throw new AIUnavailableError('AI features are disabled by an administrator (feature flag: ai).');
+  if (!await flagEnabled('ai')) throw new AIUnavailableError('AI features are disabled by an administrator (feature flag: ai).');
   const key = providerKey();
   if (!key) {
     throw new AIUnavailableError(
       'AI provider is not configured. Set the AI_API_KEY environment variable (OpenAI-compatible) to enable Nuvra AI.',
     );
   }
-  const used = creditsUsedThisMonth(input.workspaceId);
-  const quota = creditQuota(input.plan);
+  const used = await creditsUsedThisMonth(input.workspaceId);
+  const quota = await creditQuota(input.plan);
   if (used + 1 > quota) {
     throw new AICreditError(
       `Monthly AI credit quota reached (${quota}). Upgrade your plan or wait for next month's reset.`,
@@ -114,7 +114,7 @@ export async function aiGenerate(input: AIGenerateInput): Promise<AIGenerateResu
     };
     const text = data.choices?.[0]?.message?.content?.trim() ?? '';
     const creditsUsed = 1;
-    db.insert(aiUsage)
+    await db.insert(aiUsage)
       .values({
         workspaceId: input.workspaceId,
         userId: input.userId,

@@ -25,10 +25,10 @@ export const metadata: Metadata = { title: 'Overview' };
 export default async function OverviewPage() {
   const ctx = await requireUser();
   const ws = ctx.workspace.id;
-  const stats = workspaceStats(ws);
-  const series = revenueSeries(14);
+  const stats = await workspaceStats(ws);
+  const series = await revenueSeries(14);
 
-  const recentOrders = db
+  const recentOrders = await db
     .select()
     .from(orders)
     .where(eq(orders.workspaceId, ws))
@@ -37,10 +37,10 @@ export default async function OverviewPage() {
     .all();
 
   // "Your next moves" — real recommendations from real data
-  const productCount = db.select({ id: products.id }).from(products).where(eq(products.workspaceId, ws)).all().length;
-  const courseCount = db.select({ id: courses.id }).from(courses).where(eq(courses.workspaceId, ws)).all().length;
-  const pageCount = db.select({ id: pages.id }).from(pages).where(eq(pages.workspaceId, ws)).all().length;
-  const funnelCount = db.select({ id: funnels.id }).from(funnels).where(eq(funnels.workspaceId, ws)).all().length;
+  const productCount = (await db.select({ id: products.id }).from(products).where(eq(products.workspaceId, ws)).all()).length;
+  const courseCount = (await db.select({ id: courses.id }).from(courses).where(eq(courses.workspaceId, ws)).all()).length;
+  const pageCount = (await db.select({ id: pages.id }).from(pages).where(eq(pages.workspaceId, ws)).all()).length;
+  const funnelCount = (await db.select({ id: funnels.id }).from(funnels).where(eq(funnels.workspaceId, ws)).all()).length;
   const hasStripe = paymentsMode() === 'stripe';
 
   const moves: { title: string; body: string; href: string; cta: string; done?: boolean }[] = [
@@ -82,7 +82,7 @@ export default async function OverviewPage() {
     },
     {
       title: 'Discover Nuvra Academy',
-      body: `Paid program with reseller eligibility — ${formatCents(academyPriceCents())}. The platform itself stays free.`,
+      body: `Paid program with reseller eligibility — ${formatCents(await academyPriceCents())}. The platform itself stays free.`,
       href: '/dashboard/academy',
       cta: 'Explore Academy',
       done: false,

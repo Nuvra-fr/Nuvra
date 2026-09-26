@@ -51,9 +51,23 @@ export function timeAgo(d: Date | string | number): string {
   return `${Math.floor(months / 12)}y ago`;
 }
 
+/**
+ * Canonical base URL of this deployment.
+ * Explicit configuration first, then the URL Vercel gives the deployment
+ * (VERCEL_PROJECT_PRODUCTION_URL = stable production domain, VERCEL_URL =
+ * this particular deployment), then local development.
+ */
+export function appBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  if (vercel) return `https://${vercel.replace(/\/$/, '')}`;
+  return 'http://localhost:3000';
+}
+
 export function appUrl(path = ''): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  return `${base.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+  const base = appBaseUrl();
+  return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 export function initials(name: string): string {

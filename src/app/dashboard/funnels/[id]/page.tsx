@@ -30,10 +30,10 @@ export default async function FunnelDetailPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const funnel = db.select().from(funnels).where(eq(funnels.id, id)).get();
+  const funnel = await db.select().from(funnels).where(eq(funnels.id, id)).get();
   if (!funnel || funnel.workspaceId !== ctx.workspace.id) notFound();
 
-  const steps = db
+  const steps = await db
     .select({ step: funnelSteps, page: pages })
     .from(funnelSteps)
     .innerJoin(pages, eq(funnelSteps.pageId, pages.id))
@@ -41,7 +41,7 @@ export default async function FunnelDetailPage({
     .orderBy(funnelSteps.position)
     .all();
 
-  const analytics = funnelAnalytics(id);
+  const analytics = await funnelAnalytics(id);
 
   return (
     <div>

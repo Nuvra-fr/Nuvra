@@ -40,8 +40,13 @@ jobs:
       - name: Unit & integration tests
         run: npm test
 
-      - name: Migrations apply cleanly on an empty database
-        run: npx drizzle-kit migrate
+      - name: Migrations apply cleanly on an empty database (idempotent)
+        env:
+          ADMIN_EMAIL: admin@ci.local
+          ADMIN_PASSWORD: ci-only-passphrase-1
+        run: |
+          npm run db:migrate
+          npm run db:migrate
 
       - name: Seed runs without error
         run: npm run db:seed

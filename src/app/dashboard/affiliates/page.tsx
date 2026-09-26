@@ -7,6 +7,7 @@ import { affiliates, affiliateClicks, affiliatePrograms, affiliateSales, orders 
 import { flagEnabled } from '@/lib/config';
 import { EmptyState, PageHeader, Stat, Badge, StatusBadge, InlineAlert } from '@/components/ui';
 import { formatCents } from '@/lib/money';
+import { appBaseUrl } from '@/lib/utils';
 import NewAffiliateProgramButton from './NewAffiliateProgramButton';
 import CopyButton from '../academy/CopyButton';
 
@@ -15,7 +16,7 @@ export const metadata: Metadata = { title: 'Affiliates' };
 export default async function AffiliatesPage() {
   const ctx = await requireUser();
 
-  if (!flagEnabled('affiliates')) {
+  if (!await flagEnabled('affiliates')) {
     return (
       <div>
         <PageHeader title="Affiliates" />
@@ -27,34 +28,34 @@ export default async function AffiliatesPage() {
     );
   }
 
-  const programs = db
+  const programs = await db
     .select()
     .from(affiliatePrograms)
     .where(eq(affiliatePrograms.workspaceId, ctx.workspace.id))
     .orderBy(desc(affiliatePrograms.createdAt))
     .all();
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
+  const appUrl = appBaseUrl();
 
-  const programStats = programs.map((p) => {
-    const affs = db.select().from(affiliates).where(eq(affiliates.programId, p.id)).all();
+  const programStats = await Promise.all(programs.map(async (p) => {
+    const affs = await db.select().from(affiliates).where(eq(affiliates.programId, p.id)).all();
     const affIds = affs.map((a) => a.id);
     const clicks = affIds.length
-      ? db.select().from(affiliateClicks).all().filter((c) => affIds.includes(c.affiliateId))
+      ? (await db.select().from(affiliateClicks).all()).filter((c) => affIds.includes(c.affiliateId))
       : [];
     const sales = affIds.length
-      ? db.select().from(affiliateSales).all().filter((s) => affIds.includes(s.affiliateId))
+      ? (await db.select().from(affiliateSales).all()).filter((s) => affIds.includes(s.affiliateId))
       : [];
-    const paidSales = sales
-      .map((s) => {
-        const order = db.select().from(orders).where(eq(orders.id, s.orderId)).get();
+    const paidSales = (await Promise.all(sales
+      .map(async (s) => {
+        const order = await db.select().from(orders).where(eq(orders.id, s.orderId)).get();
         return { ...s, order };
-      })
+      })))
       .filter((s) => s.order?.status === 'PAID');
     const revenue = paidSales.reduce((sum, s) => sum + (s.order?.totalCents ?? 0), 0);
     const commissions = paidSales.reduce((sum, s) => sum + s.commissionCents, 0);
     return { program: p, affCount: affs.length, clickCount: clicks.length, revenue, commissions, affs: affs.slice(0, 5), sales: paidSales };
-  });
+  }));
 
   const totals = programStats.reduce(
     (acc, p) => ({ revenue: acc.revenue + p.revenue, commissions: acc.commissions + p.commissions, clicks: acc.clicks + p.clickCount }),

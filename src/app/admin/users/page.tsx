@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Admin — Users' };
 
 export default async function AdminUsersPage() {
   await requireAdmin();
-  const rows = db.select().from(users).orderBy(desc(users.createdAt)).limit(200).all();
+  const rows = await db.select().from(users).orderBy(desc(users.createdAt)).limit(200).all();
 
   return (
     <div>
@@ -30,8 +30,8 @@ export default async function AdminUsersPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((u) => {
-              const mem = db
+            {await Promise.all(rows.map(async (u) => {
+              const mem = await db
                 .select({ ws: workspaces })
                 .from(memberships)
                 .innerJoin(workspaces, eq(memberships.workspaceId, workspaces.id))
@@ -63,7 +63,7 @@ export default async function AdminUsersPage() {
                   </td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </table>
       </div>

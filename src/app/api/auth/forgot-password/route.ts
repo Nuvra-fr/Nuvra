@@ -22,12 +22,12 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) return jsonError('Enter a valid email.');
 
   const email = parsed.data.email.toLowerCase().trim();
-  const user = db.select().from(users).where(eq(users.email, email)).get();
+  const user = await db.select().from(users).where(eq(users.email, email)).get();
 
   // Always answer success to avoid account enumeration
   if (user) {
     const raw = randomBytes(32).toString('hex');
-    db.insert(passwordResetTokens)
+    await db.insert(passwordResetTokens)
       .values({
         userId: user.id,
         tokenHash: sha256(raw),
@@ -40,7 +40,7 @@ export async function POST(req: Request): Promise<Response> {
       body: `Someone requested a password reset for your Nuvra account.\n\nChoose a new password (valid 1 hour):\n${appUrl(`/reset-password?token=${raw}`)}\n\nIf this wasn't you, ignore this email.`,
       relatedTo: 'auth:reset',
     });
-    audit('auth.forgot_requested', { actorUserId: user.id, target: user.id, ip });
+    await audit('auth.forgot_requested', { actorUserId: user.id, target: user.id, ip });
   }
 
   return jsonOk({ message: 'If that account exists, a reset link has been sent.' });

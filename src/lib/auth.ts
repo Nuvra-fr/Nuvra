@@ -35,7 +35,7 @@ export function sha256(input: string): string {
 export async function createSession(userId: string, ip?: string | null, userAgent?: string | null) {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 3600 * 1000);
-  db.insert(sessions)
+  await db.insert(sessions)
     .values({ userId, tokenHash: sha256(token), expiresAt, ip: ip ?? null, userAgent: userAgent ?? null })
     .run();
   const jar = await cookies();
@@ -52,7 +52,7 @@ export async function createSession(userId: string, ip?: string | null, userAgen
 export async function destroySession() {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  if (token) db.delete(sessions).where(eq(sessions.tokenHash, sha256(token))).run();
+  if (token) await db.delete(sessions).where(eq(sessions.tokenHash, sha256(token))).run();
   jar.delete(SESSION_COOKIE);
   jar.delete(WS_COOKIE);
 }
@@ -65,10 +65,10 @@ export interface AuthContext {
 }
 
 async function loadContext(userId: string): Promise<AuthContext | null> {
-  const user = db.select().from(users).where(eq(users.id, userId)).get();
+  const user = await db.select().from(users).where(eq(users.id, userId)).get();
   if (!user || user.status !== 'ACTIVE') return null;
-  const profile = db.select().from(profiles).where(eq(profiles.userId, userId)).get() ?? null;
-  const rows = db
+  const profile = await db.select().from(profiles).where(eq(profiles.userId, userId)).get() ?? null;
+  const rows = await db
     .select({ membership: memberships, workspace: workspaces })
     .from(memberships)
     .innerJoin(workspaces, eq(memberships.workspaceId, workspaces.id))
@@ -85,7 +85,7 @@ export async function getSession(): Promise<AuthContext | null> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const row = db
+  const row = await db
     .select()
     .from(sessions)
     .where(and(eq(sessions.tokenHash, sha256(token)), gt(sessions.expiresAt, new Date())))
@@ -120,7 +120,7 @@ export async function getIp(): Promise<string | null> {
 export async function switchWorkspace(workspaceId: string) {
   const ctx = await getSession();
   if (!ctx) return;
-  const m = db
+  const m = await db
     .select()
     .from(memberships)
     .where(and(eq(memberships.userId, ctx.user.id), eq(memberships.workspaceId, workspaceId)))
@@ -138,17 +138,17 @@ export async function switchWorkspace(workspaceId: string) {
 /* eslint-disable @typescript-eslint/no-explicit-any -- dynamic drizzle table
    parameter by design: the tenant guard runs the same query shape against
    many tables. Each call site passes a concrete table and receives a typed T. */
-export function ownedQuery<T extends { id: string }>(
+export async function ownedQuery<T extends { id: string }>(
   table: { id: any; workspaceId: any; [k: string]: any } & { _: any },
   id: string,
   workspaceId: string,
-): T | null {
-  const rows = db
+): Promise<T | null> {
+  const rows = (await db
     .select()
     .from(table as any)
     .where(eq((table as any).id, id))
     .limit(1)
-    .all() as T[];
+    .all() as T[]);
   const row = rows[0];
   if (!row) return null;
   if ((row as any).workspaceId !== workspaceId) return null;

@@ -30,21 +30,21 @@ export async function POST(req: Request): Promise<Response> {
   if (!workspaceId && parsed.data.pagePath) {
     const parts = parsed.data.pagePath.split('/').filter(Boolean);
     if (parts[0] === 'p' && parts[1]) {
-      const ws = db.select().from(workspaces).where(eq(workspaces.slug, parts[1])).get();
+      const ws = await db.select().from(workspaces).where(eq(workspaces.slug, parts[1])).get();
       workspaceId = ws?.id ?? null;
     }
   }
   if (!workspaceId) return jsonError('Unknown workspace.', 404);
 
   const email = parsed.data.email.toLowerCase().trim();
-  let contact = db
+  let contact = await db
     .select()
     .from(contacts)
     .where(and(eq(contacts.workspaceId, workspaceId), eq(contacts.email, email)))
     .get();
 
   if (!contact) {
-    contact = db
+    contact = await db
       .insert(contacts)
       .values({
         workspaceId,
@@ -55,10 +55,10 @@ export async function POST(req: Request): Promise<Response> {
       })
       .returning()
       .get();
-    db.insert(contactActivities)
+    await db.insert(contactActivities)
       .values({ contactId: contact.id, type: 'lead.created', summary: `Captured from ${parsed.data.pagePath ?? 'form'}` })
       .run();
-    emitEvent({
+    await emitEvent({
       name: 'lead.created',
       workspaceId,
       payload: { email, name: parsed.data.name ?? '', contactId: contact.id, path: parsed.data.pagePath },

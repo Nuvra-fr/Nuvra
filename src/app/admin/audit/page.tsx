@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Admin — Audit logs' };
 
 export default async function AdminAuditPage() {
   await requireAdmin();
-  const rows = db
+  const rows = await db
     .select({ log: auditLogs, actor: users })
     .from(auditLogs)
     .leftJoin(users, eq(auditLogs.actorUserId, users.id))

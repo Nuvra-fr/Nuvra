@@ -18,17 +18,17 @@ export default async function AutomationDetailPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const auto = db.select().from(automations).where(eq(automations.id, id)).get();
+  const auto = await db.select().from(automations).where(eq(automations.id, id)).get();
   if (!auto || auto.workspaceId !== ctx.workspace.id) notFound();
 
-  const actions = db
+  const actions = (await db
     .select()
     .from(automationActions)
     .where(eq(automationActions.automationId, id))
-    .all()
+    .all())
     .sort((a, b) => a.position - b.position);
 
-  const runs = db
+  const runs = await db
     .select()
     .from(automationRuns)
     .where(eq(automationRuns.automationId, id))

@@ -18,8 +18,8 @@ export async function adminUpdateSettingAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    setConfig(key, value);
-    audit('admin.setting_updated', { actorUserId: ctx.user.id, target: key, meta: { value } });
+    await setConfig(key, value);
+    await audit('admin.setting_updated', { actorUserId: ctx.user.id, target: key, meta: { value } });
     revalidatePath('/admin/settings');
     revalidatePath('/admin');
     return { ok: true };
@@ -54,15 +54,15 @@ export async function adminSaveBusinessSettingsAction(input: {
     const parsed = settingsSchema.safeParse(input);
     if (!parsed.success) return { ok: false, error: 'Invalid values' };
     const v = parsed.data;
-    setConfig('academy.priceCents', v.academyPrice);
-    setConfig('pro.priceCents', v.proPrice);
-    setConfig('business.priceCents', v.businessPrice);
-    setConfig('commission.freeBps', v.freeCommissionBps);
-    setConfig('commission.resellerBps', v.resellerBps);
-    setConfig('payouts.holdDays', v.payoutHoldDays);
-    setConfig('ai.freeCredits', v.aiFreeCredits);
-    setConfig('ai.proCredits', v.aiProCredits);
-    audit('admin.business_settings', { actorUserId: ctx.user.id, meta: v });
+    await setConfig('academy.priceCents', v.academyPrice);
+    await setConfig('pro.priceCents', v.proPrice);
+    await setConfig('business.priceCents', v.businessPrice);
+    await setConfig('commission.freeBps', v.freeCommissionBps);
+    await setConfig('commission.resellerBps', v.resellerBps);
+    await setConfig('payouts.holdDays', v.payoutHoldDays);
+    await setConfig('ai.freeCredits', v.aiFreeCredits);
+    await setConfig('ai.proCredits', v.aiProCredits);
+    await audit('admin.business_settings', { actorUserId: ctx.user.id, meta: v });
     revalidatePath('/admin/settings');
     return { ok: true };
   } catch (e) {
@@ -76,11 +76,11 @@ export async function adminModerateListingAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    db.update(marketplaceListings)
+    await db.update(marketplaceListings)
       .set({ status, updatedAt: new Date() })
       .where(eq(marketplaceListings.id, listingId))
       .run();
-    audit('admin.listing_moderated', { actorUserId: ctx.user.id, target: listingId, meta: { status } });
+    await audit('admin.listing_moderated', { actorUserId: ctx.user.id, target: listingId, meta: { status } });
     revalidatePath('/admin/marketplace');
     revalidatePath('/marketplace');
     return { ok: true };
@@ -95,9 +95,9 @@ export async function adminPayoutAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    if (action === 'paid') markPayoutPaid(payoutId);
-    else markPayoutFailed(payoutId, 'admin rejected');
-    audit(`admin.payout_${action}`, { actorUserId: ctx.user.id, target: payoutId });
+    if (action === 'paid') await markPayoutPaid(payoutId);
+    else await markPayoutFailed(payoutId, 'admin rejected');
+    await audit(`admin.payout_${action}`, { actorUserId: ctx.user.id, target: payoutId });
     revalidatePath('/admin/payouts');
     return { ok: true };
   } catch (e) {
@@ -111,8 +111,8 @@ export async function adminRefundAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    refundOrder(orderId, { reason: reason ?? 'admin refund' });
-    audit('admin.refund', { actorUserId: ctx.user.id, target: orderId });
+    await refundOrder(orderId, { reason: reason ?? 'admin refund' });
+    await audit('admin.refund', { actorUserId: ctx.user.id, target: orderId });
     revalidatePath('/admin/orders');
     return { ok: true };
   } catch (e) {
@@ -127,9 +127,9 @@ export async function adminToggleUserAction(
   try {
     const ctx = await requireAdmin();
     if (userId === ctx.user.id) return { ok: false, error: 'You cannot suspend yourself' };
-    db.update(users).set({ status, updatedAt: new Date() }).where(eq(users.id, userId)).run();
-    if (status === 'SUSPENDED') db.delete(sessions).where(eq(sessions.userId, userId)).run();
-    audit('admin.user_status', { actorUserId: ctx.user.id, target: userId, meta: { status } });
+    await db.update(users).set({ status, updatedAt: new Date() }).where(eq(users.id, userId)).run();
+    if (status === 'SUSPENDED') await db.delete(sessions).where(eq(sessions.userId, userId)).run();
+    await audit('admin.user_status', { actorUserId: ctx.user.id, target: userId, meta: { status } });
     revalidatePath('/admin/users');
     return { ok: true };
   } catch (e) {

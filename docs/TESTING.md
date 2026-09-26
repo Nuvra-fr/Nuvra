@@ -6,7 +6,7 @@
 npm test            # vitest run — the full suite
 npm run test:watch  # watch mode
 npm run typecheck   # tsc --noEmit
-npm run lint        # eslint (next/core-web-vitals + next/typescript)
+npm run lint        # eslint (next/core-web-vitals + next/typescript + typed async rules)
 npm run smoke       # HTTP smoke test against a running, seeded server (see below)
 ```
 
@@ -50,7 +50,8 @@ Keep both green.
 ## Conventions
 
 - Tests are **pure where possible**; the integration suite points `DATABASE_URL` at a
-  `mkdtemp` file **before** importing `@/lib/db`, then runs `drizzle-kit` migrations — the
+  `mkdtemp` file **before** importing `@/lib/db`, then applies the real `drizzle/` migrations
+  through the libSQL migrator — the
   development database is never touched.
 - Assertions encode the business contract (e.g. `sellerCents + platformCents === gross`,
   refund proportions equal sale proportions) so any refactor that breaks money math fails CI.

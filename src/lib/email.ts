@@ -27,11 +27,11 @@ export function emailProvider(): 'RESEND' | 'OUTBOX' {
 }
 
 export async function deliverLog(logId: string): Promise<'SENT' | 'FAILED' | 'QUEUED'> {
-  const log = db.select().from(emailLogs).where(eq(emailLogs.id, logId)).get();
+  const log = await db.select().from(emailLogs).where(eq(emailLogs.id, logId)).get();
   if (!log) return 'FAILED';
   const key = resendKey();
   if (!key) {
-    db.update(emailLogs).set({ status: 'QUEUED', channel: 'OUTBOX' }).where(eq(emailLogs.id, logId)).run();
+    await db.update(emailLogs).set({ status: 'QUEUED', channel: 'OUTBOX' }).where(eq(emailLogs.id, logId)).run();
     return 'QUEUED';
   }
   try {
@@ -50,16 +50,16 @@ export async function deliverLog(logId: string): Promise<'SENT' | 'FAILED' | 'QU
     });
     if (!res.ok) {
       const err = await res.text();
-      db.update(emailLogs)
+      await db.update(emailLogs)
         .set({ status: 'FAILED', channel: 'RESEND', error: err.slice(0, 500) })
         .where(eq(emailLogs.id, logId))
         .run();
       return 'FAILED';
     }
-    db.update(emailLogs).set({ status: 'SENT', channel: 'RESEND', error: null }).where(eq(emailLogs.id, logId)).run();
+    await db.update(emailLogs).set({ status: 'SENT', channel: 'RESEND', error: null }).where(eq(emailLogs.id, logId)).run();
     return 'SENT';
   } catch (e) {
-    db.update(emailLogs)
+    await db.update(emailLogs)
       .set({ status: 'FAILED', channel: 'RESEND', error: String(e).slice(0, 500) })
       .where(eq(emailLogs.id, logId))
       .run();
@@ -69,7 +69,7 @@ export async function deliverLog(logId: string): Promise<'SENT' | 'FAILED' | 'QU
 
 /** Record + deliver immediately (unless no provider → outbox). */
 export async function sendEmail(input: SendEmailInput): Promise<string> {
-  const row = db
+  const row = await db
     .insert(emailLogs)
     .values({
       workspaceId: input.workspaceId ?? null,
@@ -87,8 +87,8 @@ export async function sendEmail(input: SendEmailInput): Promise<string> {
 }
 
 /** Schedule an email (sequence delays). Process with processDueEmails(). */
-export function scheduleEmail(input: SendEmailInput & { runAt: Date }): string {
-  const row = db
+export async function scheduleEmail(input: SendEmailInput & { runAt: Date }): Promise<string> {
+  const row = await db
     .insert(emailLogs)
     .values({
       workspaceId: input.workspaceId ?? null,
@@ -107,11 +107,11 @@ export function scheduleEmail(input: SendEmailInput & { runAt: Date }): string {
 
 /** Deliver all due scheduled emails. Called by cron endpoint or Admin → Run now. */
 export async function processDueEmails(): Promise<{ processed: number; sent: number; queued: number }> {
-  const due = db
+  const due = (await db
     .select()
     .from(emailLogs)
     .where(eq(emailLogs.status, 'SCHEDULED'))
-    .all()
+    .all())
     .filter((e) => !e.scheduledAt || e.scheduledAt.getTime() <= Date.now());
   let sent = 0;
   let queued = 0;
@@ -123,8 +123,8 @@ export async function processDueEmails(): Promise<{ processed: number; sent: num
   return { processed: due.length, sent, queued };
 }
 
-export function listOutbox(workspaceId?: string, limit = 100) {
-  return db
+export async function listOutbox(workspaceId?: string, limit = 100) {
+  return await db
     .select()
     .from(emailLogs)
     .where(workspaceId ? eq(emailLogs.workspaceId, workspaceId) : undefined)

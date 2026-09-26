@@ -13,26 +13,26 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const ws = db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
+  const ws = await db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
   return { title: ws ? `${ws.name} — Store` : 'Store' };
 }
 
 export default async function PublicStorePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const ws = db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
+  const ws = await db.select().from(workspaces).where(eq(workspaces.slug, slug)).get();
   if (!ws) notFound();
 
-  const productRows = db
+  const productRows = (await db
     .select()
     .from(products)
     .where(eq(products.workspaceId, ws.id))
-    .all()
+    .all())
     .filter((p) => p.status === 'PUBLISHED');
-  const courseRows = db
+  const courseRows = (await db
     .select()
     .from(courses)
     .where(eq(courses.workspaceId, ws.id))
-    .all()
+    .all())
     .filter((c) => c.status === 'PUBLISHED' && !c.isAcademy);
 
   const items = [

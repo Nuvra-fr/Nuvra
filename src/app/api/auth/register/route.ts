@@ -16,22 +16,22 @@ const schema = z.object({
   password: z.string().min(8).max(200),
 });
 
-function uniqueSlug(base: string): string {
+async function uniqueSlug(base: string): Promise<string> {
   const root = slugify(base) || 'workspace';
   let slug = root;
   for (let i = 0; i < 50; i++) {
-    const existing = db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, slug)).get();
+    const existing = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, slug)).get();
     if (!existing) return slug;
     slug = `${root}-${randomCode(4)}`;
   }
   return `${root}-${Date.now()}`;
 }
 
-function uniqueUsername(base: string): string {
+async function uniqueUsername(base: string): Promise<string> {
   const root = slugify(base).replace(/-/g, '').slice(0, 18) || 'creator';
   let username = root;
   for (let i = 0; i < 50; i++) {
-    const existing = db.select({ id: profiles.id }).from(profiles).where(eq(profiles.username, username)).get();
+    const existing = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.username, username)).get();
     if (!existing) return username;
     username = `${root}${randomCode(3)}`;
   }
@@ -51,30 +51,30 @@ export async function POST(req: Request): Promise<Response> {
   const { name, email, password } = parsed.data;
   const normalizedEmail = email.toLowerCase().trim();
 
-  const existing = db.select({ id: users.id }).from(users).where(eq(users.email, normalizedEmail)).get();
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, normalizedEmail)).get();
   if (existing) return jsonError('An account with this email already exists.', 409);
 
   const passwordHash = await hashPassword(password);
-  const username = uniqueUsername(name);
-  const wsSlug = uniqueSlug(`${name}'s space`);
+  const username = await uniqueUsername(name);
+  const wsSlug = await uniqueSlug(`${name}'s space`);
 
-  const user = db
+  const user = await db
     .insert(users)
     .values({ name: name.trim(), email: normalizedEmail, passwordHash, role: 'USER', status: 'ACTIVE' })
     .returning({ id: users.id })
     .get();
 
-  db.insert(profiles).values({ userId: user.id, username, onboardingStep: 0 }).run();
-  const workspace = db
+  await db.insert(profiles).values({ userId: user.id, username, onboardingStep: 0 }).run();
+  const workspace = await db
     .insert(workspaces)
     .values({ name: `${name.split(' ')[0]}'s space`, slug: wsSlug, ownerId: user.id, plan: 'FREE' })
     .returning({ id: workspaces.id, slug: workspaces.slug })
     .get();
-  db.insert(memberships).values({ userId: user.id, workspaceId: workspace.id, role: 'OWNER' }).run();
+  await db.insert(memberships).values({ userId: user.id, workspaceId: workspace.id, role: 'OWNER' }).run();
 
   // Email verification (outbox when no provider configured)
   const verifyRaw = randomBytes(32).toString('hex');
-  db.insert(emailVerificationTokens)
+  await db.insert(emailVerificationTokens)
     .values({
       userId: user.id,
       tokenHash: sha256(verifyRaw),
@@ -90,7 +90,7 @@ export async function POST(req: Request): Promise<Response> {
     relatedTo: 'auth:verify',
   });
 
-  db.insert(domainEvents)
+  await db.insert(domainEvents)
     .values({
       name: 'user.created',
       workspaceId: workspace.id,
@@ -99,7 +99,7 @@ export async function POST(req: Request): Promise<Response> {
     })
     .run();
 
-  audit('auth.register', { actorUserId: user.id, target: user.id, ip });
+  await audit('auth.register', { actorUserId: user.id, target: user.id, ip });
 
   // Sign the new user in right away so /onboarding (auth-guarded) can load.
   // Without a session the client is bounced /onboarding → /register in a loop.

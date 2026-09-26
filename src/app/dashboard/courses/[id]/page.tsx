@@ -18,10 +18,10 @@ export default async function CourseSettingsPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const course = db.select().from(courses).where(eq(courses.id, id)).get();
+  const course = await db.select().from(courses).where(eq(courses.id, id)).get();
   if (!course || course.workspaceId !== ctx.workspace.id) notFound();
 
-  const students = db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, id)).all().length;
+  const students = (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, id)).all()).length;
 
   return (
     <div>

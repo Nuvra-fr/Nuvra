@@ -13,8 +13,8 @@ import { requireUser, type AuthContext } from '@/lib/auth';
 import { AUTOMATION_TRIGGERS, type AutomationActionType, type AutomationTrigger } from '@/lib/constants';
 import { audit } from '@/lib/audit';
 
-function ownedAutomation(ctx: AuthContext, id: string) {
-  const a = db.select().from(automations).where(eq(automations.id, id)).get();
+async function ownedAutomation(ctx: AuthContext, id: string) {
+  const a = await db.select().from(automations).where(eq(automations.id, id)).get();
   if (!a) throw new Error('Automation not found');
   if (a.workspaceId !== ctx.workspace.id) throw new Error('Not authorized');
   return a;
@@ -30,7 +30,7 @@ export async function createAutomationAction(input: {
     if (!AUTOMATION_TRIGGERS.includes(input.triggerEvent as AutomationTrigger)) {
       return { ok: false, error: 'Unknown trigger' };
     }
-    const auto = db
+    const auto = await db
       .insert(automations)
       .values({
         workspaceId: ctx.workspace.id,
@@ -51,12 +51,12 @@ export async function createAutomationAction(input: {
             },
           },
         ];
-    acts.forEach((a, i) => {
-      db.insert(automationActions)
+    for (const [i, a] of acts.entries()) {
+      await db.insert(automationActions)
         .values({ automationId: auto.id, type: a.type, config: JSON.stringify(a.config), position: i })
         .run();
-    });
-    audit('automation.created', { actorUserId: ctx.user.id, target: auto.id });
+    };
+    await audit('automation.created', { actorUserId: ctx.user.id, target: auto.id });
     revalidatePath('/dashboard/automations');
     return { ok: true, id: auto.id };
   } catch (e) {
@@ -74,18 +74,18 @@ export async function updateAutomationAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    ownedAutomation(ctx, id);
+    await ownedAutomation(ctx, id);
     const updates: Partial<typeof automations.$inferInsert> = { updatedAt: new Date() };
     if (input.name !== undefined) updates.name = input.name.slice(0, 120);
     if (input.active !== undefined) updates.active = input.active;
-    db.update(automations).set(updates).where(eq(automations.id, id)).run();
+    await db.update(automations).set(updates).where(eq(automations.id, id)).run();
     if (input.actions) {
-      db.delete(automationActions).where(eq(automationActions.automationId, id)).run();
-      input.actions.forEach((a, i) => {
-        db.insert(automationActions)
+      await db.delete(automationActions).where(eq(automationActions.automationId, id)).run();
+      for (const [i, a] of input.actions.entries()) {
+        await db.insert(automationActions)
           .values({ automationId: id, type: a.type, config: JSON.stringify(a.config), position: i })
           .run();
-      });
+      };
     }
     revalidatePath('/dashboard/automations');
     revalidatePath(`/dashboard/automations/${id}`);
@@ -98,8 +98,8 @@ export async function updateAutomationAction(
 export async function deleteAutomationAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    ownedAutomation(ctx, id);
-    db.delete(automations).where(eq(automations.id, id)).run();
+    await ownedAutomation(ctx, id);
+    await db.delete(automations).where(eq(automations.id, id)).run();
     revalidatePath('/dashboard/automations');
     return { ok: true };
   } catch (e) {
@@ -116,7 +116,7 @@ export async function createSequenceAction(input: {
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const seq = db
+    const seq = await db
       .insert(emailSequences)
       .values({
         workspaceId: ctx.workspace.id,
@@ -126,8 +126,8 @@ export async function createSequenceAction(input: {
       })
       .returning({ id: emailSequences.id })
       .get();
-    input.steps.forEach((s, i) => {
-      db.insert(emailSequenceSteps)
+    for (const [i, s] of input.steps.entries()) {
+      await db.insert(emailSequenceSteps)
         .values({
           sequenceId: seq.id,
           delayHours: Math.max(0, Math.round(s.delayHours)),
@@ -136,7 +136,7 @@ export async function createSequenceAction(input: {
           position: i,
         })
         .run();
-    });
+    };
     revalidatePath('/dashboard/emails');
     return { ok: true, id: seq.id };
   } catch (e) {
@@ -150,9 +150,9 @@ export async function toggleSequenceAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const seq = db.select().from(emailSequences).where(eq(emailSequences.id, id)).get();
+    const seq = await db.select().from(emailSequences).where(eq(emailSequences.id, id)).get();
     if (!seq || seq.workspaceId !== ctx.workspace.id) return { ok: false, error: 'Not found' };
-    db.update(emailSequences).set({ active, updatedAt: new Date() }).where(eq(emailSequences.id, id)).run();
+    await db.update(emailSequences).set({ active, updatedAt: new Date() }).where(eq(emailSequences.id, id)).run();
     revalidatePath('/dashboard/emails');
     return { ok: true };
   } catch (e) {
@@ -163,9 +163,9 @@ export async function toggleSequenceAction(
 export async function deleteSequenceAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const seq = db.select().from(emailSequences).where(eq(emailSequences.id, id)).get();
+    const seq = await db.select().from(emailSequences).where(eq(emailSequences.id, id)).get();
     if (!seq || seq.workspaceId !== ctx.workspace.id) return { ok: false, error: 'Not found' };
-    db.delete(emailSequences).where(eq(emailSequences.id, id)).run();
+    await db.delete(emailSequences).where(eq(emailSequences.id, id)).run();
     revalidatePath('/dashboard/emails');
     return { ok: true };
   } catch (e) {

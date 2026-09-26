@@ -6,6 +6,7 @@ import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { courses, products } from '@/db/schema';
 import { formatCents } from '@/lib/money';
+import { appBaseUrl } from '@/lib/utils';
 import { PageHeader, StatusBadge, Badge, EmptyState, InlineAlert } from '@/components/ui';
 
 export const metadata: Metadata = { title: 'Store' };
@@ -14,13 +15,13 @@ export default async function StorePage() {
   const ctx = await requireUser();
   const ws = ctx.workspace;
 
-  const productRows = db
+  const productRows = await db
     .select()
     .from(products)
     .where(eq(products.workspaceId, ws.id))
     .orderBy(desc(products.updatedAt))
     .all();
-  const courseRows = db
+  const courseRows = await db
     .select()
     .from(courses)
     .where(eq(courses.workspaceId, ws.id))
@@ -48,7 +49,7 @@ export default async function StorePage() {
         <InlineAlert tone="info">
           Storefront URL:{' '}
           <a href={`/s/${ws.slug}`} target="_blank" className="font-medium text-nuvra-300 underline">
-            {(process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')}/s/{ws.slug}
+            {appBaseUrl()}/s/{ws.slug}
           </a>{' '}
           — publish products and courses to fill it.
         </InlineAlert>

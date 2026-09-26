@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: 'Admin — Payouts' };
 
 export default async function AdminPayoutsPage() {
   await requireAdmin();
-  const rows = db.select({ payout: payouts, user: users }).from(payouts).innerJoin(users, eq(payouts.userId, users.id)).orderBy(desc(payouts.createdAt)).limit(200).all();
+  const rows = await db.select({ payout: payouts, user: users }).from(payouts).innerJoin(users, eq(payouts.userId, users.id)).orderBy(desc(payouts.createdAt)).limit(200).all();
 
   const pendingAmount = rows
     .filter((r) => r.payout.status === 'PENDING')

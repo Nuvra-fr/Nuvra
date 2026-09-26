@@ -34,7 +34,7 @@ export default async function PaymentsPage({
   const mode = paymentsMode();
   const testMode = mode === 'test';
 
-  const workspaceOrders = db
+  const workspaceOrders = await db
     .select()
     .from(orders)
     .where(eq(orders.workspaceId, ctx.workspace.id))
@@ -42,7 +42,7 @@ export default async function PaymentsPage({
     .limit(100)
     .all();
 
-  const myPayouts = db
+  const myPayouts = await db
     .select()
     .from(payouts)
     .where(eq(payouts.userId, ctx.user.id))
@@ -51,15 +51,17 @@ export default async function PaymentsPage({
     .all();
 
   const accounts: LedgerAccount[] = ['CREATOR_PAYABLE', 'RESELLER_PAYABLE', 'AFFILIATE_PAYABLE'];
-  const balances = accounts
-    .map((a) => ({
-      account: a,
-      gross: grossBalance(ctx.user.id, a),
-      available: availableBalance(ctx.user.id, a),
-    }))
-    .filter((b) => b.gross !== 0 || b.available !== 0);
+  const balances = (
+    await Promise.all(
+      accounts.map(async (a) => ({
+        account: a,
+        gross: await grossBalance(ctx.user.id, a),
+        available: await availableBalance(ctx.user.id, a),
+      })),
+    )
+  ).filter((b) => b.gross !== 0 || b.available !== 0);
 
-  const ledger = db
+  const ledger = await db
     .select()
     .from(ledgerEntries)
     .where(eq(ledgerEntries.workspaceId, ctx.workspace.id))
@@ -68,7 +70,7 @@ export default async function PaymentsPage({
     .all();
 
   const selectedOrder = sp.order ? workspaceOrders.find((o) => o.id === sp.order) ?? null : null;
-  const holdDays = Number(getConfig<number>('payouts.holdDays') ?? 7);
+  const holdDays = Number(await getConfig<number>('payouts.holdDays') ?? 7);
 
   return (
     <div>
@@ -231,7 +233,7 @@ export default async function PaymentsPage({
                 {holdDays}-day hold period passes.
               </div>
             ) : (
-              balances.map((b) => (
+              await Promise.all(balances.map(async (b) => (
                 <div key={b.account} className="card p-5">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                     <Wallet className="h-3.5 w-3.5" /> {ACCOUNT_LABELS[b.account] ?? b.account}
@@ -241,10 +243,10 @@ export default async function PaymentsPage({
                     Available after {holdDays}-day hold: <span className="text-emerald-300">{formatCents(b.available)}</span>
                   </div>
                   <div className="mt-3">
-                    <PayoutButton account={b.account} available={b.available} min={minPayoutCents()} mode={testMode ? 'TEST' : 'LIVE'} />
+                    <PayoutButton account={b.account} available={b.available} min={await minPayoutCents()} mode={testMode ? 'TEST' : 'LIVE'} />
                   </div>
                 </div>
-              ))
+              )))
             )}
           </div>
 

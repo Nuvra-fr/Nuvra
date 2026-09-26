@@ -15,7 +15,7 @@ export default async function PageEditPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const page = db.select().from(pages).where(eq(pages.id, id)).get();
+  const page = await db.select().from(pages).where(eq(pages.id, id)).get();
   if (!page || page.workspaceId !== ctx.workspace.id) notFound();
 
   return (

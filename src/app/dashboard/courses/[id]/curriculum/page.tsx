@@ -17,18 +17,18 @@ export default async function CurriculumPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const course = db.select().from(courses).where(eq(courses.id, id)).get();
+  const course = await db.select().from(courses).where(eq(courses.id, id)).get();
   if (!course || course.workspaceId !== ctx.workspace.id) notFound();
 
-  const mods = db
+  const mods = await db
     .select()
     .from(courseModules)
     .where(eq(courseModules.courseId, id))
     .orderBy(asc(courseModules.position))
     .all();
 
-  const lessonRows = db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.position)).all();
-  const quizRows = db.select().from(quizzes).all();
+  const lessonRows = await db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.position)).all();
+  const quizRows = await db.select().from(quizzes).all();
 
   const data = mods.map((m) => ({
     id: m.id,

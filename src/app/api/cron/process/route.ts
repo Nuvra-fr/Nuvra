@@ -6,12 +6,15 @@ import { processWaitingRuns } from '@/lib/events';
  *  • delivers due SCHEDULED emails (sequence delays)
  *  • resumes automations paused by a `wait` action
  *
- * Protect with CRON_SECRET: call with header `x-cron-secret: <secret>`.
- * Works locally without the header ONLY when NODE_ENV=development.
+ * Protect with CRON_SECRET. Two accepted forms:
+ *   • `x-cron-secret: <secret>`            (manual calls, CI, uptime checks)
+ *   • `Authorization: Bearer <secret>`     (Vercel Cron sends this automatically)
+ * Works locally without a secret ONLY when NODE_ENV=development.
  */
 export async function POST(req: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
-  const provided = req.headers.get('x-cron-secret');
+  const bearer = req.headers.get('authorization');
+  const provided = req.headers.get('x-cron-secret') ?? (bearer?.startsWith('Bearer ') ? bearer.slice(7) : null);
   const isDev = process.env.NODE_ENV === 'development';
 
   if (secret) {

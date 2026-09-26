@@ -11,15 +11,15 @@ export interface NotifyInput {
 }
 
 /** Notify every member of a workspace (used by sales, refunds, payments). */
-export function notifyWorkspaceOwners(workspaceId: string, input: NotifyInput): void {
-  const rows = db
+export async function notifyWorkspaceOwners(workspaceId: string, input: NotifyInput): Promise<void> {
+  const rows = await db
     .select({ userId: memberships.userId })
     .from(memberships)
     .where(eq(memberships.workspaceId, workspaceId))
     .all();
   if (rows.length === 0) return;
   for (const { userId } of rows) {
-    db.insert(notifications)
+    await db.insert(notifications)
       .values({
         userId,
         workspaceId,
@@ -32,8 +32,8 @@ export function notifyWorkspaceOwners(workspaceId: string, input: NotifyInput): 
   }
 }
 
-export function listNotifications(userId: string, limit = 20) {
-  return db
+export async function listNotifications(userId: string, limit = 20) {
+  return await db
     .select()
     .from(notifications)
     .where(eq(notifications.userId, userId))
@@ -42,14 +42,14 @@ export function listNotifications(userId: string, limit = 20) {
     .all();
 }
 
-export function unreadCount(userId: string): number {
-  return db
+export async function unreadCount(userId: string): Promise<number> {
+  return (await db
     .select({ id: notifications.id })
     .from(notifications)
     .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
-    .all().length;
+    .all()).length;
 }
 
-export function markAllRead(userId: string): void {
-  db.update(notifications).set({ readAt: new Date() }).where(eq(notifications.userId, userId)).run();
+export async function markAllRead(userId: string): Promise<void> {
+  await db.update(notifications).set({ readAt: new Date() }).where(eq(notifications.userId, userId)).run();
 }

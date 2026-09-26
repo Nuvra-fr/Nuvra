@@ -12,7 +12,7 @@ export async function sendVerificationEmailAction(): Promise<{ ok: true } | { ok
     const ctx = await requireUser();
     if (ctx.user.emailVerifiedAt) return { ok: true };
     const raw = randomBytes(32).toString('hex');
-    db.insert(emailVerificationTokens)
+    await db.insert(emailVerificationTokens)
       .values({
         userId: ctx.user.id,
         tokenHash: sha256(raw),

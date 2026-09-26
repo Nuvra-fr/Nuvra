@@ -18,16 +18,16 @@ interface Props {
 }
 
 async function load(slug: string) {
-  const course = db.select().from(courses).where(eq(courses.slug, slug)).get();
+  const course = await db.select().from(courses).where(eq(courses.slug, slug)).get();
   if (!course || course.status !== 'PUBLISHED') return null;
-  const ws = db.select().from(workspaces).where(eq(workspaces.id, course.workspaceId)).get();
-  const mods = db
+  const ws = await db.select().from(workspaces).where(eq(workspaces.id, course.workspaceId)).get();
+  const mods = await db
     .select()
     .from(courseModules)
     .where(eq(courseModules.courseId, course.id))
     .orderBy(asc(courseModules.position))
     .all();
-  const ls = db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)).all();
+  const ls = await db.select().from(lessons).where(eq(lessons.courseId, course.id)).orderBy(asc(lessons.position)).all();
   return { course, ws, mods, ls };
 }
 
@@ -50,14 +50,14 @@ export default async function PublicCoursePage({ params }: Props) {
 
   const ctx = await getSession();
   const enrolled = ctx
-    ? db
+    ? await db
         .select({ id: enrollments.id, progressPct: enrollments.progressPct })
         .from(enrollments)
         .where(and(eq(enrollments.userId, ctx.user.id), eq(enrollments.courseId, course.id)))
         .get()
     : null;
 
-  const studentCount = db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, course.id)).all().length;
+  const studentCount = (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, course.id)).all()).length;
   const previewLessons = ls.filter((l) => l.isPreview);
   const isFree = course.priceCents === 0;
 

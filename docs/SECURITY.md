@@ -57,5 +57,6 @@
 ## Known limitations (honest list)
 
 - Rate limiter is per-instance (see above).
-- SQLite single-writer: perfect for this scale; move to Postgres for multi-region write load.
+- libSQL (local file or hosted Turso) is single-writer per database: perfect at this scale;
+  the same Drizzle schema moves to Postgres if multi-region write load ever requires it.
 - No 2FA/TOTP yet — session hygiene + bcrypt + rate limits today.

@@ -42,8 +42,8 @@ beforeAll(async () => {
 
   const dbMod = await import('@/lib/db');
   db = dbMod.db;
-  const { migrate } = await import('drizzle-orm/better-sqlite3/migrator');
-  migrate(db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
+  const { migrate } = await import('drizzle-orm/libsql/migrator');
+  await migrate(db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
 
   schema = await import('@/db/schema');
   auth = await import('@/lib/auth');
@@ -70,9 +70,9 @@ describe('POST /api/auth/register', () => {
     expect(data.next).toBe('/onboarding');
 
     // User, profile, workspace and OWNER membership exist
-    const user = db.select().from(schema.users).where(eq(schema.users.email, 'nadia@example.com')).get();
+    const user = await db.select().from(schema.users).where(eq(schema.users.email, 'nadia@example.com')).get();
     expect(user).toBeTruthy();
-    const membership = db
+    const membership = await db
       .select()
       .from(schema.memberships)
       .where(eq(schema.memberships.userId, user!.id))
@@ -83,7 +83,7 @@ describe('POST /api/auth/register', () => {
     // A session cookie was issued and maps to a persisted session for this user
     const token = jar.get('nuvra_session');
     expect(token).toMatch(/^[0-9a-f]{64}$/);
-    const session = db
+    const session = await db
       .select()
       .from(schema.sessions)
       .where(eq(schema.sessions.tokenHash, auth.sha256(token!)))
@@ -110,7 +110,7 @@ describe('POST /api/auth/register', () => {
   it('validates input (short password) without creating anything', async () => {
     const res = await registerPOST(registerRequest({ name: 'X', email: 'not-an-email', password: 'short' }));
     expect(res.status).toBe(400);
-    const count = db.select().from(schema.users).all().length;
+    const count = (await db.select().from(schema.users).all()).length;
     expect(count).toBe(1);
   });
 });

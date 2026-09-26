@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Profile' };
 
 export default async function ProfilePage() {
   const ctx = await requireUser();
-  const activeSessions = db
+  const activeSessions = await db
     .select({ id: sessions.id, createdAt: sessions.createdAt, userAgent: sessions.userAgent })
     .from(sessions)
     .where(eq(sessions.userId, ctx.user.id))

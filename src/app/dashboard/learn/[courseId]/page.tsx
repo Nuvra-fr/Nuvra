@@ -31,34 +31,34 @@ export default async function LearnPage({
   const { courseId } = await params;
   const sp = await searchParams;
 
-  const course = db.select().from(courses).where(eq(courses.id, courseId)).get();
+  const course = await db.select().from(courses).where(eq(courses.id, courseId)).get();
   if (!course) notFound();
 
-  const enrollment = db
+  const enrollment = await db
     .select()
     .from(enrollments)
     .where(and(eq(enrollments.userId, ctx.user.id), eq(enrollments.courseId, courseId)))
     .get();
   if (!enrollment) notFound();
 
-  const mods = db
+  const mods = await db
     .select()
     .from(courseModules)
     .where(eq(courseModules.courseId, courseId))
     .orderBy(asc(courseModules.position))
     .all();
-  const ls = db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.position)).all();
+  const ls = await db.select().from(lessons).where(eq(lessons.courseId, courseId)).orderBy(asc(lessons.position)).all();
   const completed = new Set(
-    db
+    (await db
       .select({ lessonId: lessonProgress.lessonId })
       .from(lessonProgress)
       .where(eq(lessonProgress.enrollmentId, enrollment.id))
-      .all()
+      .all())
       .map((p) => p.lessonId),
   );
 
   const current = ls.find((l) => l.id === sp.lesson) ?? ls[0] ?? null;
-  const cert = db
+  const cert = await db
     .select()
     .from(certificates)
     .where(eq(certificates.enrollmentId, enrollment.id))

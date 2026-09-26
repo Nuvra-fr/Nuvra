@@ -21,7 +21,7 @@ export async function POST(req: Request): Promise<Response> {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return jsonError('Invalid request. Password must be at least 8 characters.');
 
-  const row = db
+  const row = await db
     .select()
     .from(passwordResetTokens)
     .where(
@@ -36,12 +36,12 @@ export async function POST(req: Request): Promise<Response> {
   if (!row) return jsonError('This reset link is invalid or has expired.', 400);
 
   const passwordHash = await hashPassword(parsed.data.password);
-  db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, row.userId)).run();
-  db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, row.id)).run();
+  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, row.userId)).run();
+  await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, row.id)).run();
   // Invalidate all sessions after a password reset
-  db.delete(sessions).where(eq(sessions.userId, row.userId)).run();
+  await db.delete(sessions).where(eq(sessions.userId, row.userId)).run();
 
-  audit('auth.password_reset', { actorUserId: row.userId, target: row.userId, ip });
+  await audit('auth.password_reset', { actorUserId: row.userId, target: row.userId, ip });
 
   return jsonOk({ message: 'Password updated. You can sign in now.' });
 }

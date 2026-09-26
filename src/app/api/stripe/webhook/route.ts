@@ -33,11 +33,11 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // Idempotency: process each Stripe event at most once
-  const seen = db.select({ id: stripeEvents.id }).from(stripeEvents).where(eq(stripeEvents.id, event.id)).get();
+  const seen = await db.select({ id: stripeEvents.id }).from(stripeEvents).where(eq(stripeEvents.id, event.id)).get();
   if (seen) {
     return Response.json({ ok: true, duplicate: true });
   }
-  db.insert(stripeEvents)
+  await db.insert(stripeEvents)
     .values({ id: event.id, type: event.type, payload: payload.slice(0, 100_000) })
     .run();
 
@@ -47,14 +47,14 @@ export async function POST(req: Request): Promise<Response> {
         const session = event.data.object;
         const orderId = session.metadata?.orderId;
         if (orderId && session.payment_status === 'paid') {
-          finalizeOrderPaid(orderId, {
+          await finalizeOrderPaid(orderId, {
             provider: 'stripe',
             reference: session.id,
             raw: { payment_status: session.payment_status, mode: session.mode },
           });
         }
         if (session.metadata?.kind === 'subscription' && session.metadata?.workspaceId) {
-          activatePlan(session.metadata.workspaceId, session.metadata.plan ?? 'PRO', {
+          await activatePlan(session.metadata.workspaceId, session.metadata.plan ?? 'PRO', {
             stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null,
           });
         }
@@ -67,13 +67,13 @@ export async function POST(req: Request): Promise<Response> {
         const subId = typeof parentSub === 'string' ? parentSub : parentSub?.id ?? null;
         if (subId) {
           const { subscriptions } = await import('@/db/schema');
-          const sub = db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subId)).get();
+          const sub = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subId)).get();
           if (sub) {
-            db.update(subscriptions)
+            await db.update(subscriptions)
               .set({ status: 'active', currentPeriodEnd: new Date((invoice.period_end ?? 0) * 1000) })
               .where(eq(subscriptions.id, sub.id))
               .run();
-            audit('subscription.invoice_paid', { target: sub.workspaceId, meta: { invoiceId: invoice.id } });
+            await audit('subscription.invoice_paid', { target: sub.workspaceId, meta: { invoiceId: invoice.id } });
           }
         }
         break;
@@ -85,8 +85,8 @@ export async function POST(req: Request): Promise<Response> {
         const subId = typeof parentSub === 'string' ? parentSub : parentSub?.id ?? null;
         if (subId) {
           const { subscriptions } = await import('@/db/schema');
-          const sub = db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subId)).get();
-          if (sub) markPaymentFailed(sub.workspaceId);
+          const sub = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subId)).get();
+          if (sub) await markPaymentFailed(sub.workspaceId);
         }
         break;
       }
@@ -95,7 +95,7 @@ export async function POST(req: Request): Promise<Response> {
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
         const { subscriptions } = await import('@/db/schema');
-        const row = db
+        const row = await db
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.stripeSubscriptionId, sub.id))
@@ -103,7 +103,7 @@ export async function POST(req: Request): Promise<Response> {
         if (row) {
           if (sub.status === 'active' || sub.status === 'trialing') {
             const periodEndSec = sub.items?.data?.[0]?.current_period_end ?? 0;
-            db.update(subscriptions)
+            await db.update(subscriptions)
               .set({
                 status: sub.status,
                 currentPeriodEnd: periodEndSec ? new Date(periodEndSec * 1000) : null,
@@ -112,7 +112,7 @@ export async function POST(req: Request): Promise<Response> {
               .where(eq(subscriptions.id, row.id))
               .run();
           } else {
-            cancelPlan(row.workspaceId);
+            await cancelPlan(row.workspaceId);
           }
         }
         break;
@@ -124,7 +124,7 @@ export async function POST(req: Request): Promise<Response> {
         if (orderId) {
           const refunded = charge.amount_refunded ?? 0;
           try {
-            refundOrder(orderId, {
+            await refundOrder(orderId, {
               amountCents: refunded,
               reason: 'stripe_refund',
               provider: 'stripe',
@@ -142,11 +142,11 @@ export async function POST(req: Request): Promise<Response> {
         break;
     }
 
-    db.update(stripeEvents).set({ processedAt: new Date() }).where(eq(stripeEvents.id, event.id)).run();
+    await db.update(stripeEvents).set({ processedAt: new Date() }).where(eq(stripeEvents.id, event.id)).run();
     return Response.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    db.update(stripeEvents).set({ error: message.slice(0, 500) }).where(eq(stripeEvents.id, event.id)).run();
+    await db.update(stripeEvents).set({ error: message.slice(0, 500) }).where(eq(stripeEvents.id, event.id)).run();
     // 500 → Stripe retries with backoff (safe thanks to idempotency above)
     return Response.json({ ok: false, error: message }, { status: 500 });
   }

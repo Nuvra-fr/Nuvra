@@ -22,11 +22,11 @@ import { initials } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 async function load(username: string) {
-  const prof = db.select().from(profiles).where(eq(profiles.username, username)).get();
+  const prof = await db.select().from(profiles).where(eq(profiles.username, username)).get();
   if (!prof) return null;
-  const user = db.select().from(users).where(eq(users.id, prof.userId)).get();
+  const user = await db.select().from(users).where(eq(users.id, prof.userId)).get();
   if (!user) return null;
-  const membership = db
+  const membership = await db
     .select({ workspace: workspaces })
     .from(memberships)
     .innerJoin(workspaces, eq(memberships.workspaceId, workspaces.id))
@@ -50,23 +50,23 @@ export default async function UserPage({ params }: { params: Promise<{ username:
   const { prof, user, ws } = found;
 
   // Nuvra Link page: first published LINKINBIO page of the workspace
-  const linkPage = db
+  const linkPage = (await db
     .select()
     .from(pages)
     .where(eq(pages.workspaceId, ws.id))
-    .all()
+    .all())
     .find((p) => p.type === 'LINKINBIO' && p.status === 'PUBLISHED');
 
-  const otherPages = db
+  const otherPages = (await db
     .select()
     .from(pages)
     .where(eq(pages.workspaceId, ws.id))
-    .all()
+    .all())
     .filter((p) => p.status === 'PUBLISHED' && p.type !== 'LINKINBIO' && p.id !== linkPage?.id);
 
-  const productRows = db.select().from(products).where(eq(products.workspaceId, ws.id)).all()
+  const productRows = (await db.select().from(products).where(eq(products.workspaceId, ws.id)).all())
     .filter((p) => p.status === 'PUBLISHED');
-  const courseRows = db.select().from(courses).where(eq(courses.workspaceId, ws.id)).all()
+  const courseRows = (await db.select().from(courses).where(eq(courses.workspaceId, ws.id)).all())
     .filter((c) => c.status === 'PUBLISHED' && !c.isAcademy);
 
   if (linkPage) {

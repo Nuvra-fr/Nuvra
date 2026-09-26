@@ -14,19 +14,19 @@ export const metadata: Metadata = { title: 'Courses' };
 
 export default async function CoursesPage() {
   const ctx = await requireUser();
-  const rows = db
+  const rows = await db
     .select()
     .from(courses)
     .where(eq(courses.workspaceId, ctx.workspace.id))
     .orderBy(desc(courses.updatedAt))
     .all();
 
-  const details = rows.map((c) => ({
+  const details = await Promise.all(rows.map(async (c) => ({
     ...c,
-    moduleCount: db.select({ id: courseModules.id }).from(courseModules).where(eq(courseModules.courseId, c.id)).all().length,
-    lessonCount: db.select({ id: lessons.id }).from(lessons).where(eq(lessons.courseId, c.id)).all().length,
-    studentCount: db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, c.id)).all().length,
-  }));
+    moduleCount: (await db.select({ id: courseModules.id }).from(courseModules).where(eq(courseModules.courseId, c.id)).all()).length,
+    lessonCount: (await db.select({ id: lessons.id }).from(lessons).where(eq(lessons.courseId, c.id)).all()).length,
+    studentCount: (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, c.id)).all()).length,
+  })));
 
   return (
     <div>
