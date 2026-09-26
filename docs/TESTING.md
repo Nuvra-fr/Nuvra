@@ -38,8 +38,14 @@ Sessions are read from `Set-Cookie` directly, so it also works against a product
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push to `main` and every pull request:
-typecheck → lint → tests → build → migrations on an empty DB → seed → production server →
-smoke test. Keep it green.
+
+- **quality** — typecheck → lint → tests → migrations on an empty DB → seed → build →
+  production server → smoke test.
+- **docker** — builds the production image, boots it on an empty volume with
+  `ADMIN_EMAIL`/`ADMIN_PASSWORD`, checks `/api/health`, public pages, the env-provisioned admin
+  login, cron-secret protection, and that data survives a container restart.
+
+Keep both green.
 
 ## Conventions
 

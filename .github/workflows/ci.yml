@@ -59,3 +59,53 @@ jobs:
           done
           BASE=http://localhost:3000 bash scripts/smoke.sh
           kill $SERVER_PID
+
+  docker:
+    name: Docker image builds and boots
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build image
+        run: docker build -t nuvra:ci .
+
+      - name: Boot with an empty volume (migrations + first admin at startup)
+        run: |
+          docker volume create nuvra-ci-data
+          docker run -d --name nuvra -p 3000:3000 -v nuvra-ci-data:/data \
+            -e NEXT_PUBLIC_APP_URL=http://localhost:3000 \
+            -e ADMIN_EMAIL=admin@ci.local -e ADMIN_PASSWORD='ci-only-passphrase-1' \
+            -e CRON_SECRET=ci-secret nuvra:ci
+          for i in $(seq 1 45); do
+            curl -sf http://localhost:3000/api/health >/dev/null && break
+            sleep 2
+          done
+          echo "--- container log ---"; docker logs nuvra
+          echo "--- health ---"; curl -sf http://localhost:3000/api/health | tee health.json; echo
+          grep -q '"db":"ok"' health.json
+          grep -q '"cronProtected":true' health.json
+          echo "--- public pages ---"
+          for p in / /pricing /academy /login /register; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000$p); echo "$p $code"; [ "$code" = 200 ]
+          done
+          echo "--- env-provisioned admin can sign in ---"
+          curl -sf -H 'content-type: application/json' \
+            -d '{"email":"admin@ci.local","password":"ci-only-passphrase-1"}' \
+            http://localhost:3000/api/auth/login | tee login.json; echo
+          grep -q '"role":"ADMIN"' login.json
+          echo "--- cron endpoint is protected ---"
+          [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3000/api/cron/process)" = 401 ]
+          [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'x-cron-secret: ci-secret' http://localhost:3000/api/cron/process)" = 200 ]
+
+      - name: Data survives a restart (persistent volume)
+        run: |
+          docker restart nuvra
+          for i in $(seq 1 45); do
+            curl -sf http://localhost:3000/api/health >/dev/null && break
+            sleep 2
+          done
+          curl -sf -H 'content-type: application/json' \
+            -d '{"email":"admin@ci.local","password":"ci-only-passphrase-1"}' \
+            http://localhost:3000/api/auth/login | grep -q '"role":"ADMIN"'
+          docker logs nuvra 2>&1 | grep -c 'administrator created' | grep -qx 1   # not re-created
