@@ -6,6 +6,15 @@ All mutations are Next.js **server actions** (POST semantics, same-origin only) 
 
 ## HTTP endpoints
 
+### `GET /api/health`
+Public liveness/readiness probe (uptime monitors, load balancers, Docker `HEALTHCHECK`).
+Reports *which* integrations are configured — never their values.
+```json
+{ "ok": true, "service": "nuvra", "version": "0.1.0", "env": "production", "uptimeSec": 42,
+  "db": "ok", "integrations": { "payments": "test", "email": "OUTBOX", "ai": false, "cronProtected": true } }
+```
+- `200` healthy · `503` when the database cannot be queried. `Cache-Control: no-store`.
+
 ### `POST /api/leads`
 Public lead capture from published pages/funnels.
 ```json
@@ -30,8 +39,10 @@ Runs due email sequences + waited automation steps.
 ### `PATCH /api/lessons/[id]` (session cookie)
 Lesson content save from the curriculum editor (workspace ownership enforced).
 
-### `GET /api/auth/me`, `POST /api/auth/logout`, … 
-Session helpers used by client components (see `src/app/api/auth`).
+### `POST /api/auth/register|login|logout|forgot-password|reset-password|verify-email`
+JSON auth endpoints used by the client forms (see `src/app/api/auth`). `register` and `login`
+both open a session (`nuvra_session` httpOnly cookie) and answer `{ ok, next }` — the client
+navigates to `next` (`/onboarding` after sign-up, `/dashboard` after sign-in). Rate-limited per IP.
 
 ## Server-action groups (by domain)
 

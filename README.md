@@ -37,9 +37,14 @@ Demo accounts (created by `npm run db:seed`, clearly-marked demo data):
 ```bash
 npm run typecheck   # tsc --noEmit — 0 errors
 npm run lint        # eslint (next/core-web-vitals + next/typescript) — 0 problems
-npm test            # vitest — 52 tests: money splits, refunds, ledger, auth, rate-limit, utils
+npm test            # vitest — 55 tests: money splits, refunds, ledger, registration, auth, rate-limit, utils
 npm run build       # next build
+npm run smoke       # HTTP smoke test of every route × every demo role (needs a running seeded server)
 ```
+
+All of the above run automatically in GitHub Actions on every push and pull request
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). `GET /api/health` is a public
+liveness probe for uptime monitors and load balancers.
 
 ## Documentation
 
@@ -52,11 +57,26 @@ npm run build       # next build
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Env vars, Stripe setup, cron, Vercel deploy |
 | [docs/TESTING.md](docs/TESTING.md) | Test strategy and how to run each suite |
 
+## Deploy
+
+Nuvra runs as **one container with a persistent volume** for its SQLite database — migrations
+and the first administrator (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) are applied automatically at boot.
+**Railway** (Dockerfile + `/data` volume, ~5 minutes) is the recommended host; Fly.io, Render or
+any Docker host work the same way. Serverless platforms (Vercel, Netlify) are **not** supported
+with SQLite. Step-by-step guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+```bash
+docker build -t nuvra . && docker run -p 3000:3000 -v nuvra-data:/data \
+  -e NEXT_PUBLIC_APP_URL=https://your-domain.com \
+  -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD='a-long-passphrase' -e CRON_SECRET=… nuvra
+```
+
 ## Environment
 
 | Variable | Purpose |
 |---|---|
-| `DATABASE_URL` | SQLite file path (default `./nuvra.db`) |
+| `DATABASE_URL` | SQLite file path (default `./nuvra.db`; production: `/data/nuvra.db` on a volume) |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | First administrator, provisioned at boot while no admin exists |
 | `APP_URL` / `NEXT_PUBLIC_APP_URL` | Canonical URL (links, Stripe redirects) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Live payments (absent ⇒ labeled TEST mode) |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | Recurring subscription price IDs |

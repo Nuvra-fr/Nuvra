@@ -1,0 +1,30 @@
+name: Cron — deliver scheduled emails & resume automations
+
+# Hits POST /api/cron/process on your deployment every 5 minutes (GitHub's
+# minimum; delivery is best-effort). Enable it by adding two repository
+# secrets: APP_URL (https://your-domain.com) and CRON_SECRET (same value as
+# the CRON_SECRET env var of the deployment). Does nothing until both exist.
+#
+# Alternatives: Railway cron service, system cron, cron-job.org — anything
+# that can send a POST with the x-cron-secret header (docs/DEPLOYMENT.md).
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: POST /api/cron/process
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL / CRON_SECRET secrets not set — nothing to do."; exit 0
+          fi
+          curl -sS --fail-with-body --max-time 60 -X POST \
+            -H "x-cron-secret: $CRON_SECRET" "${APP_URL%/}/api/cron/process"
