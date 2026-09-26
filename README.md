@@ -37,9 +37,14 @@ Demo accounts (created by `npm run db:seed`, clearly-marked demo data):
 ```bash
 npm run typecheck   # tsc --noEmit — 0 errors
 npm run lint        # eslint (next/core-web-vitals + next/typescript) — 0 problems
-npm test            # vitest — 52 tests: money splits, refunds, ledger, auth, rate-limit, utils
+npm test            # vitest — 55 tests: money splits, refunds, ledger, registration, auth, rate-limit, utils
 npm run build       # next build
+npm run smoke       # HTTP smoke test of every route × every demo role (needs a running seeded server)
 ```
+
+All of the above run automatically in GitHub Actions on every push and pull request
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). `GET /api/health` is a public
+liveness probe for uptime monitors and load balancers.
 
 ## Documentation
 

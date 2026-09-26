@@ -46,6 +46,10 @@ Call `POST https://your-domain.com/api/cron/process` every minute with header
 
 ## 5 — Post-deploy checklist
 
+- [ ] `GET /api/health` → `200 { "ok": true, "db": "ok", … }` — point your uptime monitor /
+      load-balancer probe / Docker `HEALTHCHECK` at it (`503` when the DB is unreachable)
+- [ ] `BASE=https://your-domain.com npm run smoke` is green (requires the demo accounts —
+      staging only; never seed demo data in production)
 - [ ] Landing page renders, `/pricing` shows admin-configured values
 - [ ] Register → onboarding → dashboard works
 - [ ] Test checkout (or live Stripe in test keys) creates PAID order + ledger entries
