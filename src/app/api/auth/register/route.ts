@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { users, profiles, workspaces, memberships, domainEvents, emailVerificationTokens } from '@/db/schema';
-import { hashPassword, getIp, sha256 } from '@/lib/auth';
+import { hashPassword, getIp, sha256, createSession } from '@/lib/auth';
 import { jsonError, jsonOk, readJson } from '@/lib/http';
 import { rateLimit } from '@/lib/rate-limit';
 import { sendEmail } from '@/lib/email';
@@ -100,6 +100,10 @@ export async function POST(req: Request): Promise<Response> {
     .run();
 
   audit('auth.register', { actorUserId: user.id, target: user.id, ip });
+
+  // Sign the new user in right away so /onboarding (auth-guarded) can load.
+  // Without a session the client is bounced /onboarding → /register in a loop.
+  await createSession(user.id, ip, req.headers.get('user-agent'));
 
   return jsonOk({ next: '/onboarding', workspaceId: workspace.id });
 }
