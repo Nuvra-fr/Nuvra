@@ -30,7 +30,7 @@ export async function migrateDatabase(): Promise<void> {
     return;
   }
   await migrate(db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
-  log(`base de données prête (${databaseFile()})`);
+  log(`database ready (${databaseFile()})`);
 }
 
 export interface BootstrapResult {
@@ -55,7 +55,7 @@ export async function ensureAdmin(): Promise<BootstrapResult> {
   if (existingAdmin) return { status: 'exists' };
 
   if (password.length < 12) {
-    throw new Error('ADMIN_PASSWORD doit contenir au moins 12 caractères');
+    throw new Error('ADMIN_PASSWORD must be at least 12 characters');
   }
 
   let admin = await db.select().from(users).where(eq(users.email, email)).get();
@@ -145,12 +145,12 @@ export async function ensureAdmin(): Promise<BootstrapResult> {
 export async function bootstrapData(): Promise<void> {
   await ensurePlans();
   const admin = await ensureAdmin();
-  if (admin.status === 'created') log(`administrateur créé : ${admin.email}`);
+  if (admin.status === 'created') log(`administrator created: ${admin.email}`);
   else if (admin.status === 'promoted')
-    log(`compte existant promu administrateur : ${admin.email}`);
+    log(`existing account promoted to administrator: ${admin.email}`);
   else if (admin.status === 'skipped')
     log('no ADMIN_EMAIL/ADMIN_PASSWORD — admin bootstrap skipped');
-  else log('administrateur déjà configuré');
+  else log('administrator already provisioned');
 }
 
 /**
@@ -167,7 +167,7 @@ export async function bootstrapDatabase(): Promise<void> {
   if (process.env.VERCEL && target.local) {
     throw new Error(
       'Aucune base hébergée configurée. Vercel n’a pas de disque persistant, donc un fichier SQLite local ' +
-        'inutilisable : définissez TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (voir docs/DEPLOYMENT.md)',
+        'cannot be used: set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (see docs/DEPLOYMENT.md)',
     );
   }
 
