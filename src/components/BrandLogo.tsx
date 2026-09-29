@@ -26,7 +26,12 @@ const LOCKUP_SRC = '/brand/nuvra-lockup.png';
 type LogoSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /** Pixel height of the rendered mark for each size token. */
-const MARK_HEIGHT: Record<LogoSize, number> = { sm: 20, md: 26, lg: 32, xl: 44 };
+const MARK_HEIGHT: Record<LogoSize, number> = {
+  sm: 20,
+  md: 26,
+  lg: 32,
+  xl: 44,
+};
 const WORDMARK_CLASS: Record<LogoSize, string> = {
   sm: 'text-[13px]',
   md: 'text-[15px]',
@@ -111,7 +116,11 @@ export function BrandLogo({
 
   if (!href) return content;
   return (
-    <Link href={href} aria-label="Nuvra — home" className="group inline-flex rounded-lg">
+    <Link
+      href={href}
+      aria-label="Nuvra — accueil"
+      className="group inline-flex rounded-lg"
+    >
       {content}
     </Link>
   );

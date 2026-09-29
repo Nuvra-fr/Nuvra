@@ -61,13 +61,24 @@ export function LiquidGlassHeader({
 
   const links = (onNavigate?: () => void) =>
     items.map((item) => (
-      <Link key={item.href} href={item.href} onClick={onNavigate} className="nav-link">
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onNavigate}
+        className="nav-link"
+      >
         {item.label}
       </Link>
     ));
 
   return (
-    <div className={cn('z-40 w-full px-3 sm:px-5', sticky && 'sticky top-0', className)}>
+    <div
+      className={cn(
+        'z-40 w-full px-3 sm:px-5',
+        sticky && 'sticky top-0',
+        className,
+      )}
+    >
       <div className="mx-auto max-w-6xl pt-3 sm:pt-4">
         <header
           className={cn(
@@ -79,7 +90,10 @@ export function LiquidGlassHeader({
           <BrandLogo size={brandSize} priority showWordmark={showWordmark} />
 
           {/* Desktop navigation — the anchor links stay <a> so they scroll in place */}
-          <nav aria-label="Main" className="ml-2 hidden items-center gap-1 lg:flex">
+          <nav
+            aria-label="Navigation principale"
+            className="ml-2 hidden items-center gap-1 lg:flex"
+          >
             {items.map((item) =>
               item.href.startsWith('#') ? (
                 <a key={item.href} href={item.href} className="nav-link">
@@ -100,7 +114,7 @@ export function LiquidGlassHeader({
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
               aria-controls="nuvra-mobile-nav"
-              aria-label={open ? 'Close menu' : 'Open menu'}
+              aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
               className="btn-glass !rounded-full !p-2.5 lg:hidden"
             >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -111,8 +125,14 @@ export function LiquidGlassHeader({
 
       {/* Mobile sheet — same glass language, full-width, no horizontal overflow */}
       {open ? (
-        <div id="nuvra-mobile-nav" className="mx-auto mt-2 max-w-6xl animate-panelIn lg:hidden">
-          <nav aria-label="Mobile" className="glass-panel flex flex-col rounded-3xl p-2">
+        <div
+          id="nuvra-mobile-nav"
+          className="mx-auto mt-2 max-w-6xl animate-panelIn lg:hidden"
+        >
+          <nav
+            aria-label="Navigation mobile"
+            className="glass-panel flex flex-col rounded-3xl p-2"
+          >
             {links(() => setOpen(false))}
           </nav>
         </div>
