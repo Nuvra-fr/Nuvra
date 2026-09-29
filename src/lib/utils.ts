@@ -5,30 +5,41 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60) || 'item';
+  return (
+    input
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'item'
+  );
 }
 
 export function randomCode(len = 8): string {
   const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
   let out = '';
-  for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (let i = 0; i < len; i++)
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
   return out;
 }
 
-export function formatDate(d: Date | string | number | null | undefined): string {
+export function formatDate(
+  d: Date | string | number | null | undefined,
+): string {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(d).toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
-export function formatDateTime(d: Date | string | number | null | undefined): string {
+export function formatDateTime(
+  d: Date | string | number | null | undefined,
+): string {
   if (!d) return '—';
-  return new Date(d).toLocaleString('en-US', {
+  return new Date(d).toLocaleString('fr-FR', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -39,16 +50,17 @@ export function formatDateTime(d: Date | string | number | null | undefined): st
 
 export function timeAgo(d: Date | string | number): string {
   const seconds = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return "à l'instant";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `il y a ${minutes} min`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `il y a ${hours} h`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `il y a ${days} j`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
+  if (months < 12) return `il y a ${months} mois`;
+  const years = Math.floor(months / 12);
+  return `il y a ${years} an${years > 1 ? 's' : ''}`;
 }
 
 /**
@@ -60,7 +72,8 @@ export function timeAgo(d: Date | string | number): string {
 export function appBaseUrl(): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (configured) return configured.replace(/\/$/, '');
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  const vercel =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
   if (vercel) return `https://${vercel.replace(/\/$/, '')}`;
   return 'http://localhost:3000';
 }

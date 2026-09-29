@@ -49,32 +49,38 @@ export default function CheckoutForm({
       <FormError error={error} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="label" htmlFor="co-name">Name</label>
+          <label className="label" htmlFor="co-name">
+            Nom
+          </label>
           <input
             id="co-name"
             className="input"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            placeholder="Votre nom"
             required={!requireAccount}
           />
         </div>
         <div>
-          <label className="label" htmlFor="co-email">Email</label>
+          <label className="label" htmlFor="co-email">
+            Email
+          </label>
           <input
             id="co-email"
             className="input"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="vous@exemple.com"
             readOnly={emailLocked}
             required
           />
         </div>
       </div>
       <div>
-        <label className="label" htmlFor="co-coupon">Coupon (optional)</label>
+        <label className="label" htmlFor="co-coupon">
+          Code promo (optionnel)
+        </label>
         <input
           id="co-coupon"
           className="input"
@@ -84,10 +90,11 @@ export default function CheckoutForm({
         />
       </div>
       <button className="btn-primary w-full py-3" disabled={pending}>
-        {pending ? 'Redirecting…' : 'Continue to payment'}
+        {pending ? 'Redirection…' : 'Continuer vers le paiement'}
       </button>
       <p className="text-center text-[11px] text-zinc-600">
-        By purchasing you agree to our refund and creator terms.
+        En achetant, vous acceptez nos conditions de remboursement et celles du
+        créateur.
       </p>
     </form>
   );

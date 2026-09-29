@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,31 +57,63 @@ function BlockView({
   onBuy?: (kind: string, id: string) => void;
 }) {
   const d = block.data ?? {};
-  const align = d.align === 'left' ? 'text-left items-start' : d.align === 'right' ? 'text-right items-end' : 'text-center items-center';
+  const align =
+    d.align === 'left'
+      ? 'text-left items-start'
+      : d.align === 'right'
+        ? 'text-right items-end'
+        : 'text-center items-center';
 
   switch (block.type) {
     case 'hero':
       return (
         <section className={cn('flex flex-col px-6 py-20 md:py-28', align)}>
-          <h1 className={cn('max-w-3xl text-4xl font-bold leading-tight text-white md:text-6xl', d.align === 'center' && 'mx-auto')}>
+          <h1
+            className={cn(
+              'max-w-3xl text-4xl font-bold leading-tight text-white md:text-6xl',
+              d.align === 'center' && 'mx-auto',
+            )}
+          >
             {d.heading}
           </h1>
           {d.subheading ? (
-            <p className={cn('mt-4 max-w-2xl text-lg text-zinc-400', d.align === 'center' && 'mx-auto')}>
+            <p
+              className={cn(
+                'mt-4 max-w-2xl text-lg text-zinc-400',
+                d.align === 'center' && 'mx-auto',
+              )}
+            >
               {d.subheading}
             </p>
           ) : null}
           {d.ctaLabel ? (
-            <CtaLink href={d.ctaHref || '#'} label={d.ctaLabel} className="mt-8" />
+            <CtaLink
+              href={d.ctaHref || '#'}
+              label={d.ctaLabel}
+              className="mt-8"
+            />
           ) : null}
         </section>
       );
 
     case 'text':
       return (
-        <section className={cn('px-6 py-12', d.align === 'center' ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl')}>
-          {d.heading ? <h2 className="mb-3 text-2xl font-semibold text-white">{d.heading}</h2> : null}
-          <div className="whitespace-pre-wrap text-leading-relaxed leading-relaxed text-zinc-400">{d.body}</div>
+        <section
+          className={cn(
+            'px-6 py-12',
+            d.align === 'center'
+              ? 'mx-auto max-w-3xl text-center'
+              : 'max-w-3xl',
+          )}
+        >
+          {d.heading ? (
+            <h2 className="mb-3 text-2xl font-semibold text-white">
+              {d.heading}
+            </h2>
+          ) : null}
+          <div className="whitespace-pre-wrap leading-relaxed text-zinc-400">
+            {d.body}
+          </div>
         </section>
       );
 
@@ -93,7 +125,10 @@ function BlockView({
             <img
               src={d.src}
               alt={d.alt || ''}
-              className={cn('mx-auto max-h-[480px] w-full max-w-3xl object-cover', d.rounded !== false && 'rounded-xl')}
+              className={cn(
+                'mx-auto max-h-[480px] w-full max-w-3xl object-cover',
+                d.rounded !== false && 'rounded-xl',
+              )}
             />
           ) : (
             <div className="mx-auto flex h-48 max-w-3xl items-center justify-center rounded-xl border border-dashed border-white/15 text-sm text-zinc-600">
@@ -108,7 +143,13 @@ function BlockView({
         <section className="px-6 py-8">
           <div className="mx-auto flex max-w-3xl items-center justify-center gap-2 rounded-xl border border-white/10 bg-ink-900 px-4 py-10 text-sm text-zinc-500">
             <Play className="h-4 w-4 text-nuvra-400" />
-            {d.url ? <a href={d.url} className="hover:text-zinc-300">{d.title || d.url}</a> : 'Video block — set a URL'}
+            {d.url ? (
+              <a href={d.url} className="hover:text-zinc-300">
+                {d.title || d.url}
+              </a>
+            ) : (
+              'Bloc vidéo — renseignez une URL'
+            )}
           </div>
         </section>
       );
@@ -118,26 +159,46 @@ function BlockView({
         <section className="flex justify-center px-6 py-10">
           <CtaLink
             href={d.href || '#'}
-            label={d.label || 'Get started'}
+            label={d.label || 'Commencer'}
             variant={d.variant === 'secondary' ? 'secondary' : 'primary'}
           />
         </section>
       );
 
     case 'form':
-      return <LeadForm title={d.title} buttonLabel={d.buttonLabel} workspaceId={workspaceId} basePath={basePath} />;
+      return (
+        <LeadForm
+          title={d.title}
+          buttonLabel={d.buttonLabel}
+          workspaceId={workspaceId}
+          basePath={basePath}
+        />
+      );
 
     case 'pricing':
       return (
         <section className="mx-auto max-w-4xl px-6 py-12">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(Array.isArray(d.plans) ? d.plans : []).map((p, i) => (
-              <div key={i} className="rounded-xl border border-white/10 bg-ink-900 p-6">
-                <div className="text-sm font-semibold text-zinc-300">{p.name}</div>
-                <div className="mt-2 text-3xl font-semibold text-white">{p.price}</div>
-                <div className="mt-3 whitespace-pre-line text-sm text-zinc-500">{p.features}</div>
+              <div
+                key={i}
+                className="rounded-xl border border-white/10 bg-ink-900 p-6"
+              >
+                <div className="text-sm font-semibold text-zinc-300">
+                  {p.name}
+                </div>
+                <div className="mt-2 text-3xl font-semibold text-white">
+                  {p.price}
+                </div>
+                <div className="mt-3 whitespace-pre-line text-sm text-zinc-500">
+                  {p.features}
+                </div>
                 {p.cta ? (
-                  <CtaLink href={p.href || '#'} label={p.cta} className="mt-5 w-full justify-center" />
+                  <CtaLink
+                    href={p.href || '#'}
+                    label={p.cta}
+                    className="mt-6 w-full justify-center"
+                  />
                 ) : null}
               </div>
             ))}
@@ -150,9 +211,16 @@ function BlockView({
         <section className="mx-auto max-w-4xl px-6 py-12">
           <div className="grid gap-4 sm:grid-cols-2">
             {(Array.isArray(d.items) ? d.items : []).map((t, i) => (
-              <figure key={i} className="rounded-xl border border-white/10 bg-ink-900 p-5">
-                <blockquote className="text-sm leading-relaxed text-zinc-300">“{t.quote}”</blockquote>
-                <figcaption className="mt-3 text-xs text-zinc-500">{t.author}</figcaption>
+              <figure
+                key={i}
+                className="rounded-xl border border-white/10 bg-ink-900 p-5"
+              >
+                <blockquote className="text-sm leading-relaxed text-zinc-300">
+                  “{t.quote}”
+                </blockquote>
+                <figcaption className="mt-3 text-xs text-zinc-500">
+                  {t.author}
+                </figcaption>
               </figure>
             ))}
           </div>
@@ -164,8 +232,13 @@ function BlockView({
         <section className="mx-auto max-w-3xl px-6 py-12">
           <div className="space-y-3">
             {(Array.isArray(d.items) ? d.items : []).map((f, i) => (
-              <details key={i} className="rounded-xl border border-white/10 bg-ink-900 p-5">
-                <summary className="cursor-pointer text-sm font-semibold text-zinc-200">{f.q}</summary>
+              <details
+                key={i}
+                className="rounded-xl border border-white/10 bg-ink-900 p-5"
+              >
+                <summary className="cursor-pointer section-title">
+                  {f.q}
+                </summary>
                 <p className="mt-2 text-sm text-zinc-500">{f.a}</p>
               </details>
             ))}
@@ -176,11 +249,18 @@ function BlockView({
     case 'features':
       return (
         <section className="mx-auto max-w-5xl px-6 py-12">
-          {d.title ? <h2 className="mb-6 text-center text-2xl font-semibold text-white">{d.title}</h2> : null}
+          {d.title ? (
+            <h2 className="mb-6 text-center text-2xl font-semibold text-white">
+              {d.title}
+            </h2>
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(Array.isArray(d.items) ? d.items : []).map((f, i) => (
-              <div key={i} className="rounded-xl border border-white/10 bg-ink-900 p-5">
-                <div className="text-sm font-semibold text-zinc-200">{f.title}</div>
+              <div
+                key={i}
+                className="rounded-xl border border-white/10 bg-ink-900 p-5"
+              >
+                <div className="section-title">{f.title}</div>
                 <div className="mt-1.5 text-sm text-zinc-500">{f.body}</div>
               </div>
             ))}
@@ -189,16 +269,27 @@ function BlockView({
       );
 
     case 'countdown':
-      return <Countdown days={Number(d.untilDays) || 7} label={d.label || 'Offer ends in'} />;
+      return (
+        <Countdown
+          days={Number(d.untilDays) || 7}
+          label={d.label || 'L’offre se termine dans'}
+        />
+      );
 
     case 'product':
     case 'course':
     case 'checkout':
       return (
         <BuySection
-          kind={block.type === 'course' ? 'course' : block.type === 'checkout' ? 'checkout' : 'product'}
+          kind={
+            block.type === 'course'
+              ? 'course'
+              : block.type === 'checkout'
+                ? 'checkout'
+                : 'product'
+          }
           id={block.type === 'course' ? d.courseId : d.productId || d.courseId}
-          label={d.ctaLabel || 'Buy now'}
+          label={d.ctaLabel || 'Acheter'}
           onBuy={onBuy}
           isPreview={isPreview}
         />
@@ -207,13 +298,20 @@ function BlockView({
     case 'social_proof':
       return (
         <section className="px-6 py-10 text-center">
-          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-600">{d.label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            {d.label}
+          </div>
           <div className="mt-3 flex flex-wrap justify-center gap-3">
-            {(Array.isArray(d.items) ? d.items : []).map((s: string, i: number) => (
-              <span key={i} className="rounded-full border border-white/10 px-3 py-1 text-sm text-zinc-400">
-                {s}
-              </span>
-            ))}
+            {(Array.isArray(d.items) ? d.items : []).map(
+              (s: string, i: number) => (
+                <span
+                  key={i}
+                  className="rounded-full border border-white/10 px-3 py-1 text-sm text-zinc-400"
+                >
+                  {s}
+                </span>
+              ),
+            )}
           </div>
         </section>
       );
@@ -221,11 +319,16 @@ function BlockView({
     case 'logos':
       return (
         <section className="flex flex-wrap items-center justify-center gap-6 px-6 py-8 opacity-60">
-          {(Array.isArray(d.items) ? d.items : []).map((l: string, i: number) => (
-            <span key={i} className="text-sm font-semibold tracking-wide text-zinc-500">
-              {l}
-            </span>
-          ))}
+          {(Array.isArray(d.items) ? d.items : []).map(
+            (l: string, i: number) => (
+              <span
+                key={i}
+                className="text-sm font-semibold tracking-wide text-zinc-500"
+              >
+                {l}
+              </span>
+            ),
+          )}
         </section>
       );
 
@@ -273,7 +376,12 @@ function CtaLink({
     );
   }
   return (
-    <a href={href} className={cn(cls, 'px-6 py-3', className)} target="_blank" rel="noopener">
+    <a
+      href={href}
+      className={cn(cls, 'px-6 py-3', className)}
+      target="_blank"
+      rel="noopener"
+    >
       {label}
     </a>
   );
@@ -312,12 +420,12 @@ function LeadForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Something went wrong');
+        setError(data.error ?? 'Une erreur est survenue');
         return;
       }
       setDone(true);
     } catch {
-      setError('Network error');
+      setError('Erreur réseau');
     } finally {
       setBusy(false);
     }
@@ -327,7 +435,7 @@ function LeadForm({
     return (
       <section className="mx-auto max-w-xl px-6 py-10 text-center">
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-200">
-          ✓ You&apos;re in. Thanks for subscribing.
+          ✓ C&apos;est fait. Merci pour votre inscription.
         </div>
       </section>
     );
@@ -335,17 +443,30 @@ function LeadForm({
 
   return (
     <section className="mx-auto max-w-xl px-6 py-10">
-      <form onSubmit={submit} className="rounded-xl border border-white/10 bg-ink-900 p-6">
-        <h3 className="text-lg font-semibold text-white">{title || 'Join the list'}</h3>
+      <form
+        onSubmit={submit}
+        className="rounded-xl border border-white/10 bg-ink-900 p-6"
+      >
+        <h3 className="text-lg font-semibold text-white">
+          {title || 'Rejoignez la liste'}
+        </h3>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <input name="name" placeholder="Name" className="input" />
-          <input name="email" type="email" required placeholder="Email" className="input" />
+          <input name="name" placeholder="Nom" className="input" />
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="Email"
+            className="input"
+          />
         </div>
         {error ? <p className="mt-2 text-xs text-red-400">{error}</p> : null}
         <button className="btn-primary mt-3 w-full" disabled={busy}>
-          {busy ? 'Sending…' : buttonLabel || 'Subscribe'}
+          {busy ? 'Envoi…' : buttonLabel || 'S’inscrire'}
         </button>
-        <p className="mt-2 text-center text-[10px] text-zinc-600">No spam. Unsubscribe anytime.</p>
+        <p className="mt-2 text-center text-[10px] text-zinc-600">
+          Aucun spam. Désinscription en un clic.
+        </p>
       </form>
     </section>
   );
@@ -371,7 +492,11 @@ function BuySection({
         onClick={() => id && onBuy?.(kind, id)}
         disabled={!id || isPreview}
         className="btn-primary px-6 py-3 disabled:opacity-40"
-        title={!id ? 'Select a product/course in the inspector' : undefined}
+        title={
+          !id
+            ? 'Sélectionnez un produit ou une formation dans l’inspecteur'
+            : undefined
+        }
       >
         {label}
       </button>
@@ -379,37 +504,52 @@ function BuySection({
   );
 }
 
+/**
+ * Countdown block — counts down the next `days` days, live.
+ *
+ * Server and client both start from the same relative duration, so the first
+ * paint is identical (no hydration mismatch); a 1 s interval then updates it.
+ */
 function Countdown({ days, label }: { days: number; label: string }) {
-  const [now] = useState(() => Date.now());
-  const target = new Date();
-  target.setDate(target.getDate() + days);
-  const diff = Math.max(0, target.getTime() - now);
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
+  const totalMs = Math.max(0, Math.floor(days)) * 86400000;
+  const [remaining, setRemaining] = useState(totalMs);
+
+  useEffect(() => {
+    const target = Date.now() + totalMs;
+    const tick = () => setRemaining(Math.max(0, target - Date.now()));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [totalMs]);
+
+  const d = Math.floor(remaining / 86400000);
+  const h = Math.floor((remaining % 86400000) / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
 
   return (
     <section className="px-6 py-8 text-center">
-      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-600">{label}</div>
-      <div className="mt-2 flex justify-center gap-3">
+      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+        {label}
+      </div>
+      <div className="mt-2 flex justify-center gap-3" data-nv-countdown>
         {[
           [d, 'days'],
           [h, 'hrs'],
           [m, 'min'],
           [s, 'sec'],
         ].map(([v, l]) => (
-          <div key={l as string} className="rounded-lg border border-white/10 bg-ink-900 px-4 py-2.5">
-            <div className="text-2xl font-semibold tabular-nums text-white">{String(v).padStart(2, '0')}</div>
+          <div
+            key={l as string}
+            className="rounded-lg border border-white/10 bg-ink-900 px-4 py-2.5"
+          >
+            <div className="text-2xl font-semibold tabular-nums text-white">
+              {String(v).padStart(2, '0')}
+            </div>
             <div className="text-[10px] uppercase text-zinc-600">{l}</div>
           </div>
         ))}
       </div>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `setInterval(()=>{document.querySelectorAll('[data-nv-tick]').forEach(e=>e.textContent=String(Date.now()))},1000)`,
-        }}
-      />
     </section>
   );
 }

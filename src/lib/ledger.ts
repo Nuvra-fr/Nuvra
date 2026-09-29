@@ -32,7 +32,10 @@ export function newGroup(): string {
   return randomUUID();
 }
 
-export async function writeEntries(group: string, entries: EntryInput[]): Promise<void> {
+export async function writeEntries(
+  group: string,
+  entries: EntryInput[],
+): Promise<void> {
   const now = new Date();
   const rows = entries
     .filter((e) => e.amountCents > 0)
@@ -96,7 +99,7 @@ export async function recordSale(params: {
       orderId: params.orderId,
       refType: 'ORDER',
       refId: params.orderId,
-      description: `${params.description} — Nuvra share`,
+      description: `${params.description} — part Nuvra`,
       mode: params.mode,
     },
   ];
@@ -143,7 +146,7 @@ export async function recordRefund(params: {
       orderId: params.orderId,
       refType: 'REFUND',
       refId: params.orderId,
-      description: `${params.description} — Nuvra share reversal`,
+      description: `${params.description} — reprise de la part Nuvra`,
       mode: params.mode,
     },
   ]);
@@ -246,7 +249,9 @@ export async function getBalance(
 }
 
 /** Platform revenue (net of reversals) across all workspaces. */
-export async function getPlatformRevenue(mode?: 'LIVE' | 'TEST'): Promise<number> {
+export async function getPlatformRevenue(
+  mode?: 'LIVE' | 'TEST',
+): Promise<number> {
   const conditions = [eq(ledgerEntries.account, 'PLATFORM_REVENUE')];
   if (mode) conditions.push(eq(ledgerEntries.mode, mode));
   const rows = await db
@@ -259,12 +264,16 @@ export async function getPlatformRevenue(mode?: 'LIVE' | 'TEST'): Promise<number
     .groupBy(ledgerEntries.direction)
     .all();
   let balance = 0;
-  for (const r of rows) balance += r.direction === 'CREDIT' ? Number(r.total) : -Number(r.total);
+  for (const r of rows)
+    balance += r.direction === 'CREDIT' ? Number(r.total) : -Number(r.total);
   return balance;
 }
 
 /** Workspace creator earnings (CREATOR_PAYABLE, net). */
-export async function getWorkspaceEarnings(workspaceId: string, mode?: 'LIVE' | 'TEST'): Promise<number> {
+export async function getWorkspaceEarnings(
+  workspaceId: string,
+  mode?: 'LIVE' | 'TEST',
+): Promise<number> {
   const conditions = [
     eq(ledgerEntries.workspaceId, workspaceId),
     eq(ledgerEntries.account, 'CREATOR_PAYABLE'),
@@ -280,11 +289,15 @@ export async function getWorkspaceEarnings(workspaceId: string, mode?: 'LIVE' | 
     .groupBy(ledgerEntries.direction)
     .all();
   let balance = 0;
-  for (const r of rows) balance += r.direction === 'CREDIT' ? Number(r.total) : -Number(r.total);
+  for (const r of rows)
+    balance += r.direction === 'CREDIT' ? Number(r.total) : -Number(r.total);
   return balance;
 }
 
-export async function listLedgerForWorkspace(workspaceId: string, limit = 100): Promise<LedgerEntry[]> {
+export async function listLedgerForWorkspace(
+  workspaceId: string,
+  limit = 100,
+): Promise<LedgerEntry[]> {
   return await db
     .select()
     .from(ledgerEntries)
@@ -294,7 +307,10 @@ export async function listLedgerForWorkspace(workspaceId: string, limit = 100): 
     .all();
 }
 
-export async function listLedgerForUser(userId: string, limit = 100): Promise<LedgerEntry[]> {
+export async function listLedgerForUser(
+  userId: string,
+  limit = 100,
+): Promise<LedgerEntry[]> {
   return await db
     .select()
     .from(ledgerEntries)
@@ -305,11 +321,19 @@ export async function listLedgerForUser(userId: string, limit = 100): Promise<Le
 }
 
 export async function ledgerForOrder(orderId: string): Promise<LedgerEntry[]> {
-  return await db.select().from(ledgerEntries).where(eq(ledgerEntries.orderId, orderId)).all();
+  return await db
+    .select()
+    .from(ledgerEntries)
+    .where(eq(ledgerEntries.orderId, orderId))
+    .all();
 }
 
 export async function entriesInGroup(group: string): Promise<LedgerEntry[]> {
-  return await db.select().from(ledgerEntries).where(eq(ledgerEntries.group, group)).all();
+  return await db
+    .select()
+    .from(ledgerEntries)
+    .where(eq(ledgerEntries.group, group))
+    .all();
 }
 
 /** Admin: sums by account for reconciliation. */
@@ -328,7 +352,8 @@ export async function ledgerSummary(mode?: 'LIVE' | 'TEST') {
   const out: Record<string, number> = {};
   for (const r of rows) {
     const n = Number(r.total);
-    out[r.account] = (out[r.account] ?? 0) + (r.direction === 'CREDIT' ? n : -n);
+    out[r.account] =
+      (out[r.account] ?? 0) + (r.direction === 'CREDIT' ? n : -n);
   }
   return out;
 }

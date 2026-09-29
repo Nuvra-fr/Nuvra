@@ -2,18 +2,21 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthShell, RegisterForm } from '@/components/auth';
 
-export const metadata: Metadata = { title: 'Create account' };
+export const metadata: Metadata = { title: 'Créer un compte' };
 
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="Start for free"
-      subtitle="No credit card. The Nuvra platform is free to use."
+      title="Commencer gratuitement"
+      subtitle="Sans carte bancaire. La plateforme Nuvra est gratuite."
       footer={
         <>
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-nuvra-400 hover:text-nuvra-300">
-            Sign in
+          Vous avez déjà un compte ?{' '}
+          <Link
+            href="/login"
+            className="font-medium text-nuvra-400 hover:text-nuvra-300"
+          >
+            Se connecter
           </Link>
         </>
       }

@@ -19,7 +19,10 @@ function readEnv(key: string): string | undefined {
  * - sinon, accepte tout nom se terminant par _STRIPE_SECRET_KEY / _STRIPE_WEBHOOK_SECRET
  *   ex: Nuvra_STRIPE_SECRET_KEY (comme le fait src/lib/db.ts pour Turso)
  */
-function resolveStripeEnv(exactKey: string, suffix: string): string | undefined {
+function resolveStripeEnv(
+  exactKey: string,
+  suffix: string,
+): string | undefined {
   const exact = readEnv(exactKey);
   if (exact) return exact;
   for (const k of Object.keys(process.env)) {
@@ -59,15 +62,19 @@ export function getStripe(): Stripe | null {
   return stripeClient;
 }
 
-export function constructWebhookEvent(payload: Buffer, signature: string): Stripe.Event {
+export function constructWebhookEvent(
+  payload: Buffer,
+  signature: string,
+): Stripe.Event {
   const secret = getStripeWebhookSecret();
   if (!secret) {
     throw new Error(
-      'STRIPE_WEBHOOK_SECRET is not configured — add STRIPE_WEBHOOK_SECRET (or a prefixed *_STRIPE_WEBHOOK_SECRET) in Vercel Environment Variables and redeploy',
+      'STRIPE_WEBHOOK_SECRET n’est pas configuré — ajoutez STRIPE_WEBHOOK_SECRET (ou une variable préfixée *_STRIPE_WEBHOOK_SECRET) dans les variables d’environnement Vercel, puis redéployez',
     );
   }
   const stripe = getStripe();
-  if (!stripe) throw new Error('Stripe is not configured (set STRIPE_SECRET_KEY)');
+  if (!stripe)
+    throw new Error('Stripe n’est pas configuré (définissez STRIPE_SECRET_KEY)');
   return stripe.webhooks.constructEvent(payload, signature, secret);
 }
 
@@ -81,7 +88,8 @@ export async function createPaymentCheckoutSession(params: {
   metadata?: Record<string, string>;
 }): Promise<{ id: string; url: string }> {
   const stripe = getStripe();
-  if (!stripe) throw new Error('Stripe is not configured (set STRIPE_SECRET_KEY)');
+  if (!stripe)
+    throw new Error('Stripe n’est pas configuré (définissez STRIPE_SECRET_KEY)');
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
@@ -92,7 +100,7 @@ export async function createPaymentCheckoutSession(params: {
         price_data: {
           currency: params.currency,
           unit_amount: params.amountCents,
-          product_data: { name: `Order ${params.orderId.slice(0, 8)}` },
+          product_data: { name: `Commande ${params.orderId.slice(0, 8)}` },
         },
       },
     ],
@@ -113,7 +121,8 @@ export async function createSubscriptionCheckoutSession(params: {
   cancelUrl: string;
 }): Promise<{ id: string; url: string }> {
   const stripe = getStripe();
-  if (!stripe) throw new Error('Stripe is not configured (set STRIPE_SECRET_KEY)');
+  if (!stripe)
+    throw new Error('Stripe n’est pas configuré (définissez STRIPE_SECRET_KEY)');
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -131,7 +140,11 @@ export async function createSubscriptionCheckoutSession(params: {
     ],
     success_url: params.successUrl,
     cancel_url: params.cancelUrl,
-    metadata: { workspaceId: params.workspaceId, plan: params.planCode, kind: 'subscription' },
+    metadata: {
+      workspaceId: params.workspaceId,
+      plan: params.planCode,
+      kind: 'subscription',
+    },
   });
   return { id: session.id, url: session.url! };
 }

@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { pages } from '@/db/schema';
 import PageEditor from './PageEditor';
 
-export const metadata: Metadata = { title: 'Page editor' };
+export const metadata: Metadata = { title: 'Éditeur de page' };
 
 export default async function PageEditPage({
   params,

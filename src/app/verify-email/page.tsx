@@ -4,9 +4,9 @@ import { eq, and, isNull, gt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { users, emailVerificationTokens } from '@/db/schema';
 import { sha256 } from '@/lib/auth';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 
-export const metadata: Metadata = { title: 'Verify email' };
+export const metadata: Metadata = { title: 'Vérification de l’email' };
 
 export default async function VerifyEmailPage({
   searchParams,
@@ -29,8 +29,13 @@ export default async function VerifyEmailPage({
       )
       .get();
     if (row) {
-      await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, row.userId)).run();
-      await db.update(emailVerificationTokens)
+      await db
+        .update(users)
+        .set({ emailVerifiedAt: new Date() })
+        .where(eq(users.id, row.userId))
+        .run();
+      await db
+        .update(emailVerificationTokens)
         .set({ usedAt: new Date() })
         .where(eq(emailVerificationTokens.id, row.id))
         .run();
@@ -43,24 +48,29 @@ export default async function VerifyEmailPage({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="mb-8">
-        <Logo />
+        <BrandLogo size="lg" orientation="stacked" />
       </div>
       <div className="card w-full max-w-md p-7 text-center">
         {status === 'ok' ? (
           <>
-            <h1 className="text-lg font-semibold text-emerald-300">Email verified</h1>
-            <p className="mt-2 text-sm text-zinc-500">Your account is fully set up.</p>
+            <h1 className="text-lg font-semibold text-emerald-300">
+              Email vérifié
+            </h1>
+            <p className="mt-2 text-sm text-zinc-500">Votre compte est prêt.</p>
             <Link href="/dashboard" className="btn-primary mt-5 inline-flex">
-              Open dashboard
+              Ouvrir le tableau de bord
             </Link>
           </>
         ) : (
           <>
             <h1 className="text-lg font-semibold text-zinc-100">
-              {status === 'invalid' ? 'Link invalid or expired' : 'Missing verification token'}
+              {status === 'invalid'
+                ? 'Lien invalide ou expiré'
+                : 'Jeton de vérification manquant'}
             </h1>
             <p className="mt-2 text-sm text-zinc-500">
-              You can keep using Nuvra — request a fresh link from your profile settings.
+              Vous pouvez continuer à utiliser Nuvra — demandez un nouveau lien
+              depuis votre profil.
             </p>
             <Link href="/login" className="btn-secondary mt-5 inline-flex">
               Back to sign in

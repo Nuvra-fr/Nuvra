@@ -9,7 +9,7 @@ import { PageHeader, StatusBadge, Stat, Badge } from '@/components/ui';
 import { formatDateTime } from '@/lib/utils';
 import AdminRefundButton from './AdminRefundButton';
 
-export const metadata: Metadata = { title: 'Admin — Orders' };
+export const metadata: Metadata = { title: 'Admin — Commandes' };
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -19,14 +19,25 @@ export default async function AdminOrdersPage({
   await requireAdmin();
   const sp = await searchParams;
 
-  let rows = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(300).all();
+  let rows = await db
+    .select()
+    .from(orders)
+    .orderBy(desc(orders.createdAt))
+    .limit(300)
+    .all();
   const statusFilter = sp.status?.toUpperCase();
   if (statusFilter) rows = rows.filter((o) => o.status === statusFilter);
 
-  const withSeller = await Promise.all(rows.map(async (o) => {
-    const ws = await db.select().from(workspaces).where(eq(workspaces.id, o.workspaceId)).get();
-    return { order: o, seller: ws };
-  }));
+  const withSeller = await Promise.all(
+    rows.map(async (o) => {
+      const ws = await db
+        .select()
+        .from(workspaces)
+        .where(eq(workspaces.id, o.workspaceId))
+        .get();
+      return { order: o, seller: ws };
+    }),
+  );
 
   const totals = {
     paid: rows.filter((r) => r.status === 'PAID').length,
@@ -36,48 +47,71 @@ export default async function AdminOrdersPage({
 
   return (
     <div>
-      <PageHeader title="Orders" description="All orders across the platform, with test/live labeling." />
+      <PageHeader
+        title="Commandes"
+        description="Toutes les commandes de la plateforme, avec distinction test/live."
+      />
 
       <div className="mb-5 grid gap-4 sm:grid-cols-3">
-        <Stat label="Paid" value={String(totals.paid)} />
-        <Stat label="Refunded" value={String(totals.refunded)} />
-        <Stat label="Pending" value={String(totals.pending)} />
+        <Stat label="Payées" value={String(totals.paid)} />
+        <Stat label="Remboursées" value={String(totals.refunded)} />
+        <Stat label="En attente" value={String(totals.pending)} />
       </div>
 
       <div className="table-wrap">
         <table className="data">
           <thead>
             <tr>
-              <th>Order</th>
+              <th>Commande</th>
               <th>Seller</th>
-              <th>Buyer</th>
+              <th>Acheteur</th>
               <th>Kind</th>
               <th>Total</th>
-              <th>Nuvra fee</th>
+              <th>Commission Nuvra</th>
               <th>Mode</th>
-              <th>Status</th>
+              <th>Statut</th>
               <th>Date</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {withSeller.length === 0 ? (
-              <tr><td colSpan={10} className="text-center text-zinc-600">No orders.</td></tr>
+              <tr>
+                <td colSpan={10} className="text-center text-zinc-600">
+                  Aucune commande.
+                </td>
+              </tr>
             ) : (
               withSeller.map(({ order: o, seller }) => (
                 <tr key={o.id}>
-                  <td className="font-mono text-xs text-zinc-300">{o.number}</td>
+                  <td className="font-mono text-xs text-zinc-300">
+                    {o.number}
+                  </td>
                   <td className="text-zinc-500">{seller?.name ?? '—'}</td>
                   <td className="text-zinc-400">{o.buyerEmail}</td>
-                  <td><Badge>{o.kind === 'ACADEMY_SALE' ? 'Academy' : 'Creator'}</Badge></td>
+                  <td>
+                    <Badge>
+                      {o.kind === 'ACADEMY_SALE' ? 'Academy' : 'Créateur'}
+                    </Badge>
+                  </td>
                   <td className="tabular-nums">{formatCents(o.totalCents)}</td>
-                  <td className="tabular-nums text-zinc-500">{formatCents(o.platformFeeCents)}</td>
-                  <td><StatusBadge status={o.mode} /></td>
-                  <td><StatusBadge status={o.status} /></td>
-                  <td className="text-zinc-500">{formatDateTime(o.createdAt)}</td>
+                  <td className="tabular-nums text-zinc-500">
+                    {formatCents(o.platformFeeCents)}
+                  </td>
+                  <td>
+                    <StatusBadge status={o.mode} />
+                  </td>
+                  <td>
+                    <StatusBadge status={o.status} />
+                  </td>
+                  <td className="text-zinc-500">
+                    {formatDateTime(o.createdAt)}
+                  </td>
                   <td>
                     <div className="flex justify-end">
-                      {o.status === 'PAID' ? <AdminRefundButton orderId={o.id} /> : null}
+                      {o.status === 'PAID' ? (
+                        <AdminRefundButton orderId={o.id} />
+                      ) : null}
                     </div>
                   </td>
                 </tr>

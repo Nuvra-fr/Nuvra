@@ -10,17 +10,17 @@ import { funnelAnalytics } from '@/lib/analytics';
 import { Badge, PageHeader, StatusBadge, ProgressBar } from '@/components/ui';
 import { FunnelClientActions } from './FunnelClientActions';
 
-export const metadata: Metadata = { title: 'Funnel' };
+export const metadata: Metadata = { title: 'Tunnel' };
 
 const STEP_OPTIONS = [
   ['LANDING', 'Landing'],
-  ['LEAD', 'Lead capture'],
-  ['SALES', 'Sales page'],
-  ['CHECKOUT', 'Checkout'],
+  ['LEAD', 'Capture de prospects'],
+  ['SALES', 'Page de vente'],
+  ['CHECKOUT', 'Paiement'],
   ['UPSELL', 'Upsell'],
   ['DOWNSELL', 'Downsell'],
-  ['THANKYOU', 'Thank you'],
-  ['DELIVERY', 'Delivery'],
+  ['THANKYOU', 'Remerciement'],
+  ['DELIVERY', 'Livraison'],
 ];
 
 export default async function FunnelDetailPage({
@@ -30,7 +30,11 @@ export default async function FunnelDetailPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const funnel = await db.select().from(funnels).where(eq(funnels.id, id)).get();
+  const funnel = await db
+    .select()
+    .from(funnels)
+    .where(eq(funnels.id, id))
+    .get();
   if (!funnel || funnel.workspaceId !== ctx.workspace.id) notFound();
 
   const steps = await db
@@ -47,7 +51,7 @@ export default async function FunnelDetailPage({
     <div>
       <PageHeader
         title={funnel.name}
-        description="Each step is a page. Conversions are computed from real page views."
+        description="Chaque étape est une page. Les conversions sont calculées sur de vraies visites."
         actions={
           <FunnelClientActions
             funnelId={funnel.id}
@@ -59,8 +63,10 @@ export default async function FunnelDetailPage({
 
       <div className="card mb-5 p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-zinc-200">Flow & conversions</h2>
-          <Badge tone="blue">Overall: {analytics?.overallConversion ?? 0} %</Badge>
+          <h2 className="section-title">Flow & conversions</h2>
+          <Badge tone="blue">
+            Overall: {analytics?.overallConversion ?? 0} %
+          </Badge>
         </div>
         <div className="space-y-2">
           {steps.map((s, i) => {
@@ -69,7 +75,9 @@ export default async function FunnelDetailPage({
             return (
               <div key={s.step.id}>
                 <div className="flex items-center gap-3 rounded-lg border border-white/[0.07] bg-ink-900/70 px-4 py-3">
-                  <Badge tone={i === 0 ? 'blue' : 'default'}>{s.step.stepType}</Badge>
+                  <Badge tone={i === 0 ? 'blue' : 'default'}>
+                    {s.step.stepType}
+                  </Badge>
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/dashboard/pages/${s.page.id}`}
@@ -77,19 +85,28 @@ export default async function FunnelDetailPage({
                     >
                       {s.page.title}
                     </Link>
-                    <div className="text-[11px] text-zinc-600">{s.page.status} · {s.page.views} views</div>
+                    <div className="text-[11px] text-zinc-600">
+                      {s.page.status} · {s.page.views} views
+                    </div>
                   </div>
                   <div className="hidden w-32 sm:block">
-                    <ProgressBar value={a?.views ?? 0} max={Math.max(1, analytics?.steps[0]?.views ?? 1)} />
+                    <ProgressBar
+                      value={a?.views ?? 0}
+                      max={Math.max(1, analytics?.steps[0]?.views ?? 1)}
+                    />
                   </div>
                   {conv !== null && conv !== undefined ? (
-                    <Badge tone={conv >= 40 ? 'green' : conv >= 15 ? 'amber' : 'red'}>{conv} % →</Badge>
+                    <Badge
+                      tone={conv >= 40 ? 'green' : conv >= 15 ? 'amber' : 'red'}
+                    >
+                      {conv} % →
+                    </Badge>
                   ) : null}
                   <a
                     href={`/p/${ctx.workspace.slug}/${s.page.slug}`}
                     target="_blank"
                     className="btn-ghost !px-2"
-                    aria-label="Open page"
+                    aria-label="Ouvrir la page"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
@@ -109,10 +126,10 @@ export default async function FunnelDetailPage({
         <table className="data">
           <thead>
             <tr>
-              <th>Step</th>
+              <th>Étape</th>
               <th>Type</th>
-              <th>Status</th>
-              <th>Views</th>
+              <th>Statut</th>
+              <th>Vues</th>
               <th />
             </tr>
           </thead>
@@ -127,7 +144,10 @@ export default async function FunnelDetailPage({
                 <td className="tabular-nums">{s.page.views}</td>
                 <td>
                   <div className="flex justify-end gap-2">
-                    <Link href={`/dashboard/pages/${s.page.id}`} className="btn-secondary !px-3 !py-1.5 !text-xs">
+                    <Link
+                      href={`/dashboard/pages/${s.page.id}`}
+                      className="btn-secondary btn-sm"
+                    >
                       <FileText className="h-3.5 w-3.5" /> Edit
                     </Link>
                   </div>

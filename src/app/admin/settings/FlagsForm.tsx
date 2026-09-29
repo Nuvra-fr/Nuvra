@@ -9,24 +9,28 @@ const LABELS: Record<string, string> = {
   ai: 'Nuvra AI',
   marketplace: 'Marketplace',
   affiliates: 'Affiliates',
-  customDomains: 'Custom domains',
+  customDomains: 'Domaines personnalisés',
   templates: 'Templates',
-  advancedAnalytics: 'Advanced analytics',
+  advancedAnalytics: 'Statistiques avancées',
   beta: 'Beta features',
 };
 
-export default function FlagsForm({ flags }: { flags: Record<string, boolean> }) {
+export default function FlagsForm({
+  flags,
+}: {
+  flags: Record<string, boolean>;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
     <Card padded>
-      <div className="mb-4 text-sm font-semibold text-zinc-200">Feature flags</div>
+      <div className="mb-4 section-title">Options de fonctionnalités</div>
       <div className="space-y-2.5">
         {Object.entries(flags).map(([key, on]) => (
           <label
             key={key}
-            className="flex items-center justify-between rounded-lg border border-white/[0.07] px-3.5 py-2.5"
+            className="flex items-center justify-between rounded-xl border border-white/[0.07] px-3.5 py-2.5"
           >
             <span className="text-sm text-zinc-300">{LABELS[key] ?? key}</span>
             <input
@@ -35,7 +39,10 @@ export default function FlagsForm({ flags }: { flags: Record<string, boolean> })
               disabled={pending}
               onChange={() =>
                 startTransition(async () => {
-                  const res = await adminUpdateSettingAction(`flags.${key}`, !on);
+                  const res = await adminUpdateSettingAction(
+                    `flags.${key}`,
+                    !on,
+                  );
                   if (res.ok) router.refresh();
                 })
               }
@@ -45,7 +52,8 @@ export default function FlagsForm({ flags }: { flags: Record<string, boolean> })
         ))}
       </div>
       <p className="mt-4 text-[11px] text-zinc-600">
-        Disabled features show an explicit notice in the UI — nothing disappears silently.
+        Une fonction désactivée affiche un message explicite dans
+        l&apos;interface — rien ne disparaît en silence.
       </p>
     </Card>
   );

@@ -21,8 +21,8 @@ const productSchema = z.object({
 
 async function ownedProduct(ctx: AuthContext, id: string): Promise<Product> {
   const p = await db.select().from(products).where(eq(products.id, id)).get();
-  if (!p) throw new Error('Product not found');
-  if (p.workspaceId !== ctx.workspace.id) throw new Error('Not authorized');
+  if (!p) throw new Error('Produit introuvable');
+  if (p.workspaceId !== ctx.workspace.id) throw new Error('Non autorisé');
   return p;
 }
 
@@ -33,7 +33,12 @@ async function uniqueSlug(ctx: AuthContext, base: string): Promise<string> {
     const exists = await db
       .select({ id: products.id })
       .from(products)
-      .where(and(eq(products.workspaceId, ctx.workspace.id), eq(products.slug, slug)))
+      .where(
+        and(
+          eq(products.workspaceId, ctx.workspace.id),
+          eq(products.slug, slug),
+        ),
+      )
       .get();
     if (!exists) return slug;
     slug = `${root}-${randomCode(3)}`;
@@ -47,7 +52,11 @@ export async function createProductAction(
   try {
     const ctx = await requireUser();
     const parsed = productSchema.safeParse(input);
-    if (!parsed.success) return { ok: false, error: 'Check the product fields (name and price required).' };
+    if (!parsed.success)
+      return {
+        ok: false,
+        error: 'Vérifiez les champs du produit (nom et prix requis).',
+      };
     const p = parsed.data;
     const created = await db
       .insert(products)
@@ -64,11 +73,15 @@ export async function createProductAction(
       })
       .returning({ id: products.id })
       .get();
-    await audit('product.created', { actorUserId: ctx.user.id, target: created.id, meta: { name: p.name } });
+    await audit('product.created', {
+      actorUserId: ctx.user.id,
+      target: created.id,
+      meta: { name: p.name },
+    });
     revalidatePath('/dashboard/products');
     return { ok: true, id: created.id };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -79,26 +92,33 @@ export async function updateProductAction(
   try {
     const ctx = await requireUser();
     await ownedProduct(ctx, id);
-    const updates: Partial<typeof products.$inferInsert> = { updatedAt: new Date() };
+    const updates: Partial<typeof products.$inferInsert> = {
+      updatedAt: new Date(),
+    };
     if (input.name !== undefined) updates.name = input.name;
-    if (input.description !== undefined) updates.description = input.description;
+    if (input.description !== undefined)
+      updates.description = input.description;
     if (input.type !== undefined) updates.type = input.type;
     if (input.priceCents !== undefined) {
-      if (!Number.isInteger(input.priceCents) || input.priceCents < 0) return { ok: false, error: 'Invalid price' };
+      if (!Number.isInteger(input.priceCents) || input.priceCents < 0)
+        return { ok: false, error: 'Prix invalide' };
       updates.priceCents = input.priceCents;
     }
     if (input.status !== undefined) updates.status = input.status;
-    if (input.downloadUrl !== undefined) updates.downloadUrl = input.downloadUrl || null;
+    if (input.downloadUrl !== undefined)
+      updates.downloadUrl = input.downloadUrl || null;
     if (input.coverUrl !== undefined) updates.coverUrl = input.coverUrl || null;
     await db.update(products).set(updates).where(eq(products.id, id)).run();
     revalidatePath('/dashboard/products');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
-export async function deleteProductAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function deleteProductAction(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
     await ownedProduct(ctx, id);
@@ -107,6 +127,6 @@ export async function deleteProductAction(id: string): Promise<{ ok: true } | { 
     revalidatePath('/dashboard/products');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

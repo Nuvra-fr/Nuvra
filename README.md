@@ -39,7 +39,7 @@ Demo accounts (created by `npm run db:seed`, clearly-marked demo data):
 ```bash
 npm run typecheck   # tsc --noEmit — 0 errors
 npm run lint        # eslint (next/core-web-vitals + next/typescript) — 0 problems
-npm test            # vitest — 55 tests: money splits, refunds, ledger, registration, auth, rate-limit, utils
+npm test            # vitest — 73 tests: money splits, refunds, ledger, payment integrity, registration, auth, rate-limit, utils
 npm run build       # next build
 npm run smoke       # HTTP smoke test of every route × every demo role (needs a running seeded server)
 ```
@@ -59,6 +59,7 @@ liveness probe for uptime monitors and load balancers.
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel + Turso, Docker/Railway, env vars, Stripe, cron |
 | [docs/VERCEL.fr.md](docs/VERCEL.fr.md) | Déployer sur Vercel + Turso, guide en français |
 | [docs/TESTING.md](docs/TESTING.md) | Test strategy and how to run each suite |
+| [docs/BRANDING.md](docs/BRANDING.md) | Logo assets and how to replace them, liquid-glass rules, design tokens, accessibility |
 
 ## Deploy
 

@@ -47,7 +47,11 @@ export async function ensureAdmin(): Promise<BootstrapResult> {
   const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) return { status: 'skipped' };
 
-  const existingAdmin = await db.select({ id: users.id }).from(users).where(eq(users.role, 'ADMIN')).get();
+  const existingAdmin = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.role, 'ADMIN'))
+    .get();
   if (existingAdmin) return { status: 'exists' };
 
   if (password.length < 12) {
@@ -60,7 +64,12 @@ export async function ensureAdmin(): Promise<BootstrapResult> {
   if (admin) {
     await db
       .update(users)
-      .set({ role: 'ADMIN', status: 'ACTIVE', emailVerifiedAt: admin.emailVerifiedAt ?? new Date(), updatedAt: new Date() })
+      .set({
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        emailVerifiedAt: admin.emailVerifiedAt ?? new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(users.id, admin.id))
       .run();
     result = 'promoted';
@@ -78,20 +87,39 @@ export async function ensureAdmin(): Promise<BootstrapResult> {
       })
       .returning()
       .get();
-    const base = slugify(email.split('@')[0] ?? 'admin').replace(/-/g, '').slice(0, 18) || 'admin';
-    const taken = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.username, base)).get();
+    const base =
+      slugify(email.split('@')[0] ?? 'admin')
+        .replace(/-/g, '')
+        .slice(0, 18) || 'admin';
+    const taken = await db
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.username, base))
+      .get();
     await db
       .insert(profiles)
-      .values({ userId: admin.id, username: taken ? `${base}${randomCode(3)}` : base, onboardingStep: 5 })
+      .values({
+        userId: admin.id,
+        username: taken ? `${base}${randomCode(3)}` : base,
+        onboardingStep: 5,
+      })
       .onConflictDoNothing()
       .run();
     result = 'created';
   }
 
   // Platform workspace — owner of Nuvra Academy sales (see resolveCheckoutItem)
-  let platform = await db.select().from(workspaces).where(eq(workspaces.isPlatform, true)).get();
+  let platform = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.isPlatform, true))
+    .get();
   if (!platform) {
-    const slugTaken = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, 'nuvra')).get();
+    const slugTaken = await db
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.slug, 'nuvra'))
+      .get();
     platform = await db
       .insert(workspaces)
       .values({
@@ -118,8 +146,10 @@ export async function bootstrapData(): Promise<void> {
   await ensurePlans();
   const admin = await ensureAdmin();
   if (admin.status === 'created') log(`administrator created: ${admin.email}`);
-  else if (admin.status === 'promoted') log(`existing account promoted to administrator: ${admin.email}`);
-  else if (admin.status === 'skipped') log('no ADMIN_EMAIL/ADMIN_PASSWORD — admin bootstrap skipped');
+  else if (admin.status === 'promoted')
+    log(`existing account promoted to administrator: ${admin.email}`);
+  else if (admin.status === 'skipped')
+    log('no ADMIN_EMAIL/ADMIN_PASSWORD — admin bootstrap skipped');
   else log('administrator already provisioned');
 }
 
@@ -130,11 +160,13 @@ export async function bootstrapData(): Promise<void> {
  */
 export async function bootstrapDatabase(): Promise<void> {
   const target = databaseTarget();
-  log(`database target: ${target.local ? 'local file' : 'Turso / libSQL'} (${target.source})`);
+  log(
+    `database target: ${target.local ? 'local file' : 'Turso / libSQL'} (${target.source})`,
+  );
 
   if (process.env.VERCEL && target.local) {
     throw new Error(
-      'No hosted database configured. Vercel has no persistent disk, so a local SQLite file ' +
+      'Aucune base hébergée configurée. Vercel n’a pas de disque persistant, donc un fichier SQLite local ' +
         'cannot be used: set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN (see docs/DEPLOYMENT.md)',
     );
   }

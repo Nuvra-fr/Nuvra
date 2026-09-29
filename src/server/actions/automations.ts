@@ -10,13 +10,21 @@ import {
   emailSequenceSteps,
 } from '@/db/schema';
 import { requireUser, type AuthContext } from '@/lib/auth';
-import { AUTOMATION_TRIGGERS, type AutomationActionType, type AutomationTrigger } from '@/lib/constants';
+import {
+  AUTOMATION_TRIGGERS,
+  type AutomationActionType,
+  type AutomationTrigger,
+} from '@/lib/constants';
 import { audit } from '@/lib/audit';
 
 async function ownedAutomation(ctx: AuthContext, id: string) {
-  const a = await db.select().from(automations).where(eq(automations.id, id)).get();
-  if (!a) throw new Error('Automation not found');
-  if (a.workspaceId !== ctx.workspace.id) throw new Error('Not authorized');
+  const a = await db
+    .select()
+    .from(automations)
+    .where(eq(automations.id, id))
+    .get();
+  if (!a) throw new Error('Automatisation introuvable');
+  if (a.workspaceId !== ctx.workspace.id) throw new Error('Non autorisé');
   return a;
 }
 
@@ -27,7 +35,9 @@ export async function createAutomationAction(input: {
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    if (!AUTOMATION_TRIGGERS.includes(input.triggerEvent as AutomationTrigger)) {
+    if (
+      !AUTOMATION_TRIGGERS.includes(input.triggerEvent as AutomationTrigger)
+    ) {
       return { ok: false, error: 'Unknown trigger' };
     }
     const auto = await db
@@ -46,21 +56,30 @@ export async function createAutomationAction(input: {
           {
             type: 'send_email' as AutomationActionType,
             config: {
-              subject: 'Welcome!',
-              body: 'Thanks for joining — here is what to do next.',
+              subject: 'Bienvenue !',
+              body: 'Merci pour votre inscription — voici la suite.',
             },
           },
         ];
     for (const [i, a] of acts.entries()) {
-      await db.insert(automationActions)
-        .values({ automationId: auto.id, type: a.type, config: JSON.stringify(a.config), position: i })
+      await db
+        .insert(automationActions)
+        .values({
+          automationId: auto.id,
+          type: a.type,
+          config: JSON.stringify(a.config),
+          position: i,
+        })
         .run();
-    };
-    await audit('automation.created', { actorUserId: ctx.user.id, target: auto.id });
+    }
+    await audit('automation.created', {
+      actorUserId: ctx.user.id,
+      target: auto.id,
+    });
     revalidatePath('/dashboard/automations');
     return { ok: true, id: auto.id };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -75,27 +94,44 @@ export async function updateAutomationAction(
   try {
     const ctx = await requireUser();
     await ownedAutomation(ctx, id);
-    const updates: Partial<typeof automations.$inferInsert> = { updatedAt: new Date() };
+    const updates: Partial<typeof automations.$inferInsert> = {
+      updatedAt: new Date(),
+    };
     if (input.name !== undefined) updates.name = input.name.slice(0, 120);
     if (input.active !== undefined) updates.active = input.active;
-    await db.update(automations).set(updates).where(eq(automations.id, id)).run();
+    await db
+      .update(automations)
+      .set(updates)
+      .where(eq(automations.id, id))
+      .run();
     if (input.actions) {
-      await db.delete(automationActions).where(eq(automationActions.automationId, id)).run();
+      await db
+        .delete(automationActions)
+        .where(eq(automationActions.automationId, id))
+        .run();
       for (const [i, a] of input.actions.entries()) {
-        await db.insert(automationActions)
-          .values({ automationId: id, type: a.type, config: JSON.stringify(a.config), position: i })
+        await db
+          .insert(automationActions)
+          .values({
+            automationId: id,
+            type: a.type,
+            config: JSON.stringify(a.config),
+            position: i,
+          })
           .run();
-      };
+      }
     }
     revalidatePath('/dashboard/automations');
     revalidatePath(`/dashboard/automations/${id}`);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
-export async function deleteAutomationAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function deleteAutomationAction(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
     await ownedAutomation(ctx, id);
@@ -103,7 +139,7 @@ export async function deleteAutomationAction(id: string): Promise<{ ok: true } |
     revalidatePath('/dashboard/automations');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -120,14 +156,15 @@ export async function createSequenceAction(input: {
       .insert(emailSequences)
       .values({
         workspaceId: ctx.workspace.id,
-        name: input.name.trim().slice(0, 120) || 'Sequence',
+        name: input.name.trim().slice(0, 120) || 'Séquence',
         triggerEvent: input.triggerEvent,
         active: false,
       })
       .returning({ id: emailSequences.id })
       .get();
     for (const [i, s] of input.steps.entries()) {
-      await db.insert(emailSequenceSteps)
+      await db
+        .insert(emailSequenceSteps)
         .values({
           sequenceId: seq.id,
           delayHours: Math.max(0, Math.round(s.delayHours)),
@@ -136,11 +173,11 @@ export async function createSequenceAction(input: {
           position: i,
         })
         .run();
-    };
+    }
     revalidatePath('/dashboard/emails');
     return { ok: true, id: seq.id };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -150,25 +187,41 @@ export async function toggleSequenceAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const seq = await db.select().from(emailSequences).where(eq(emailSequences.id, id)).get();
-    if (!seq || seq.workspaceId !== ctx.workspace.id) return { ok: false, error: 'Not found' };
-    await db.update(emailSequences).set({ active, updatedAt: new Date() }).where(eq(emailSequences.id, id)).run();
+    const seq = await db
+      .select()
+      .from(emailSequences)
+      .where(eq(emailSequences.id, id))
+      .get();
+    if (!seq || seq.workspaceId !== ctx.workspace.id)
+      return { ok: false, error: 'Introuvable' };
+    await db
+      .update(emailSequences)
+      .set({ active, updatedAt: new Date() })
+      .where(eq(emailSequences.id, id))
+      .run();
     revalidatePath('/dashboard/emails');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
-export async function deleteSequenceAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function deleteSequenceAction(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const seq = await db.select().from(emailSequences).where(eq(emailSequences.id, id)).get();
-    if (!seq || seq.workspaceId !== ctx.workspace.id) return { ok: false, error: 'Not found' };
+    const seq = await db
+      .select()
+      .from(emailSequences)
+      .where(eq(emailSequences.id, id))
+      .get();
+    if (!seq || seq.workspaceId !== ctx.workspace.id)
+      return { ok: false, error: 'Introuvable' };
     await db.delete(emailSequences).where(eq(emailSequences.id, id)).run();
     revalidatePath('/dashboard/emails');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

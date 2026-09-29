@@ -6,17 +6,32 @@ import { appBaseUrl } from '@/lib/utils';
 export const metadata: Metadata = {
   metadataBase: new URL(appBaseUrl()),
   title: {
-    default: 'Nuvra — Create. Sell. Teach. Scale.',
+    default: 'Nuvra — Créez. Vendez. Enseignez. Développez.',
     template: '%s · Nuvra',
   },
   description:
-    'One platform to build, sell and grow a digital business: pages, funnels, courses, CRM, automations and analytics.',
+    'Une seule plateforme pour créer, vendre et développer votre activité digitale : pages, tunnels, formations, CRM, automatisations et statistiques.',
   openGraph: {
-    title: 'Nuvra — Create. Sell. Teach. Scale.',
+    title: 'Nuvra — Créez. Vendez. Enseignez. Développez.',
     description:
-      'One platform to build, sell and grow a digital business: pages, funnels, courses, CRM, automations and analytics.',
+      'Une seule plateforme pour créer, vendre et développer votre activité digitale : pages, tunnels, formations, CRM, automatisations et statistiques.',
     type: 'website',
     siteName: 'Nuvra',
+    images: [
+      {
+        url: '/brand/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Nuvra — Créez. Vendez. Enseignez. Développez.',
+      },
+    ],
+  },
+  twitter: { card: 'summary_large_image' },
+  applicationName: 'Nuvra',
+  appleWebApp: {
+    capable: true,
+    title: 'Nuvra',
+    statusBarStyle: 'black-translucent',
   },
   robots: { index: true, follow: true },
 };
@@ -27,9 +42,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className="dark">
+    <html lang="fr" className="dark">
       <body>
         <RefAttribution />
         {children}

@@ -10,13 +10,23 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   const ctx = await getSession();
-  if (!ctx) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  if (!ctx)
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
   const { id } = await params;
-  const lesson = await db.select().from(lessons).where(eq(lessons.id, id)).get();
-  if (!lesson) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const course = await db.select().from(courses).where(eq(courses.id, lesson.courseId)).get();
+  const lesson = await db
+    .select()
+    .from(lessons)
+    .where(eq(lessons.id, id))
+    .get();
+  if (!lesson)
+    return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
+  const course = await db
+    .select()
+    .from(courses)
+    .where(eq(courses.id, lesson.courseId))
+    .get();
   if (!course || course.workspaceId !== ctx.workspace.id) {
-    return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
   return NextResponse.json({
     ok: true,

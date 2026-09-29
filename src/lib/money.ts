@@ -20,15 +20,26 @@ export interface PlatformSplit {
 
 export function assertCents(value: number, label = 'amount'): void {
   if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`${label} must be a non-negative integer number of cents (got ${value})`);
+    throw new Error(
+      `${label} doit être un nombre de centimes entier positif (reçu : ${value})`,
+    );
   }
 }
 
 /** Distribute `grossCents` using basis points for the recipient. Remainder cent goes to recipient. */
-export function splitByBps(grossCents: number, recipientBps: number): PlatformSplit {
+export function splitByBps(
+  grossCents: number,
+  recipientBps: number,
+): PlatformSplit {
   assertCents(grossCents, 'grossCents');
-  if (!Number.isInteger(recipientBps) || recipientBps < 0 || recipientBps > 10000) {
-    throw new Error(`recipientBps must be an integer between 0 and 10000 (got ${recipientBps})`);
+  if (
+    !Number.isInteger(recipientBps) ||
+    recipientBps < 0 ||
+    recipientBps > 10000
+  ) {
+    throw new Error(
+      `recipientBps doit être un entier entre 0 et 10000 (reçu : ${recipientBps})`,
+    );
   }
   const sellerCents = Math.floor((grossCents * recipientBps) / 10000);
   const platformCents = grossCents - sellerCents;
@@ -40,7 +51,10 @@ export function splitByBps(grossCents: number, recipientBps: number): PlatformSp
  * Default: reseller 9000 bps (90 %), Nuvra 1000 bps (10 %).
  * Both values are admin-configurable.
  */
-export function academySplit(grossCents: number, resellerBps = 9000): PlatformSplit {
+export function academySplit(
+  grossCents: number,
+  resellerBps = 9000,
+): PlatformSplit {
   return splitByBps(grossCents, resellerBps);
 }
 
@@ -75,7 +89,11 @@ export function applyCoupon(grossCents: number, percentOff: number): number {
  * Payment-processor fee estimate (e.g. Stripe 2.9 % + 30¢) — display only.
  * Nuvra never hides this: it is always shown as a separate line.
  */
-export function estimateProcessorFee(grossCents: number, bps = 290, fixedCents = 30): number {
+export function estimateProcessorFee(
+  grossCents: number,
+  bps = 290,
+  fixedCents = 30,
+): number {
   assertCents(grossCents, 'grossCents');
   if (grossCents === 0) return 0;
   return Math.floor((grossCents * bps) / 10000) + fixedCents;
@@ -96,11 +114,19 @@ export function refundSplit(
 }
 
 /** Commission Nuvra would earn on `grossCents` for a FREE creator. */
-export function platformFeeFor(grossCents: number, plan: PlanCode, freeCommissionBps = 1000): number {
+export function platformFeeFor(
+  grossCents: number,
+  plan: PlanCode,
+  freeCommissionBps = 1000,
+): number {
   return creatorSplit(grossCents, plan, freeCommissionBps).platformCents;
 }
 
-/** Format integer cents as a display string, e.g. 129900 → "$1,299.00" */
+/**
+ * Format integer cents for the French UI, e.g. 129900 → "1 299,00 $".
+ * Thousands use a space, decimals a comma, and the currency symbol sits after
+ * the amount — the convention every French visitor reads natively.
+ */
 export function formatCents(cents: number, currency = 'usd'): string {
   const symbols: Record<string, string> = { usd: '$', eur: '€', gbp: '£' };
   const symbol = symbols[currency.toLowerCase()] ?? '';
@@ -108,7 +134,9 @@ export function formatCents(cents: number, currency = 'usd'): string {
   const abs = Math.abs(cents);
   const major = Math.floor(abs / 100)
     .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   const minor = (abs % 100).toString().padStart(2, '0');
-  return `${sign}${symbol}${major}.${minor}`;
+  return symbol
+    ? `${sign}${major},${minor}\u00a0${symbol}`
+    : `${sign}${major},${minor}`;
 }

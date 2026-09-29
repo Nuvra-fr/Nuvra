@@ -8,7 +8,7 @@ import { EmptyState, PageHeader, Badge } from '@/components/ui';
 import { timeAgo, safeJson } from '@/lib/utils';
 import ContactDialog from '../customers/ContactDialog';
 
-export const metadata: Metadata = { title: 'Leads' };
+export const metadata: Metadata = { title: 'Prospects' };
 
 export default async function LeadsPage() {
   const ctx = await requireUser();
@@ -23,23 +23,23 @@ export default async function LeadsPage() {
   return (
     <div>
       <PageHeader
-        title="Leads"
-        description="Captured from your funnel forms. Move them to customers as they buy."
+        title="Prospects"
+        description="Récupérés via vos formulaires de tunnel. Ils deviennent clients à l’achat."
         actions={<ContactDialog />}
       />
 
       {leads.length === 0 ? (
         <EmptyState
           icon={<UserRound className="h-8 w-8" />}
-          title="No leads yet"
-          description="Add a Form block to a published page — every submission lands here and triggers your automations."
+          title="Aucun prospect"
+          description="Ajoutez un bloc Formulaire à une page publiée — chaque envoi arrive ici et déclenche vos automatisations."
         />
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th>Lead</th>
+                <th>Prospect</th>
                 <th>Tags</th>
                 <th>Source</th>
                 <th>Captured</th>
@@ -49,7 +49,10 @@ export default async function LeadsPage() {
               {leads.map((c) => (
                 <tr key={c.id}>
                   <td>
-                    <a href={`/dashboard/customers?contact=${c.id}`} className="font-medium text-zinc-200 hover:text-nuvra-300">
+                    <a
+                      href={`/dashboard/customers?contact=${c.id}`}
+                      className="font-medium text-zinc-200 hover:text-nuvra-300"
+                    >
                       {c.name ?? c.email}
                     </a>
                     <div className="text-xs text-zinc-600">{c.email}</div>

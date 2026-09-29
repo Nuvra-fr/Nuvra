@@ -18,11 +18,12 @@ const schema = z.object({
 export async function POST(req: Request): Promise<Response> {
   const ip = await getIp();
   const rl = rateLimit(`lead:${ip ?? 'unknown'}`, 20, 60);
-  if (!rl.ok) return jsonError('Too many submissions. Try again shortly.', 429);
+  if (!rl.ok)
+    return jsonError('Trop d’envois. Réessayez dans un instant.', 429);
 
   const body = await readJson(req);
   const parsed = schema.safeParse(body);
-  if (!parsed.success) return jsonError('A valid email is required.');
+  if (!parsed.success) return jsonError('Un email valide est requis.');
 
   let workspaceId = parsed.data.workspaceId ?? null;
 
@@ -30,17 +31,31 @@ export async function POST(req: Request): Promise<Response> {
   if (!workspaceId && parsed.data.pagePath) {
     const parts = parsed.data.pagePath.split('/').filter(Boolean);
     if (parts[0] === 'p' && parts[1]) {
-      const ws = await db.select().from(workspaces).where(eq(workspaces.slug, parts[1])).get();
+      const ws = await db
+        .select()
+        .from(workspaces)
+        .where(eq(workspaces.slug, parts[1]))
+        .get();
       workspaceId = ws?.id ?? null;
     }
   }
-  if (!workspaceId) return jsonError('Unknown workspace.', 404);
+  if (!workspaceId) return jsonError('Espace de travail introuvable.', 404);
+  // Validate before inserting: an unknown workspace used to surface as an
+  // unhandled foreign-key error (500) instead of a clean 404.
+  const workspace = await db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId))
+    .get();
+  if (!workspace) return jsonError('Espace de travail introuvable.', 404);
 
   const email = parsed.data.email.toLowerCase().trim();
   let contact = await db
     .select()
     .from(contacts)
-    .where(and(eq(contacts.workspaceId, workspaceId), eq(contacts.email, email)))
+    .where(
+      and(eq(contacts.workspaceId, workspaceId), eq(contacts.email, email)),
+    )
     .get();
 
   if (!contact) {
@@ -55,13 +70,23 @@ export async function POST(req: Request): Promise<Response> {
       })
       .returning()
       .get();
-    await db.insert(contactActivities)
-      .values({ contactId: contact.id, type: 'lead.created', summary: `Captured from ${parsed.data.pagePath ?? 'form'}` })
+    await db
+      .insert(contactActivities)
+      .values({
+        contactId: contact.id,
+        type: 'lead.created',
+        summary: `Capturé depuis ${parsed.data.pagePath ?? 'formulaire'}`,
+      })
       .run();
     await emitEvent({
       name: 'lead.created',
       workspaceId,
-      payload: { email, name: parsed.data.name ?? '', contactId: contact.id, path: parsed.data.pagePath },
+      payload: {
+        email,
+        name: parsed.data.name ?? '',
+        contactId: contact.id,
+        path: parsed.data.pagePath,
+      },
     });
   }
 

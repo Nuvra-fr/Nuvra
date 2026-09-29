@@ -16,13 +16,13 @@ import { randomCode } from '@/lib/utils';
 import { PAGE_BLOCK_TEMPLATES } from '@/lib/constants';
 
 async function main() {
-  console.log('🌱 Seeding Nuvra demo data…');
+  console.log('🌱 Initialisation des données de démo Nuvra…');
 
   // Safe on a brand-new file/database: applies pending migrations first.
   await bootstrapDatabase();
 
   // Config defaults (only if never set)
-  await setConfig('academy.name', 'Nuvra Academy');
+  await setConfig('academy.name', 'Académie Nuvra');
 
   await ensurePlans();
 
@@ -47,10 +47,10 @@ async function main() {
     return u;
   }
 
-  const admin = await upsertUser('admin@nuvra.app', 'Nuvra Admin', adminHash, 'ADMIN');
-  const creator = await upsertUser('creator@nuvra.app', 'Camille Creator', creatorHash, 'USER');
-  const resellerUser = await upsertUser('reseller@nuvra.app', 'Rita Reseller', resellerHash, 'USER');
-  const student = await upsertUser('student@nuvra.app', 'Sam Student', studentHash, 'USER');
+  const admin = await upsertUser('admin@nuvra.app', 'Admin Nuvra', adminHash, 'ADMIN');
+  const creator = await upsertUser('creator@nuvra.app', 'Camille Créatrice', creatorHash, 'USER');
+  const resellerUser = await upsertUser('reseller@nuvra.app', 'Rita Revendeuse', resellerHash, 'USER');
+  const student = await upsertUser('student@nuvra.app', 'Sam Étudiant', studentHash, 'USER');
 
   // ── Workspaces ─────────────────────────────────────
   async function upsertWorkspace(slug: string, name: string, ownerId: string, plan: string, isPlatform = false) {
@@ -73,16 +73,16 @@ async function main() {
     return ws;
   }
 
-  const platformWs = await upsertWorkspace('nuvra', 'Nuvra (Platform)', admin.id, 'PRO', true);
+  const platformWs = await upsertWorkspace('nuvra', 'Nuvra (Plateforme)', admin.id, 'PRO', true);
   const creatorWs = await upsertWorkspace('camille-studio', 'Camille Studio', creator.id, 'FREE');
-  await upsertWorkspace('rita-resells', 'Rita Resells', resellerUser.id, 'FREE');
-  await upsertWorkspace('sam-space', "Sam's space", student.id, 'FREE');
+  await upsertWorkspace('rita-resells', 'Rita Revend', resellerUser.id, 'FREE');
+  await upsertWorkspace('sam-space', 'Espace de Sam', student.id, 'FREE');
 
   // ── Nuvra Academy (platform course) ────────────────
   const ACADEMY_MODULES = [
-    'Business digital', 'Offre', 'Positionnement', 'Funnel', 'Landing pages',
-    'Copywriting', 'Acquisition', 'Email marketing', 'Automations', 'Création de formation',
-    'Vente', 'Analytics', 'Scaling', 'Reseller system', 'Nuvra avancé',
+    'Business digital', 'Offre', 'Positionnement', 'Tunnel', 'Pages de vente',
+    'Copywriting', 'Acquisition', 'Email marketing', 'Automatisations', 'Créer sa formation',
+    'Vente', 'Statistiques', 'Passer à l’échelle', 'Programme revendeur', 'Nuvra avancé',
   ];
   let academy = await db.select().from(courses).where(eq(courses.slug, 'nuvra-academy')).get();
   if (!academy) {
@@ -90,10 +90,10 @@ async function main() {
       .insert(courses)
       .values({
         workspaceId: platformWs.id,
-        title: 'Nuvra Academy',
+        title: 'Académie Nuvra',
         slug: 'nuvra-academy',
         description:
-          'The complete 15-module program to design, launch and scale a digital business — plus the reseller system.',
+          'Le programme complet en 15 modules pour concevoir, lancer et faire grandir une activité digitale — avec le programme revendeur.',
         priceCents: 19700,
         status: 'PUBLISHED',
         isAcademy: true,
@@ -116,7 +116,7 @@ async function main() {
           moduleId: mod.id,
           title: `Intro — ${title}`,
           type: 'text',
-          content: `Welcome to the "${title}" module.\n\nIn this module you'll learn the principles, the frameworks and the exact steps to implement them inside Nuvra.\n\nObjectives:\n• Understand the strategy\n• Apply it to your own business\n• Measure the result`,
+          content: `Bienvenue dans le module « ${title} ».\n\nVous y découvrez les principes, les frameworks et les étapes concrètes pour les appliquer dans Nuvra.\n\nObjectifs :\n• Comprendre la stratégie\n• L’appliquer à votre activité\n• Mesurer le résultat`,
           position: i * 2,
           isPreview: i === 0,
           durationMin: 15,
@@ -126,7 +126,7 @@ async function main() {
         .values({
           courseId: academy!.id,
           moduleId: mod.id,
-          title: `Workshop — ${title} in practice`,
+          title: `Atelier — ${title} en pratique`,
           type: 'video',
           content: 'https://example.com/videos/academy-workshop',
           position: i * 2 + 1,
@@ -141,9 +141,9 @@ async function main() {
     await db.insert(products)
       .values({
         workspaceId: creatorWs.id,
-        name: 'Content OS — Notion template',
+        name: 'Content OS — modèle Notion',
         slug: 'content-os',
-        description: 'Plan, draft and schedule 30 days of content in one workspace.',
+        description: 'Planifiez, rédigez et programmez 30 jours de contenu dans un seul espace.',
         type: 'TEMPLATE',
         priceCents: 1900,
         status: 'PUBLISHED',
@@ -155,7 +155,7 @@ async function main() {
         workspaceId: creatorWs.id,
         name: 'Audit express (30 min)',
         slug: 'audit-express',
-        description: 'A live 30-minute review of your funnel with actionable fixes.',
+        description: '30 minutes en direct pour auditer votre tunnel et repartir avec des correctifs concrets.',
         type: 'SERVICE',
         priceCents: 14900,
         status: 'PUBLISHED',
@@ -169,9 +169,9 @@ async function main() {
       .insert(courses)
       .values({
         workspaceId: creatorWs.id,
-        title: 'Email marketing that converts',
+        title: 'Email marketing qui convertit',
         slug: 'email-marketing-that-converts',
-        description: 'Build sequences that sell without being sleazy. 4 modules, templates included.',
+        description: 'Des séquences qui vendent sans forcer. 4 modules, modèles inclus.',
         priceCents: 4900,
         status: 'PUBLISHED',
         level: 'intermediate',
@@ -180,7 +180,7 @@ async function main() {
       })
       .returning()
       .get();
-    for (const [i, t] of ['Foundations', 'List building', 'Sequences', 'Broadcasts'].entries()) {
+    for (const [i, t] of ['Fondamentaux', 'Construire sa liste', 'Séquences', 'Campagnes'].entries()) {
       const mod = await db
         .insert(courseModules)
         .values({ courseId: paidCourse!.id, title: t, position: i })
@@ -190,9 +190,9 @@ async function main() {
         .values({
           courseId: paidCourse!.id,
           moduleId: mod.id,
-          title: `${t} — lesson 1`,
+          title: `${t} — leçon 1`,
           type: 'text',
-          content: `Everything you need to know about ${t.toLowerCase()}.`,
+          content: `Tout ce qu’il faut savoir sur : ${t.toLowerCase()}.`,
           position: i,
           isPreview: i === 0,
         })
@@ -206,9 +206,9 @@ async function main() {
       .insert(courses)
       .values({
         workspaceId: creatorWs.id,
-        title: 'Launch in a weekend',
+        title: 'Lancer en un week-end',
         slug: 'launch-in-a-weekend',
-        description: 'A free crash course: idea → offer → page → first sales.',
+        description: 'Formation gratuite express : idée → offre → page → premières ventes.',
         priceCents: 0,
         status: 'PUBLISHED',
         level: 'beginner',
@@ -221,10 +221,10 @@ async function main() {
     freeCourse = insertedFree;
     const mod = await db
       .insert(courseModules)
-      .values({ courseId: insertedFree.id, title: 'Weekend sprint', position: 0 })
+      .values({ courseId: insertedFree.id, title: 'Sprint du week-end', position: 0 })
       .returning()
       .get();
-    for (const [i, t] of ['Pick the offer', 'Build the page', 'Open the cart'].entries()) {
+    for (const [i, t] of ['Choisir l’offre', 'Construire la page', 'Ouvrir les ventes'].entries()) {
       await db.insert(lessons)
         .values({ courseId: insertedFree.id, moduleId: mod.id, title: t, type: 'text', content: `${t}.`, position: i, isPreview: true })
         .run();
@@ -237,20 +237,20 @@ async function main() {
       .insert(pages)
       .values({
         workspaceId: creatorWs.id,
-        title: 'Email marketing course — Landing',
+        title: 'Cours email marketing — page de vente',
         slug: 'email-course',
         type: 'LANDING',
         status: 'PUBLISHED',
         content: JSON.stringify({
           blocks: [
-            { id: randomCode(8), type: 'hero', data: { heading: 'Emails that actually sell', subheading: 'The 4-module system Camille uses with her clients.', ctaLabel: 'Enroll now', ctaHref: `/checkout?item=course:${paidCourse!.id}`, align: 'center' } },
-            { id: randomCode(8), type: 'features', data: { title: 'What you get', items: [{ title: '4 modules', body: 'Zero fluff' }, { title: 'Templates', body: 'Copy-paste sequences' }, { title: 'Lifetime access', body: 'All future updates' }] } },
-            { id: randomCode(8), type: 'checkout', data: { courseId: paidCourse!.id, productId: '', ctaLabel: 'Buy the course' } },
-            { id: randomCode(8), type: 'faq', data: { items: [{ q: 'Is there a refund policy?', a: 'Yes — 14 days, no questions asked.' }] } },
+            { id: randomCode(8), type: 'hero', data: { heading: 'Des emails qui vendent vraiment', subheading: 'La méthode en 4 modules que Camille applique avec ses clients.', ctaLabel: 'Je m’inscris', ctaHref: `/checkout?item=course:${paidCourse!.id}`, align: 'center' } },
+            { id: randomCode(8), type: 'features', data: { title: 'Ce que vous obtenez', items: [{ title: '4 modules', body: 'Aucun remplissage' }, { title: 'Modèles', body: 'Séquences prêtes à copier' }, { title: 'Accès à vie', body: 'Toutes les mises à jour incluses' }] } },
+            { id: randomCode(8), type: 'checkout', data: { courseId: paidCourse!.id, productId: '', ctaLabel: 'Acheter la formation' } },
+            { id: randomCode(8), type: 'faq', data: { items: [{ q: 'Existe-t-il un remboursement ?', a: 'Oui — 14 jours, sans justification.' }] } },
           ],
         }),
-        seoTitle: 'Email marketing that converts — Nuvra demo',
-        seoDescription: 'A 4-module course on ethical email selling.',
+        seoTitle: 'Email marketing qui convertit — démo Nuvra',
+        seoDescription: 'Une formation en 4 modules pour vendre par email sans forcer.',
       })
       .returning()
       .get();
@@ -258,7 +258,7 @@ async function main() {
 
     const funnel = await db
       .insert(funnels)
-      .values({ workspaceId: creatorWs.id, name: 'Course launch funnel', status: 'PUBLISHED' })
+      .values({ workspaceId: creatorWs.id, name: 'Tunnel de lancement', status: 'PUBLISHED' })
       .returning()
       .get();
     await db.insert(funnelSteps)
@@ -270,14 +270,14 @@ async function main() {
       .values({
         workspaceId: creatorWs.id,
         funnelId: funnel.id,
-        title: 'Thank you',
+        title: 'Merci',
         slug: 'email-course-thanks',
         type: 'THANKYOU',
         status: 'PUBLISHED',
         position: 1,
         content: JSON.stringify({
           blocks: [
-            { id: randomCode(8), type: 'hero', data: { heading: "You're in! 🎉", subheading: 'Check your inbox for access details.', ctaLabel: 'Go to dashboard', ctaHref: '/dashboard', align: 'center' } },
+            { id: randomCode(8), type: 'hero', data: { heading: 'C’est parti ! 🎉', subheading: 'Consultez votre boîte mail pour les détails d’accès.', ctaLabel: 'Aller au tableau de bord', ctaHref: '/dashboard', align: 'center' } },
           ],
         }),
       })
@@ -299,7 +299,7 @@ async function main() {
     const order = await createOrder({
       workspaceId: platformWs.id,
       kind: 'ACADEMY_SALE',
-      items: [{ kind: 'ACADEMY', courseId: academy.id, title: 'Nuvra Academy', priceCents: 19700 }],
+      items: [{ kind: 'ACADEMY', courseId: academy.id, title: 'Académie Nuvra', priceCents: 19700 }],
       buyerEmail: resellerUser.email,
       buyerName: resellerUser.name,
       buyerUserId: resellerUser.id,
@@ -325,7 +325,7 @@ async function main() {
       const o = await createOrder({
         workspaceId: platformWs.id,
         kind: 'ACADEMY_SALE',
-        items: [{ kind: 'ACADEMY', courseId: academy.id, title: 'Nuvra Academy', priceCents: academy.priceCents }],
+        items: [{ kind: 'ACADEMY', courseId: academy.id, title: 'Académie Nuvra', priceCents: academy.priceCents }],
         buyerEmail: student.email,
         buyerName: student.name,
         buyerUserId: student.id,
@@ -361,7 +361,7 @@ async function main() {
         workspaceId: creatorWs.id,
         items: [{ kind: 'PRODUCT', productId: product.id, title: product.name, priceCents: product.priceCents }],
         buyerEmail: 'buyer@example.com',
-        buyerName: 'Demo Buyer',
+        buyerName: 'Acheteur démo',
         mode: 'TEST',
       });
       await finalizeOrderPaid(o2.id, { provider: 'test', reference: 'seed_c2' });
@@ -399,7 +399,7 @@ async function main() {
       .insert(automations)
       .values({
         workspaceId: creatorWs.id,
-        name: 'Welcome new leads',
+        name: 'Bienvenue aux nouveaux prospects',
         triggerEvent: 'lead.created',
         active: true,
         runCount: 0,
@@ -412,8 +412,8 @@ async function main() {
         type: 'send_email',
         position: 0,
         config: JSON.stringify({
-          subject: 'Welcome 👋',
-          body: "Thanks for subscribing! Here's the free guide: /c/launch-in-a-weekend",
+          subject: 'Bienvenue 👋',
+          body: 'Merci pour votre inscription ! Voici le guide gratuit : /c/launch-in-a-weekend',
         }),
       })
       .run();
@@ -425,14 +425,14 @@ async function main() {
   if (seqCount === 0) {
     const seq = await db
       .insert(emailSequences)
-      .values({ workspaceId: creatorWs.id, name: 'Post-purchase drip', triggerEvent: 'purchase.completed', active: true })
+      .values({ workspaceId: creatorWs.id, name: 'Relance après achat', triggerEvent: 'purchase.completed', active: true })
       .returning({ id: emailSequences.id })
       .get();
     await db.insert(emailSequenceSteps)
-      .values({ sequenceId: seq.id, delayHours: 0, subject: 'Your purchase is confirmed 🎉', body: 'Thanks! Start with module 1.', position: 0 })
+      .values({ sequenceId: seq.id, delayHours: 0, subject: 'Votre achat est confirmé 🎉', body: 'Merci ! Commencez par le module 1.', position: 0 })
       .run();
     await db.insert(emailSequenceSteps)
-      .values({ sequenceId: seq.id, delayHours: 24, subject: 'How is it going?', body: 'A quick check-in — reply to this email with questions.', position: 1 })
+      .values({ sequenceId: seq.id, delayHours: 24, subject: 'Où en êtes-vous ?', body: 'Un petit point — répondez à cet email si vous avez des questions.', position: 1 })
       .run();
     console.log('  + Active sequence: purchase.completed (0h + 24h)');
   }
@@ -464,7 +464,7 @@ async function main() {
         targetType: 'COURSE',
         targetId: academy.id,
         title: 'Nuvra Academy',
-        description: 'The flagship Nuvra program.',
+        description: 'Le programme phare de Nuvra.',
         priceCents: 19700,
         category: 'Business',
         level: 'intermediate',
@@ -483,11 +483,11 @@ async function main() {
   if (progCount === 0) {
     const prog = await db
       .insert(affiliatePrograms)
-      .values({ workspaceId: creatorWs.id, name: 'Course partners', commissionBps: 3000, active: true })
+      .values({ workspaceId: creatorWs.id, name: 'Partenaires formation', commissionBps: 3000, active: true })
       .returning({ id: affiliatePrograms.id })
       .get();
     await db.insert(affiliates)
-      .values({ programId: prog.id, code: 'demo-aff', name: 'Demo affiliate', userId: student.id })
+      .values({ programId: prog.id, code: 'demo-aff', name: 'Affilié démo', userId: student.id })
       .run();
     console.log('  + Affiliate program with link /?aff=demo-aff');
   }
@@ -497,10 +497,10 @@ async function main() {
   if (tplCount === 0) {
     await db.insert(templates)
       .values([
-        { kind: 'PAGE', name: 'Classic landing', category: 'SaaS', description: 'Hero + features + CTA + FAQ', content: JSON.stringify({ blocks: [PAGE_BLOCK_TEMPLATES.hero, PAGE_BLOCK_TEMPLATES.features, PAGE_BLOCK_TEMPLATES.cta, PAGE_BLOCK_TEMPLATES.faq] }), premium: false },
-        { kind: 'PAGE', name: 'Lead magnet', category: 'Growth', description: 'Form-first page', content: JSON.stringify({ blocks: [PAGE_BLOCK_TEMPLATES.hero, PAGE_BLOCK_TEMPLATES.form, PAGE_BLOCK_TEMPLATES.social_proof] }), premium: false },
-        { kind: 'EMAIL', name: 'Welcome email', category: 'Lifecycle', description: 'First touch after signup', content: JSON.stringify({ subject: 'Welcome!', body: 'Thanks for joining. Here is what to do next.' }), premium: false },
-        { kind: 'COURSE', name: '4-week cohort', category: 'Education', description: '4 modules × weekly lessons', content: JSON.stringify({ modules: ['Week 1', 'Week 2', 'Week 3', 'Week 4'] }), premium: true },
+        { kind: 'PAGE', name: 'Page de vente classique', category: 'SaaS', description: 'Bannière + fonctionnalités + bouton + FAQ', content: JSON.stringify({ blocks: [PAGE_BLOCK_TEMPLATES.hero, PAGE_BLOCK_TEMPLATES.features, PAGE_BLOCK_TEMPLATES.cta, PAGE_BLOCK_TEMPLATES.faq] }), premium: false },
+        { kind: 'PAGE', name: 'Aimant à prospects', category: 'Croissance', description: 'Page centrée sur le formulaire', content: JSON.stringify({ blocks: [PAGE_BLOCK_TEMPLATES.hero, PAGE_BLOCK_TEMPLATES.form, PAGE_BLOCK_TEMPLATES.social_proof] }), premium: false },
+        { kind: 'EMAIL', name: 'Email de bienvenue', category: 'Cycle de vie', description: 'Premier contact après l’inscription', content: JSON.stringify({ subject: 'Bienvenue !', body: 'Merci de nous rejoindre. Voici les prochaines étapes.' }), premium: false },
+        { kind: 'COURSE', name: 'Parcours en 4 semaines', category: 'Éducation', description: '4 modules × une leçon par semaine', content: JSON.stringify({ modules: ['Semaine 1', 'Semaine 2', 'Semaine 3', 'Semaine 4'] }), premium: true },
       ])
       .run();
     console.log('  + Templates library');
@@ -514,7 +514,7 @@ async function main() {
   });
 
   console.log('');
-  console.log('✅ Seed complete. Demo accounts (all demo data, clearly identifiable):');
+  console.log('✅ Données de démo prêtes. Comptes de démonstration (données identifiables) :');
   console.log('   admin@nuvra.app    / admin2026!    (ADMIN)');
   console.log('   creator@nuvra.app  / creator2026!  (FREE creator)');
   console.log('   reseller@nuvra.app / reseller2026! (ACTIVE reseller)');
@@ -524,6 +524,6 @@ async function main() {
 main()
   .then(() => process.exit(0))
   .catch((e) => {
-    console.error('Seed failed:', e);
+    console.error('Échec de l’initialisation :', e);
     process.exit(1);
   });

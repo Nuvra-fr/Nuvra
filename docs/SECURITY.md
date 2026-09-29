@@ -39,8 +39,18 @@
 
 - Stripe **webhook signature verified** on the raw body (`constructEvent`); bad signature → 400.
 - Webhook processing is **idempotent** via the `stripe_events` table (event id dedupe).
+- **A payment claim is never trusted on its own.** Both the Stripe webhook and
+  `/checkout/success` pass the session through `verifyCheckoutSessionForOrder`
+  (`src/lib/checkout-verify.ts`) before anything is marked paid: the session must carry the
+  `metadata.orderId` of *that* order, must be `paid`, and its `amount_total`/`currency` must
+  match the order. Rejected claims are never finalized — they are recorded as
+  `payment.claim_rejected` in the audit log for review.
+- `finalizeOrderPaid` (defense in depth) refuses a Stripe payment on a `TEST` order and refuses
+  a payment reference that already finalized a different order.
+- An order id is **not** a credential: test-mode confirmation only works for the buyer of an
+  account-bound (course/Academy) order.
 - Commission/split logic lives **only** on the server (`src/lib/orders.ts`); the frontend never
-  computes or submits amounts.
+  computes or submits amounts. Only `PUBLISHED` products/courses can be checked out.
 - Test mode is explicit — orders are labeled `mode=TEST`, banners shown, admin filters separate.
 
 ## Secrets
@@ -56,6 +66,10 @@
 
 ## Known limitations (honest list)
 
+- Workspace membership roles exist in the schema (`OWNER | ADMIN | MEMBER`, every workspace
+  creator is `OWNER`) but **no team layer is shipped yet**: the only way to join a workspace is
+  to create one, and every action scopes on the caller's workspace rather than on a finer role.
+  Enforce role checks before opening workspace invitations to third parties.
 - Rate limiter is per-instance (see above).
 - libSQL (local file or hosted Turso) is single-writer per database: perfect at this scale;
   the same Drizzle schema moves to Postgres if multi-region write load ever requires it.

@@ -15,11 +15,15 @@ const schema = z.object({
 export async function POST(req: Request): Promise<Response> {
   const ip = await getIp();
   const rl = rateLimit(`reset:${ip ?? 'unknown'}`, 10, 60);
-  if (!rl.ok) return jsonError('Too many attempts. Try again shortly.', 429);
+  if (!rl.ok)
+    return jsonError('Trop de tentatives. Réessayez dans un instant.', 429);
 
   const body = await readJson(req);
   const parsed = schema.safeParse(body);
-  if (!parsed.success) return jsonError('Invalid request. Password must be at least 8 characters.');
+  if (!parsed.success)
+    return jsonError(
+      'Requête invalide. Le mot de passe doit contenir au moins 8 caractères.',
+    );
 
   const row = await db
     .select()
@@ -33,15 +37,33 @@ export async function POST(req: Request): Promise<Response> {
     )
     .get();
 
-  if (!row) return jsonError('This reset link is invalid or has expired.', 400);
+  if (!row)
+    return jsonError(
+      'Ce lien de réinitialisation est invalide ou expiré.',
+      400,
+    );
 
   const passwordHash = await hashPassword(parsed.data.password);
-  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, row.userId)).run();
-  await db.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, row.id)).run();
+  await db
+    .update(users)
+    .set({ passwordHash, updatedAt: new Date() })
+    .where(eq(users.id, row.userId))
+    .run();
+  await db
+    .update(passwordResetTokens)
+    .set({ usedAt: new Date() })
+    .where(eq(passwordResetTokens.id, row.id))
+    .run();
   // Invalidate all sessions after a password reset
   await db.delete(sessions).where(eq(sessions.userId, row.userId)).run();
 
-  await audit('auth.password_reset', { actorUserId: row.userId, target: row.userId, ip });
+  await audit('auth.password_reset', {
+    actorUserId: row.userId,
+    target: row.userId,
+    ip,
+  });
 
-  return jsonOk({ message: 'Password updated. You can sign in now.' });
+  return jsonOk({
+    message: 'Mot de passe mis à jour. Vous pouvez vous connecter.',
+  });
 }

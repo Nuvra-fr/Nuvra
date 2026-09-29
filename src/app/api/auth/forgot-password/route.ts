@@ -15,19 +15,27 @@ const schema = z.object({ email: z.string().email() });
 export async function POST(req: Request): Promise<Response> {
   const ip = await getIp();
   const rl = rateLimit(`forgot:${ip ?? 'unknown'}`, 5, 60);
-  if (!rl.ok) return jsonError('Too many requests. Try again shortly.', 429, { retryAfter: rl.retryAfterSec });
+  if (!rl.ok)
+    return jsonError('Trop de demandes. Réessayez dans un instant.', 429, {
+      retryAfter: rl.retryAfterSec,
+    });
 
   const body = await readJson(req);
   const parsed = schema.safeParse(body);
-  if (!parsed.success) return jsonError('Enter a valid email.');
+  if (!parsed.success) return jsonError('Saisissez un email valide.');
 
   const email = parsed.data.email.toLowerCase().trim();
-  const user = await db.select().from(users).where(eq(users.email, email)).get();
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .get();
 
   // Always answer success to avoid account enumeration
   if (user) {
     const raw = randomBytes(32).toString('hex');
-    await db.insert(passwordResetTokens)
+    await db
+      .insert(passwordResetTokens)
       .values({
         userId: user.id,
         tokenHash: sha256(raw),
@@ -36,12 +44,18 @@ export async function POST(req: Request): Promise<Response> {
       .run();
     await sendEmail({
       to: email,
-      subject: 'Reset your Nuvra password',
-      body: `Someone requested a password reset for your Nuvra account.\n\nChoose a new password (valid 1 hour):\n${appUrl(`/reset-password?token=${raw}`)}\n\nIf this wasn't you, ignore this email.`,
+      subject: 'Réinitialisez votre mot de passe Nuvra',
+      body: `Une réinitialisation de mot de passe a été demandée pour votre compte Nuvra.\n\nChoisissez un nouveau mot de passe (valable 1 heure) :\n${appUrl(`/reset-password?token=${raw}`)}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
       relatedTo: 'auth:reset',
     });
-    await audit('auth.forgot_requested', { actorUserId: user.id, target: user.id, ip });
+    await audit('auth.forgot_requested', {
+      actorUserId: user.id,
+      target: user.id,
+      ip,
+    });
   }
 
-  return jsonOk({ message: 'If that account exists, a reset link has been sent.' });
+  return jsonOk({
+    message: 'Si ce compte existe, un lien de réinitialisation a été envoyé.',
+  });
 }

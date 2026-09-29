@@ -30,7 +30,7 @@ export default function PayoutButton({
       <button
         className="btn-primary !py-2 !text-xs w-full"
         disabled={pending || disabled}
-        title={disabled ? `Minimum payout is ${formatCents(min)}` : undefined}
+        title={disabled ? `Le versement minimum est de ${formatCents(min)}` : undefined}
         onClick={() =>
           startTransition(async () => {
             const res = await requestPayoutAction(account as LedgerAccount, mode);
@@ -39,7 +39,7 @@ export default function PayoutButton({
           })
         }
       >
-        {pending ? 'Requesting…' : `Request payout (${formatCents(available)})`}
+        {pending ? 'Requesting…' : `Demander un versement (${formatCents(available)})`}
       </button>
       {disabled ? (
         <p className="mt-1.5 text-center text-[10px] text-zinc-600">

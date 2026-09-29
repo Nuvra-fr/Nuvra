@@ -174,4 +174,4 @@ It delivers scheduled sequence emails and resumes automations paused by a *wait*
 - [ ] `/api/stripe/webhook` returns 400 on a bogus signature, 200 on a real event
 - [ ] `POST /api/cron/process` without secret → 401; with secret → `{ ok: true }`
 - [ ] Staging only: `BASE=https://staging.example npm run smoke` green (needs demo accounts)
-- [ ] CI green on the pull request (`typecheck`, `lint`, 55 tests, build, Docker job)
+- [ ] CI green on the pull request (`typecheck`, `lint`, 73 tests, build, Docker job)

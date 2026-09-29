@@ -20,9 +20,10 @@ export default function RunQueueButton() {
           else router.refresh();
         })
       }
-      title="Processes due scheduled emails now (normally handled by CRON_SECRET cron)"
+      title="Traiter maintenant les emails programmés (normalement géré par le cron CRON_SECRET)"
     >
-      <Zap className="h-4 w-4" /> {pending ? 'Running…' : 'Run queue now'}
+      <Zap className="h-4 w-4" />{' '}
+      {pending ? 'Traitement…' : 'Traiter la file maintenant'}
     </button>
   );
 }

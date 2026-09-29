@@ -20,7 +20,11 @@ import {
 } from '@/db/schema';
 import { academySplit, applyCoupon, creatorSplit } from '@/lib/money';
 import { freeCommissionBps, resellerBps } from '@/lib/config';
-import { recordAffiliateCommission, recordRefund, recordSale } from '@/lib/ledger';
+import {
+  recordAffiliateCommission,
+  recordRefund,
+  recordSale,
+} from '@/lib/ledger';
 import { emitEvent } from '@/lib/events';
 import { notifyWorkspaceOwners } from '@/lib/notifications';
 import { audit } from '@/lib/audit';
@@ -61,18 +65,23 @@ async function nextOrderNumber(): Promise<string> {
   for (let attempt = 0; attempt < 30; attempt++) {
     const n = Math.floor(Math.random() * 900000) + 100000;
     const number = `NV-${year}-${n}`;
-    const existing = await db.select({ id: orders.id }).from(orders).where(eq(orders.number, number)).get();
+    const existing = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.number, number))
+      .get();
     if (!existing) return number;
   }
   return `NV-${year}-${Date.now()}`;
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
-  if (input.items.length === 0) throw new OrderError('Order must have at least one item');
+  if (input.items.length === 0)
+    throw new OrderError('La commande doit contenir au moins un article');
   let subtotal = 0;
   for (const it of input.items) {
     if (it.priceCents < 0 || !Number.isInteger(it.priceCents)) {
-      throw new OrderError('Invalid item price');
+      throw new OrderError('Prix d’article invalide');
     }
     subtotal += it.priceCents * (it.quantity ?? 1);
   }
@@ -85,15 +94,21 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       .from(coupons)
       .where(eq(coupons.code, input.couponCode.toUpperCase()))
       .get();
-    if (!couponRow || !couponRow.active) throw new OrderError('Invalid coupon');
+    if (!couponRow || !couponRow.active)
+      throw new OrderError('Code promo invalide');
     if (couponRow.expiresAt && couponRow.expiresAt.getTime() < Date.now()) {
-      throw new OrderError('Coupon expired');
+      throw new OrderError('Coupon expiré');
     }
-    if (couponRow.maxRedemptions && couponRow.redeemedCount >= couponRow.maxRedemptions) {
-      throw new OrderError('Coupon fully redeemed');
+    if (
+      couponRow.maxRedemptions &&
+      couponRow.redeemedCount >= couponRow.maxRedemptions
+    ) {
+      throw new OrderError('Coupon déjà utilisé');
     }
-    if (couponRow.percentOff) discount = subtotal - applyCoupon(subtotal, couponRow.percentOff);
-    else if (couponRow.amountOffCents) discount = Math.min(subtotal, couponRow.amountOffCents);
+    if (couponRow.percentOff)
+      discount = subtotal - applyCoupon(subtotal, couponRow.percentOff);
+    else if (couponRow.amountOffCents)
+      discount = Math.min(subtotal, couponRow.amountOffCents);
   }
 
   const total = subtotal - discount;
@@ -122,7 +137,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     .get();
 
   for (const it of input.items) {
-    await db.insert(orderItems)
+    await db
+      .insert(orderItems)
       .values({
         orderId: order.id,
         kind: it.kind,
@@ -136,7 +152,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   }
 
   if (couponRow) {
-    await db.update(coupons)
+    await db
+      .update(coupons)
       .set({ redeemedCount: couponRow.redeemedCount + 1 })
       .where(eq(coupons.id, couponRow.id))
       .run();
@@ -183,7 +200,11 @@ export async function computeOrderSplit(order: Order): Promise<{
   }
 
   // Creator sale — plan of the seller workspace, determined at transaction time
-  const workspace = await db.select().from(workspaces).where(eq(workspaces.id, order.workspaceId)).get();
+  const workspace = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, order.workspaceId))
+    .get();
   const plan = (workspace?.plan ?? 'FREE') as Plan;
   const split = creatorSplit(gross, plan, await freeCommissionBps());
   return {
@@ -191,7 +212,7 @@ export async function computeOrderSplit(order: Order): Promise<{
     sellerUserId: workspace?.ownerId ?? null,
     sellerCents: split.sellerCents,
     platformCents: split.platformCents,
-    sellerBps: plan === 'FREE' ? 10000 - await freeCommissionBps() : 10000,
+    sellerBps: plan === 'FREE' ? 10000 - (await freeCommissionBps()) : 10000,
   };
 }
 
@@ -207,13 +228,53 @@ export interface FinalizeInput {
  * Called ONLY from the Stripe webhook, checkout success verification or the
  * explicit TEST MODE confirmation endpoint — always server-side.
  */
-export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): Promise<Order> {
-  const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-  if (!order) throw new OrderError('Order not found');
+export async function finalizeOrderPaid(
+  orderId: string,
+  input: FinalizeInput,
+): Promise<Order> {
+  const order = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .get();
+  if (!order) throw new OrderError('Commande introuvable');
   if (order.status === 'PAID') return order; // idempotent
-  if (order.status !== 'PENDING') throw new OrderError(`Order not payable (status ${order.status})`);
+  if (order.status !== 'PENDING')
+    throw new OrderError(`Commande non payable (statut ${order.status})`);
 
-  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId)).all();
+  // Defense in depth: a Stripe payment may only finalize a LIVE order, and one
+  // Stripe session may never finalize two different orders (replay).
+  if (input.provider === 'stripe') {
+    if (order.mode !== 'LIVE') {
+      throw new OrderError(
+        'Un paiement Stripe ne peut pas finaliser une commande en mode TEST',
+      );
+    }
+    const reference = input.reference?.trim();
+    if (reference) {
+      const clash = await db
+        .select({ orderId: payments.orderId })
+        .from(payments)
+        .where(
+          and(
+            eq(payments.provider, 'stripe'),
+            eq(payments.reference, reference),
+          ),
+        )
+        .get();
+      if (clash && clash.orderId !== orderId) {
+        throw new OrderError(
+          'Ce paiement Stripe a déjà finalisé une autre commande',
+        );
+      }
+    }
+  }
+
+  const items = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .all();
   const split = await computeOrderSplit(order);
 
   await db.transaction(async (tx) => {
@@ -252,7 +313,7 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
       sellerAccount: split.sellerAccount,
       sellerCents: split.sellerCents,
       platformCents: split.platformCents,
-      description: `${order.number} sale`,
+      description: `Vente ${order.number}`,
     });
   } else {
     await recordSale({
@@ -264,7 +325,7 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
       sellerAccount: 'CREATOR_PAYABLE',
       sellerCents: 0,
       platformCents: split.platformCents,
-      description: `${order.number} direct sale`,
+      description: `Vente directe ${order.number}`,
     });
   }
 
@@ -274,12 +335,18 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
     const existing = await db
       .select()
       .from(contacts)
-      .where(and(eq(contacts.workspaceId, order.workspaceId), eq(contacts.email, order.buyerEmail)))
+      .where(
+        and(
+          eq(contacts.workspaceId, order.workspaceId),
+          eq(contacts.email, order.buyerEmail),
+        ),
+      )
       .get();
     if (existing) {
       contactId = existing.id;
       if (existing.status !== 'STUDENT') {
-        await db.update(contacts)
+        await db
+          .update(contacts)
           .set({ status: 'CUSTOMER', updatedAt: new Date() })
           .where(eq(contacts.id, existing.id))
           .run();
@@ -300,16 +367,21 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
       contactId = created.id;
     }
     if (contactId) {
-      await db.insert(contactActivities)
+      await db
+        .insert(contactActivities)
         .values({
           contactId,
           type: 'purchase.completed',
-          summary: `Purchased ${order.number} — ${(order.totalCents / 100).toFixed(2)} ${order.currency.toUpperCase()}`,
+          summary: `Achat ${order.number} — ${(order.totalCents / 100).toFixed(2)} ${order.currency.toUpperCase()}`,
           meta: JSON.stringify({ orderId, totalCents: order.totalCents }),
         })
         .run();
       if (!order.contactId) {
-        await db.update(orders).set({ contactId }).where(eq(orders.id, orderId)).run();
+        await db
+          .update(orders)
+          .set({ contactId })
+          .where(eq(orders.id, orderId))
+          .run();
       }
     }
   } catch {
@@ -326,16 +398,24 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
       const already = await db
         .select({ id: enrollments.id })
         .from(enrollments)
-        .where(and(eq(enrollments.userId, order.buyerUserId), eq(enrollments.courseId, courseId)))
+        .where(
+          and(
+            eq(enrollments.userId, order.buyerUserId),
+            eq(enrollments.courseId, courseId),
+          ),
+        )
         .get();
       if (!already) {
-        await db.insert(enrollments)
+        await db
+          .insert(enrollments)
           .values({
             userId: order.buyerUserId,
             courseId,
             orderId,
             source:
-              items.find((i) => i.courseId === courseId)?.kind === 'ACADEMY' ? 'ACADEMY' : 'PURCHASE',
+              items.find((i) => i.courseId === courseId)?.kind === 'ACADEMY'
+                ? 'ACADEMY'
+                : 'PURCHASE',
           })
           .run();
       }
@@ -348,7 +428,11 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
   // Affiliate commission
   if (order.affiliateCode) {
     try {
-      const aff = await db.select().from(affiliates).where(eq(affiliates.code, order.affiliateCode)).get();
+      const aff = await db
+        .select()
+        .from(affiliates)
+        .where(eq(affiliates.code, order.affiliateCode))
+        .get();
       if (aff) {
         const program = await db
           .select()
@@ -357,7 +441,8 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
           .get();
         const bps = program?.commissionBps ?? 0;
         const commissionCents = Math.floor((order.totalCents * bps) / 10000);
-        await db.insert(affiliateSales)
+        await db
+          .insert(affiliateSales)
           .values({
             affiliateId: aff.id,
             orderId,
@@ -374,7 +459,7 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
             mode: order.mode as 'LIVE' | 'TEST',
             affiliateUserId: aff.userId,
             commissionCents,
-            description: `Affiliate commission ${bps / 100}% on ${order.number}`,
+            description: `Commission d'affiliation ${bps / 100}% sur ${order.number}`,
           });
         }
       }
@@ -386,10 +471,10 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
   // Notification + automation event
   await notifyWorkspaceOwners(order.workspaceId, {
     type: 'sale',
-    title: `New sale — ${order.number}`,
+    title: `Nouvelle vente — ${order.number}`,
     body: `${order.buyerEmail} purchased for ${(order.totalCents / 100).toFixed(2)} ${order.currency.toUpperCase()}${
       order.platformFeeCents
-        ? ` (Nuvra fee: ${(order.platformFeeCents / 100).toFixed(2)})`
+        ? ` (frais Nuvra : ${(order.platformFeeCents / 100).toFixed(2)})`
         : ' (0 % platform fee)'
     }`,
     link: `/dashboard/payments?order=${order.id}`,
@@ -414,7 +499,11 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
       name: 'reseller.sale',
       workspaceId: order.workspaceId,
       userId: order.buyerUserId,
-      payload: { orderId, email: order.buyerEmail, totalCents: order.totalCents },
+      payload: {
+        orderId,
+        email: order.buyerEmail,
+        totalCents: order.totalCents,
+      },
     });
   }
 
@@ -430,32 +519,42 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
 /** Full or partial refund — recalculates and reverses the ledger split. */
 export async function refundOrder(
   orderId: string,
-  opts: { amountCents?: number; reason?: string; provider?: string; reference?: string } = {},
+  opts: {
+    amountCents?: number;
+    reason?: string;
+    provider?: string;
+    reference?: string;
+  } = {},
 ): Promise<Order> {
-  const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-  if (!order) throw new OrderError('Order not found');
-  if (order.status !== 'PAID' && order.status !== 'PARTIALLY_REFUNDED') {
-    throw new OrderError(`Order not refundable (status ${order.status})`);
-  }
-  const alreadyRefunded = (await db
+  const order = await db
     .select()
-    .from(refunds)
-    .where(eq(refunds.orderId, orderId))
-    .all())
-    .reduce((s, r) => s + r.amountCents, 0);
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .get();
+  if (!order) throw new OrderError('Commande introuvable');
+  if (order.status !== 'PAID' && order.status !== 'PARTIALLY_REFUNDED') {
+    throw new OrderError(`Commande non remboursable (statut ${order.status})`);
+  }
+  const alreadyRefunded = (
+    await db.select().from(refunds).where(eq(refunds.orderId, orderId)).all()
+  ).reduce((s, r) => s + r.amountCents, 0);
   const refundCents = opts.amountCents ?? order.totalCents - alreadyRefunded;
-  if (refundCents <= 0) throw new OrderError('Nothing to refund');
-  if (refundCents > order.totalCents - alreadyRefunded) throw new OrderError('Refund exceeds captured amount');
+  if (refundCents <= 0) throw new OrderError('Rien à rembourser');
+  if (refundCents > order.totalCents - alreadyRefunded)
+    throw new OrderError('Le remboursement dépasse le montant encaissé');
 
   const split = await computeOrderSplit(order);
   // Reverse the exact proportions captured AT SALE TIME (order.platformFeeCents) —
   // a plan upgrade/downgrade between sale and refund must never change who bears
   // the refund, and the ledger stays reconstructable.
   const platformReversal =
-    order.totalCents > 0 ? Math.floor((refundCents * order.platformFeeCents) / order.totalCents) : refundCents;
+    order.totalCents > 0
+      ? Math.floor((refundCents * order.platformFeeCents) / order.totalCents)
+      : refundCents;
   const sellerReversal = refundCents - platformReversal;
 
-  await db.insert(refunds)
+  await db
+    .insert(refunds)
     .values({
       orderId,
       amountCents: refundCents,
@@ -476,11 +575,12 @@ export async function refundOrder(
     refundCents,
     sellerReversalCents: split.sellerUserId ? sellerReversal : 0,
     platformReversalCents: split.sellerUserId ? platformReversal : refundCents,
-    description: `Refund of ${order.number} (${(refundCents / 100).toFixed(2)})`,
+    description: `Remboursement de ${order.number} (${(refundCents / 100).toFixed(2)})`,
   });
 
   const full = alreadyRefunded + refundCents >= order.totalCents;
-  await db.update(orders)
+  await db
+    .update(orders)
     .set({
       status: full ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
       refundedAt: new Date(),
@@ -491,28 +591,48 @@ export async function refundOrder(
   if (full) {
     // Revoke course access granted by this order
     await db.delete(enrollments).where(eq(enrollments.orderId, orderId)).run();
-    await db.update(affiliateSales).set({ status: 'REVERSED' }).where(eq(affiliateSales.orderId, orderId)).run();
+    await db
+      .update(affiliateSales)
+      .set({ status: 'REVERSED' })
+      .where(eq(affiliateSales.orderId, orderId))
+      .run();
   }
 
   await notifyWorkspaceOwners(order.workspaceId, {
     type: 'payment_error',
-    title: `Refund processed — ${order.number}`,
-    body: `${(refundCents / 100).toFixed(2)} ${order.currency.toUpperCase()} refunded${full ? ' (full)' : ' (partial)'}`,
+    title: `Remboursement traité — ${order.number}`,
+    body: `${(refundCents / 100).toFixed(2)} ${order.currency.toUpperCase()} remboursé${full ? ' (total)' : ' (partiel)'}`,
     link: `/dashboard/payments?order=${order.id}`,
   });
 
-  await audit('order.refunded', { target: orderId, meta: { refundCents, reason: opts.reason } });
+  await audit('order.refunded', {
+    target: orderId,
+    meta: { refundCents, reason: opts.reason },
+  });
 
   return (await db.select().from(orders).where(eq(orders.id, orderId)).get())!;
 }
 
 /** After an Academy purchase the buyer becomes an ACTIVE reseller. */
-export async function activateReseller(userId: string, academyOrderId: string): Promise<void> {
-  const existing = await db.select().from(resellerProfiles).where(eq(resellerProfiles.userId, userId)).get();
+export async function activateReseller(
+  userId: string,
+  academyOrderId: string,
+): Promise<void> {
+  const existing = await db
+    .select()
+    .from(resellerProfiles)
+    .where(eq(resellerProfiles.userId, userId))
+    .get();
   if (existing) {
     if (existing.status !== 'ACTIVE') {
-      await db.update(resellerProfiles)
-        .set({ status: 'ACTIVE', activatedAt: new Date(), academyOrderId, updatedAt: new Date() })
+      await db
+        .update(resellerProfiles)
+        .set({
+          status: 'ACTIVE',
+          activatedAt: new Date(),
+          academyOrderId,
+          updatedAt: new Date(),
+        })
         .where(eq(resellerProfiles.id, existing.id))
         .run();
     }
@@ -527,7 +647,13 @@ export async function activateReseller(userId: string, academyOrderId: string): 
     const code = `nv-${base}-${randomUUID().slice(0, 6)}`;
     const row = await db
       .insert(resellerProfiles)
-      .values({ userId, status: 'ACTIVE', code, activatedAt: new Date(), academyOrderId })
+      .values({
+        userId,
+        status: 'ACTIVE',
+        code,
+        activatedAt: new Date(),
+        academyOrderId,
+      })
       .onConflictDoNothing()
       .returning({ id: resellerProfiles.id })
       .get();

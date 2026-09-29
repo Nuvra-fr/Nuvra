@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { BrandMark } from '@/components/BrandLogo';
 
 // ── Badge ─────────────────────────────────────────────
 export function Badge({
@@ -19,9 +20,7 @@ export function Badge({
     purple: 'border-violet-500/30 bg-violet-500/10 text-violet-300',
   };
   return (
-    <span className={cn('badge', tones[tone], className)}>
-      {children}
-    </span>
+    <span className={cn('badge', tones[tone], className)}>{children}</span>
   );
 }
 
@@ -35,7 +34,11 @@ export function Card({
   className?: string;
   padded?: boolean;
 }) {
-  return <div className={cn('card', padded && 'p-5', className)}>{children}</div>;
+  return (
+    <div className={cn('card', padded && 'card-body', className)}>
+      {children}
+    </div>
+  );
 }
 
 // ── Stat ──────────────────────────────────────────────
@@ -51,12 +54,25 @@ export function Stat({
   tone?: 'positive' | 'negative' | 'neutral';
 }) {
   const toneClass =
-    tone === 'positive' ? 'text-emerald-400' : tone === 'negative' ? 'text-red-400' : 'text-zinc-100';
+    tone === 'positive'
+      ? 'text-emerald-400'
+      : tone === 'negative'
+        ? 'text-red-400'
+        : 'text-zinc-100';
   return (
-    <div className="card p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</div>
-      <div className={cn('mt-1.5 text-2xl font-semibold tabular-nums', toneClass)}>{value}</div>
-      {hint ? <div className="mt-1 text-xs text-zinc-500">{hint}</div> : null}
+    <div className="card card-hover card-body">
+      <div className="eyebrow">{label}</div>
+      <div
+        className={cn(
+          'mt-2 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums',
+          toneClass,
+        )}
+      >
+        {value}
+      </div>
+      {hint ? (
+        <div className="mt-2 text-xs leading-relaxed text-zinc-500">{hint}</div>
+      ) : null}
     </div>
   );
 }
@@ -74,11 +90,23 @@ export function EmptyState({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="card flex flex-col items-center justify-center px-6 py-14 text-center">
-      {icon ? <div className="mb-3 text-zinc-600">{icon}</div> : null}
-      <h3 className="text-sm font-semibold text-zinc-200">{title}</h3>
-      {description ? <p className="mt-1.5 max-w-md text-sm text-zinc-500">{description}</p> : null}
-      {action ? <div className="mt-4">{action}</div> : null}
+    <div className="card flex flex-col items-center justify-center px-6 py-16 text-center">
+      {icon ? (
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] text-zinc-500">
+          {icon}
+        </div>
+      ) : (
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+          <BrandMark size="sm" className="opacity-60" />
+        </div>
+      )}
+      <h3 className="section-title">{title}</h3>
+      {description ? (
+        <p className="mt-2 max-w-sm text-sm leading-relaxed text-zinc-500">
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }
@@ -86,16 +114,43 @@ export function EmptyState({
 // ── Badge for statuses ────────────────────────────────
 export function StatusBadge({ status }: { status: string }) {
   const s = status.toUpperCase();
-  const tone =
-    ['PAID', 'ACTIVE', 'APPROVED', 'PUBLISHED', 'SENT', 'LIVE', 'COMPLETED', 'VERIFIED', 'PRO'].includes(s)
-      ? 'green'
-      : ['PENDING', 'DRAFT', 'REVIEW', 'SCHEDULED', 'QUEUED', 'PROCESSING', 'TRIALING', 'WAITING', 'PAST_DUE'].includes(s)
-        ? 'amber'
-        : ['FAILED', 'REFUNDED', 'REJECTED', 'SUSPENDED', 'CANCELED', 'ARCHIVED', 'BLOCKED'].includes(s)
-          ? 'red'
-          : s === 'TEST'
-            ? 'purple'
-            : 'default';
+  const tone = [
+    'PAID',
+    'ACTIVE',
+    'APPROVED',
+    'PUBLISHED',
+    'SENT',
+    'LIVE',
+    'COMPLETED',
+    'VERIFIED',
+    'PRO',
+  ].includes(s)
+    ? 'green'
+    : [
+          'PENDING',
+          'DRAFT',
+          'REVIEW',
+          'SCHEDULED',
+          'QUEUED',
+          'PROCESSING',
+          'TRIALING',
+          'WAITING',
+          'PAST_DUE',
+        ].includes(s)
+      ? 'amber'
+      : [
+            'FAILED',
+            'REFUNDED',
+            'REJECTED',
+            'SUSPENDED',
+            'CANCELED',
+            'ARCHIVED',
+            'BLOCKED',
+          ].includes(s)
+        ? 'red'
+        : s === 'TEST'
+          ? 'purple'
+          : 'default';
   return <Badge tone={tone}>{s.replace(/_/g, ' ')}</Badge>;
 }
 
@@ -110,12 +165,14 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-100">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-zinc-500">{description}</p> : null}
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+      <div className="min-w-0">
+        <h1 className="page-title">{title}</h1>
+        {description ? <p className="page-subtitle">{description}</p> : null}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+      ) : null}
     </div>
   );
 }
@@ -135,7 +192,7 @@ export function Tabs({
           key={t.href}
           href={t.href}
           className={cn(
-            'whitespace-nowrap border-b-2 px-3.5 py-2.5 text-sm font-medium transition',
+            'whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition duration-200 ease-smooth hover:bg-white/[0.03]',
             active === t.href
               ? 'border-nuvra-500 text-zinc-100'
               : 'border-transparent text-zinc-500 hover:text-zinc-300',
@@ -166,7 +223,9 @@ export function BarChart({
           <div key={i} className="group relative flex-1">
             <div
               className="w-full rounded-t bg-nuvra-600/70 transition group-hover:bg-nuvra-500"
-              style={{ height: Math.max(3, Math.round((d.value / max) * height)) }}
+              style={{
+                height: Math.max(3, Math.round((d.value / max) * height)),
+              }}
               title={`${d.label}: ${format ? format(d.value) : d.value}`}
             />
           </div>
@@ -180,11 +239,20 @@ export function BarChart({
   );
 }
 
-export function ProgressBar({ value, max = 100 }: { value: number; max?: number }) {
+export function ProgressBar({
+  value,
+  max = 100,
+}: {
+  value: number;
+  max?: number;
+}) {
   const pct = Math.min(100, Math.round((value / Math.max(1, max)) * 100));
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
-      <div className="h-full rounded-full bg-nuvra-500 transition-all" style={{ width: `${pct}%` }} />
+      <div
+        className="h-full rounded-full bg-nuvra-500 transition-all"
+        style={{ width: `${pct}%` }}
+      />
     </div>
   );
 }
@@ -203,8 +271,48 @@ export function InlineAlert({
     error: 'border-red-500/30 bg-red-500/10 text-red-200',
   };
   return (
-    <div className={cn('rounded-lg border px-3.5 py-3 text-sm', tones[tone])} role="alert">
+    <div
+      className={cn(
+        'rounded-xl border px-4 py-3 text-sm leading-relaxed',
+        tones[tone],
+      )}
+      role="alert"
+    >
       {children}
     </div>
+  );
+}
+
+// ── Section (card with a header row) ──────────────────
+export function Section({
+  title,
+  description,
+  actions,
+  children,
+  className,
+  bodyClassName,
+}: {
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  bodyClassName?: string;
+}) {
+  return (
+    <section className={cn('card overflow-hidden', className)}>
+      <div className="card-head">
+        <div className="min-w-0">
+          <h2 className="section-title">{title}</h2>
+          {description ? (
+            <p className="section-subtitle">{description}</p>
+          ) : null}
+        </div>
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+        ) : null}
+      </div>
+      <div className={cn('card-body', bodyClassName)}>{children}</div>
+    </section>
   );
 }

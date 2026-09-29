@@ -10,7 +10,7 @@ import { formatCents } from '@/lib/money';
 import { timeAgo } from '@/lib/utils';
 import NewCourseButton from './NewCourseButton';
 
-export const metadata: Metadata = { title: 'Courses' };
+export const metadata: Metadata = { title: 'Formations' };
 
 export default async function CoursesPage() {
   const ctx = await requireUser();
@@ -21,26 +21,46 @@ export default async function CoursesPage() {
     .orderBy(desc(courses.updatedAt))
     .all();
 
-  const details = await Promise.all(rows.map(async (c) => ({
-    ...c,
-    moduleCount: (await db.select({ id: courseModules.id }).from(courseModules).where(eq(courseModules.courseId, c.id)).all()).length,
-    lessonCount: (await db.select({ id: lessons.id }).from(lessons).where(eq(lessons.courseId, c.id)).all()).length,
-    studentCount: (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, c.id)).all()).length,
-  })));
+  const details = await Promise.all(
+    rows.map(async (c) => ({
+      ...c,
+      moduleCount: (
+        await db
+          .select({ id: courseModules.id })
+          .from(courseModules)
+          .where(eq(courseModules.courseId, c.id))
+          .all()
+      ).length,
+      lessonCount: (
+        await db
+          .select({ id: lessons.id })
+          .from(lessons)
+          .where(eq(lessons.courseId, c.id))
+          .all()
+      ).length,
+      studentCount: (
+        await db
+          .select({ id: enrollments.id })
+          .from(enrollments)
+          .where(eq(enrollments.courseId, c.id))
+          .all()
+      ).length,
+    })),
+  );
 
   return (
     <div>
       <PageHeader
-        title="Courses"
-        description="Build courses with modules, lessons, quizzes and certificates — then sell them anywhere."
+        title="Formations"
+        description="Créez des formations avec modules, leçons, quiz et certificats — puis vendez-les partout."
         actions={<NewCourseButton />}
       />
 
       {details.length === 0 ? (
         <EmptyState
           icon={<GraduationCap className="h-8 w-8" />}
-          title="No courses yet"
-          description="Create your first course. You can sell it on your pages, funnels and the marketplace."
+          title="Aucune formation"
+          description="Créez votre première formation. Vendez-la sur vos pages, vos tunnels et la marketplace."
           action={<NewCourseButton />}
         />
       ) : (
@@ -48,23 +68,37 @@ export default async function CoursesPage() {
           {details.map((c) => (
             <div key={c.id} className="card flex flex-col p-5">
               <div className="flex items-start justify-between gap-2">
-                <Link href={`/dashboard/courses/${c.id}`} className="text-sm font-semibold text-zinc-200 hover:text-nuvra-300">
+                <Link
+                  href={`/dashboard/courses/${c.id}`}
+                  className="section-title hover:text-nuvra-300"
+                >
                   {c.title}
                 </Link>
                 <StatusBadge status={c.status} />
               </div>
               <div className="mt-2 text-xs text-zinc-600">
-                {c.moduleCount} modules · {c.lessonCount} lessons · {c.studentCount} students
+                {c.moduleCount} modules · {c.lessonCount} lessons ·{' '}
+                {c.studentCount} students
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-lg font-semibold text-zinc-100">{formatCents(c.priceCents, c.currency)}</span>
-                <span className="text-xs text-zinc-600">{timeAgo(c.updatedAt)}</span>
+                <span className="text-lg font-semibold text-zinc-100">
+                  {formatCents(c.priceCents, c.currency)}
+                </span>
+                <span className="text-xs text-zinc-600">
+                  {timeAgo(c.updatedAt)}
+                </span>
               </div>
               <div className="mt-4 flex gap-2">
-                <Link href={`/dashboard/courses/${c.id}`} className="btn-secondary flex-1 !py-2 !text-xs">
+                <Link
+                  href={`/dashboard/courses/${c.id}`}
+                  className="btn-secondary flex-1 !py-2 !text-xs"
+                >
                   Edit
                 </Link>
-                <Link href={`/dashboard/courses/${c.id}/curriculum`} className="btn-ghost !py-2 !text-xs">
+                <Link
+                  href={`/dashboard/courses/${c.id}/curriculum`}
+                  className="btn-ghost !py-2 !text-xs"
+                >
                   Curriculum
                 </Link>
               </div>

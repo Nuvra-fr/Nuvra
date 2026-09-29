@@ -2,7 +2,16 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronRight, GripVertical, Plus, Trash2, Video, FileText, HelpCircle } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  GripVertical,
+  Plus,
+  Trash2,
+  Video,
+  FileText,
+  HelpCircle,
+} from 'lucide-react';
 import {
   addLessonAction,
   addModuleAction,
@@ -55,17 +64,19 @@ export default function CurriculumEditor({
     setError(null);
     startTransition(async () => {
       const res = await fn();
-      if (!res.ok) setError(res.error ?? 'Failed');
+      if (!res.ok) setError(res.error ?? 'Échec');
       else router.refresh();
     });
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
       <div className="space-y-3">
         <div className="card p-4">
           <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
-            <span>{modules.length} modules · {totalLessons} lessons</span>
+            <span>
+              {modules.length} modules · {totalLessons} lessons
+            </span>
             <span>{Math.min(100, totalLessons * 10)}% content readiness</span>
           </div>
           <ProgressBar value={Math.min(100, totalLessons * 10)} />
@@ -76,26 +87,34 @@ export default function CurriculumEditor({
             <div className="flex items-center gap-2 px-4 py-3">
               <button
                 className="btn-ghost !p-1"
-                onClick={() => setExpanded({ ...expanded, [m.id]: !expanded[m.id] })}
-                aria-label="Toggle module"
+                onClick={() =>
+                  setExpanded({ ...expanded, [m.id]: !expanded[m.id] })
+                }
+                aria-label="Afficher/masquer le module"
               >
-                {expanded[m.id] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {expanded[m.id] ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
               </button>
               <input
-                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-zinc-200 outline-none focus:text-nuvra-300"
+                className="min-w-0 flex-1 bg-transparent section-title outline-none focus:text-nuvra-300"
                 defaultValue={m.title}
                 onBlur={(e) => {
-                  if (e.target.value !== m.title) run(() => renameModuleAction(m.id, e.target.value));
+                  if (e.target.value !== m.title)
+                    run(() => renameModuleAction(m.id, e.target.value));
                 }}
-                aria-label="Module title"
+                aria-label="Titre du module"
               />
               <Badge>{m.lessons.length} lessons</Badge>
               <button
                 className="btn-ghost !p-1.5"
                 onClick={() => {
-                  if (confirm('Delete this module and its lessons?')) run(() => deleteModuleAction(m.id));
+                  if (confirm('Supprimer ce module et ses leçons ?'))
+                    run(() => deleteModuleAction(m.id));
                 }}
-                aria-label="Delete module"
+                aria-label="Supprimer le module"
               >
                 <Trash2 className="h-3.5 w-3.5 text-zinc-600" />
               </button>
@@ -116,8 +135,10 @@ export default function CurriculumEditor({
                     ) : (
                       <FileText className="h-3.5 w-3.5 text-zinc-500" />
                     )}
-                    <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">{l.title}</span>
-                    {l.isPreview ? <Badge tone="blue">Preview</Badge> : null}
+                    <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
+                      {l.title}
+                    </span>
+                    {l.isPreview ? <Badge tone="blue">Aperçu</Badge> : null}
                     {l.hasQuiz ? <Badge tone="amber">Quiz</Badge> : null}
                     <button
                       className="btn-ghost !px-2 !py-1 opacity-0 group-hover:opacity-100"
@@ -135,9 +156,10 @@ export default function CurriculumEditor({
                     <button
                       className="btn-ghost !px-2 !py-1 opacity-0 group-hover:opacity-100"
                       onClick={() => {
-                        if (confirm('Delete lesson?')) run(() => deleteLessonAction(l.id));
+                        if (confirm('Supprimer cette leçon ?'))
+                          run(() => deleteLessonAction(l.id));
                       }}
-                      aria-label="Delete lesson"
+                      aria-label="Supprimer la leçon"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-zinc-600" />
                     </button>
@@ -148,21 +170,28 @@ export default function CurriculumEditor({
                   <div className="flex flex-wrap items-center gap-2 bg-white/[0.02] px-4 py-3">
                     <input
                       className="input !w-auto flex-1 !py-2"
-                      placeholder="Lesson title"
+                      placeholder="Titre de la leçon"
                       value={lessonTitle}
                       onChange={(e) => setLessonTitle(e.target.value)}
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && lessonTitle.trim()) {
                           run(async () => {
-                            const res = await addLessonAction(courseId, m.id, { title: lessonTitle, type: lessonType });
+                            const res = await addLessonAction(courseId, m.id, {
+                              title: lessonTitle,
+                              type: lessonType,
+                            });
                             setLessonTitle('');
                             return res;
                           });
                         }
                       }}
                     />
-                    <select className="input !w-auto !py-2" value={lessonType} onChange={(e) => setLessonType(e.target.value)}>
+                    <select
+                      className="input !w-auto !py-2"
+                      value={lessonType}
+                      onChange={(e) => setLessonType(e.target.value)}
+                    >
                       <option value="text">Text</option>
                       <option value="video">Video</option>
                       <option value="file">File</option>
@@ -172,22 +201,30 @@ export default function CurriculumEditor({
                       disabled={!lessonTitle.trim() || pending}
                       onClick={() =>
                         run(async () => {
-                          const res = await addLessonAction(courseId, m.id, { title: lessonTitle, type: lessonType });
+                          const res = await addLessonAction(courseId, m.id, {
+                            title: lessonTitle,
+                            type: lessonType,
+                          });
                           if (res.ok) setLessonTitle('');
                           return res;
                         })
                       }
                     >
-                      Add
+                      Ajouter
                     </button>
-                    <button className="btn-ghost !py-2 !text-xs" onClick={() => setLessonTarget(null)}>Done</button>
+                    <button
+                      className="btn-ghost !py-2 !text-xs"
+                      onClick={() => setLessonTarget(null)}
+                    >
+                      Terminé
+                    </button>
                   </div>
                 ) : (
                   <button
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zinc-500 hover:bg-white/[0.03] hover:text-nuvra-300"
                     onClick={() => setLessonTarget(m.id)}
                   >
-                    <Plus className="h-3.5 w-3.5" /> Add lesson
+                    <Plus className="h-3.5 w-3.5" /> Ajouter une leçon
                   </button>
                 )}
               </div>
@@ -198,7 +235,7 @@ export default function CurriculumEditor({
         <div className="flex gap-2">
           <input
             className="input"
-            placeholder="New module title…"
+            placeholder="Titre du nouveau module…"
             value={newModule}
             onChange={(e) => setNewModule(e.target.value)}
           />
@@ -213,7 +250,7 @@ export default function CurriculumEditor({
               })
             }
           >
-            <Plus className="h-4 w-4" /> Add module
+            <Plus className="h-4 w-4" /> Ajouter un module
           </button>
         </div>
 
@@ -223,36 +260,53 @@ export default function CurriculumEditor({
       {/* Lesson editor drawer */}
       {editingLesson && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50">
-          <div className="absolute inset-0" onClick={() => setEditingLesson(null)} />
+          <div
+            className="absolute inset-0"
+            onClick={() => setEditingLesson(null)}
+          />
           <aside className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-ink-900 p-5">
-            <h3 className="text-sm font-semibold text-zinc-200">Edit lesson</h3>
+            <h3 className="section-title">Modifier la leçon</h3>
             <div className="mt-4 space-y-3">
               <div>
-                <label className="label">Title</label>
-                <input className="input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                <label className="label">Titre</label>
+                <input
+                  className="input"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
               </div>
               <div>
-                <label className="label">Content (text or video URL)</label>
+                <label className="label">Contenu (texte ou URL de vidéo)</label>
                 <textarea
                   className="input"
                   rows={10}
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  placeholder="Write the lesson content or paste a video URL…"
+                  placeholder="Écrivez le contenu de la leçon ou collez une URL de vidéo…"
                 />
               </div>
               <label className="flex items-center gap-2 text-xs text-zinc-400">
                 <input
                   type="checkbox"
                   checked={editingLesson.isPreview ?? false}
-                  onChange={(e) => setEditingLesson({ ...editingLesson, isPreview: e.target.checked })}
+                  onChange={(e) =>
+                    setEditingLesson({
+                      ...editingLesson,
+                      isPreview: e.target.checked,
+                    })
+                  }
                   className="h-4 w-4 accent-[#1B51F5]"
                 />
-                Free preview (visible without purchase)
+                Aperçu gratuit (visible sans achat)
               </label>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button className="btn-ghost" onClick={() => setEditingLesson(null)}>Cancel</button>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                className="btn-ghost"
+                onClick={() => setEditingLesson(null)}
+              >
+                Annuler
+              </button>
               <button
                 className="btn-primary"
                 disabled={pending}
@@ -268,7 +322,7 @@ export default function CurriculumEditor({
                   })
                 }
               >
-                Save lesson
+                Enregistrer la leçon
               </button>
             </div>
           </aside>

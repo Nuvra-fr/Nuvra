@@ -7,12 +7,15 @@ import { requireUser, sha256 } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
 import { appUrl } from '@/lib/utils';
 
-export async function sendVerificationEmailAction(): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function sendVerificationEmailAction(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
   try {
     const ctx = await requireUser();
     if (ctx.user.emailVerifiedAt) return { ok: true };
     const raw = randomBytes(32).toString('hex');
-    await db.insert(emailVerificationTokens)
+    await db
+      .insert(emailVerificationTokens)
       .values({
         userId: ctx.user.id,
         tokenHash: sha256(raw),
@@ -21,12 +24,12 @@ export async function sendVerificationEmailAction(): Promise<{ ok: true } | { ok
       .run();
     await sendEmail({
       to: ctx.user.email,
-      subject: 'Verify your Nuvra email',
-      body: `Confirm your email:\n${appUrl(`/verify-email?token=${raw}`)}`,
+      subject: 'Vérifiez votre email Nuvra',
+      body: `Confirmez votre email :\n${appUrl(`/verify-email?token=${raw}`)}`,
       relatedTo: 'auth:verify',
     });
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

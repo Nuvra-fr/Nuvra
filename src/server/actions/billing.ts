@@ -14,12 +14,21 @@ import { audit } from '@/lib/audit';
  *  • TEST MODE (no Stripe keys): activates the plan locally, clearly labeled TEST.
  *  • STRIPE MODE: creates a Stripe Checkout subscription session and redirects.
  */
-export async function upgradePlanAction(planCode: 'PRO' | 'BUSINESS' | 'AGENCY'): Promise<void> {
+export async function upgradePlanAction(
+  planCode: 'PRO' | 'BUSINESS' | 'AGENCY',
+): Promise<void> {
   const ctx = await requireUser();
   await ensurePlans();
 
-  const priceKey = planCode === 'PRO' ? 'pro.priceCents' : planCode === 'BUSINESS' ? 'business.priceCents' : 'business.priceCents';
-  const amount = Number(await getConfig<number>(priceKey) ?? await proPriceCents());
+  const priceKey =
+    planCode === 'PRO'
+      ? 'pro.priceCents'
+      : planCode === 'BUSINESS'
+        ? 'business.priceCents'
+        : 'business.priceCents';
+  const amount = Number(
+    (await getConfig<number>(priceKey)) ?? (await proPriceCents()),
+  );
 
   if (paymentsMode() === 'stripe') {
     const session = await createSubscriptionCheckoutSession({
@@ -36,21 +45,30 @@ export async function upgradePlanAction(planCode: 'PRO' | 'BUSINESS' | 'AGENCY')
 
   // TEST MODE activation
   await activatePlan(ctx.workspace.id, planCode);
-  await audit('plan.upgraded', { actorUserId: ctx.user.id, target: ctx.workspace.id, meta: { planCode, mode: 'TEST' } });
+  await audit('plan.upgraded', {
+    actorUserId: ctx.user.id,
+    target: ctx.workspace.id,
+    meta: { planCode, mode: 'TEST' },
+  });
   revalidatePath('/dashboard');
   revalidatePath('/dashboard/settings/billing');
   redirect('/dashboard/settings/billing?upgraded=1');
 }
 
-export async function cancelPlanAction(): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function cancelPlanAction(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
   try {
     const ctx = await requireUser();
     await cancelPlan(ctx.workspace.id);
-    await audit('plan.canceled', { actorUserId: ctx.user.id, target: ctx.workspace.id });
+    await audit('plan.canceled', {
+      actorUserId: ctx.user.id,
+      target: ctx.workspace.id,
+    });
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/settings/billing');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

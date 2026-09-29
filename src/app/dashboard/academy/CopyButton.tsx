@@ -23,10 +23,14 @@ export default function CopyButton({ value }: { value: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1800);
       }}
-      title="Copy link"
+      title="Copier le lien"
     >
-      {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? (
+        <Check className="h-4 w-4 text-emerald-400" />
+      ) : (
+        <Copy className="h-4 w-4" />
+      )}
+      {copied ? 'Copié' : 'Copier'}
     </button>
   );
 }

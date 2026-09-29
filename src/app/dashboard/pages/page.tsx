@@ -24,15 +24,15 @@ export default async function PagesPage() {
     <div>
       <PageHeader
         title="Pages"
-        description="Landing pages, thank-you pages and your Nuvra Link — built with blocks."
+        description="Pages de vente, pages de remerciement et votre lien Nuvra — construits avec des blocs."
         actions={<NewPageButton />}
       />
 
       {rows.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-8 w-8" />}
-          title="No pages yet"
-          description="Create your first landing page. You can start from a clean skeleton or a funnel."
+          title="Aucune page"
+          description="Créez votre première page de vente, à partir d’un modèle vierge ou d’un tunnel."
           action={<NewPageButton />}
         />
       ) : (
@@ -42,9 +42,9 @@ export default async function PagesPage() {
               <tr>
                 <th>Page</th>
                 <th>Type</th>
-                <th>Status</th>
-                <th>Views</th>
-                <th>Updated</th>
+                <th>Statut</th>
+                <th>Vues</th>
+                <th>Mis à jour</th>
                 <th />
               </tr>
             </thead>
@@ -52,10 +52,15 @@ export default async function PagesPage() {
               {rows.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/dashboard/pages/${p.id}`} className="font-medium text-zinc-200 hover:text-nuvra-300">
+                    <Link
+                      href={`/dashboard/pages/${p.id}`}
+                      className="font-medium text-zinc-200 hover:text-nuvra-300"
+                    >
                       {p.title}
                     </Link>
-                    <div className="text-xs text-zinc-600">/p/{ctx.workspace.slug}/{p.slug}</div>
+                    <div className="text-xs text-zinc-600">
+                      /p/{ctx.workspace.slug}/{p.slug}
+                    </div>
                   </td>
                   <td className="text-zinc-500">{p.type}</td>
                   <td>
@@ -70,12 +75,15 @@ export default async function PagesPage() {
                           href={`/p/${ctx.workspace.slug}/${p.slug}`}
                           target="_blank"
                           className="btn-ghost !px-2 !py-1"
-                          title="Open live page"
+                          title="Ouvrir la page en ligne"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Link>
                       ) : null}
-                      <Link href={`/dashboard/pages/${p.id}`} className="btn-secondary !px-3 !py-1.5 !text-xs">
+                      <Link
+                        href={`/dashboard/pages/${p.id}`}
+                        className="btn-secondary btn-sm"
+                      >
                         Edit
                       </Link>
                     </div>

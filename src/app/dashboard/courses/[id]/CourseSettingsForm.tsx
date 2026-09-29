@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { updateCourseAction, deleteCourseAction } from '@/server/actions/courses';
+import {
+  updateCourseAction,
+  deleteCourseAction,
+} from '@/server/actions/courses';
 import { FormError } from '@/components/auth';
 
 export default function CourseSettingsForm({
@@ -49,7 +52,10 @@ export default function CourseSettingsForm({
   }
 
   function remove() {
-    if (!confirm('Delete this course, its curriculum and enrollments?')) return;
+    if (
+      !confirm('Supprimer cette formation, son programme et les inscriptions ?')
+    )
+      return;
     startTransition(async () => {
       const res = await deleteCourseAction(courseId);
       if (!res.ok) setError(res.error);
@@ -61,11 +67,15 @@ export default function CourseSettingsForm({
   }
 
   return (
-    <div className="card p-5">
+    <div className="card card-body">
       <div className="space-y-3.5">
         <div>
-          <label className="label">Title</label>
-          <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <label className="label">Titre</label>
+          <input
+            className="input"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </div>
         <div>
           <label className="label">Description</label>
@@ -78,7 +88,7 @@ export default function CourseSettingsForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Price (USD)</label>
+            <label className="label">Prix (USD)</label>
             <input
               className="input"
               type="number"
@@ -89,8 +99,12 @@ export default function CourseSettingsForm({
             />
           </div>
           <div>
-            <label className="label">Level</label>
-            <select className="input" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
+            <label className="label">Niveau</label>
+            <select
+              className="input"
+              value={form.level}
+              onChange={(e) => setForm({ ...form, level: e.target.value })}
+            >
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
@@ -99,35 +113,55 @@ export default function CourseSettingsForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Category</label>
-            <input className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Marketing" />
+            <label className="label">Catégorie</label>
+            <input
+              className="input"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              placeholder="Marketing"
+            />
           </div>
           <div>
-            <label className="label">Status</label>
-            <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="DRAFT">Draft</option>
-              <option value="REVIEW">In review</option>
-              <option value="PUBLISHED">Published</option>
+            <label className="label">Statut</label>
+            <select
+              className="input"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
+              <option value="DRAFT">Brouillon</option>
+              <option value="REVIEW">En relecture</option>
+              <option value="PUBLISHED">Publié</option>
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
         </div>
         <div>
           <label className="label">Cover image URL</label>
-          <input className="input" value={form.coverUrl} onChange={(e) => setForm({ ...form, coverUrl: e.target.value })} placeholder="https://…" />
+          <input
+            className="input"
+            value={form.coverUrl}
+            onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+            placeholder="https://…"
+          />
         </div>
       </div>
 
       <FormError error={error} />
 
-      <div className="mt-5 flex items-center justify-between">
-        <button className="btn-danger !py-2 !text-xs" onClick={remove} disabled={pending}>
-          Delete course
+      <div className="mt-6 flex items-center justify-between">
+        <button
+          className="btn-danger !py-2 !text-xs"
+          onClick={remove}
+          disabled={pending}
+        >
+          Supprimer la formation
         </button>
         <div className="flex items-center gap-3">
-          {saved ? <span className="text-xs text-emerald-400">Saved ✓</span> : null}
+          {saved ? (
+            <span className="text-xs text-emerald-400">Enregistré ✓</span>
+          ) : null}
           <button className="btn-primary" onClick={save} disabled={pending}>
-            {pending ? 'Saving…' : 'Save changes'}
+            {pending ? 'Enregistrement…' : 'Enregistrer'}
           </button>
         </div>
       </div>

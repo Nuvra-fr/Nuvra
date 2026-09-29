@@ -6,7 +6,7 @@ import { auditLogs, users } from '@/db/schema';
 import { PageHeader, Badge } from '@/components/ui';
 import { formatDateTime, safeJson } from '@/lib/utils';
 
-export const metadata: Metadata = { title: 'Admin — Audit logs' };
+export const metadata: Metadata = { title: 'Admin — Journal d’audit' };
 
 export default async function AdminAuditPage() {
   await requireAdmin();
@@ -20,7 +20,10 @@ export default async function AdminAuditPage() {
 
   return (
     <div>
-      <PageHeader title="Audit logs" description="Who did what, when — including auth and financial operations." />
+      <PageHeader
+        title="Journaux d’audit"
+        description="Qui a fait quoi et quand — y compris authentification et opérations financières."
+      />
       <div className="table-wrap">
         <table className="data">
           <thead>
@@ -34,18 +37,34 @@ export default async function AdminAuditPage() {
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={5} className="text-center text-zinc-600">No audit entries yet.</td></tr>
+              <tr>
+                <td colSpan={5} className="text-center text-zinc-600">
+                  No audit entries yet.
+                </td>
+              </tr>
             ) : (
               rows.map(({ log, actor }) => (
                 <tr key={log.id}>
-                  <td className="text-zinc-500">{formatDateTime(log.createdAt)}</td>
+                  <td className="text-zinc-500">
+                    {formatDateTime(log.createdAt)}
+                  </td>
                   <td>
-                    <Badge tone={log.action.includes('refund') ? 'red' : log.action.startsWith('auth') ? 'blue' : 'default'}>
+                    <Badge
+                      tone={
+                        log.action.includes('refund')
+                          ? 'red'
+                          : log.action.startsWith('auth')
+                            ? 'blue'
+                            : 'default'
+                      }
+                    >
                       {log.action}
                     </Badge>
                   </td>
                   <td className="text-zinc-400">{actor?.email ?? 'system'}</td>
-                  <td className="max-w-[200px] truncate text-zinc-500">{log.target ?? '—'}</td>
+                  <td className="max-w-[200px] truncate text-zinc-500">
+                    {log.target ?? '—'}
+                  </td>
                   <td className="max-w-[280px] truncate font-mono text-[11px] text-zinc-600">
                     {JSON.stringify(safeJson(log.meta, {})).slice(0, 120)}
                   </td>

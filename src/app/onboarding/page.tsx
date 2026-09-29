@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import OnboardingClient from './OnboardingClient';
 
-export const metadata: Metadata = { title: 'Set up your space' };
+export const metadata: Metadata = { title: 'Configurez votre espace' };
 
 export default async function OnboardingPage() {
   const ctx = await getSession();
