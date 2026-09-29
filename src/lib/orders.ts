@@ -213,6 +213,25 @@ export async function finalizeOrderPaid(orderId: string, input: FinalizeInput): 
   if (order.status === 'PAID') return order; // idempotent
   if (order.status !== 'PENDING') throw new OrderError(`Order not payable (status ${order.status})`);
 
+  // Defense in depth: a Stripe payment may only finalize a LIVE order, and one
+  // Stripe session may never finalize two different orders (replay).
+  if (input.provider === 'stripe') {
+    if (order.mode !== 'LIVE') {
+      throw new OrderError('A Stripe payment cannot finalize a TEST-mode order');
+    }
+    const reference = input.reference?.trim();
+    if (reference) {
+      const clash = await db
+        .select({ orderId: payments.orderId })
+        .from(payments)
+        .where(and(eq(payments.provider, 'stripe'), eq(payments.reference, reference)))
+        .get();
+      if (clash && clash.orderId !== orderId) {
+        throw new OrderError('This Stripe payment already finalized another order');
+      }
+    }
+  }
+
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId)).all();
   const split = await computeOrderSplit(order);
 

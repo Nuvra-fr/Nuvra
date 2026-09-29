@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { stripeEvents } from '@/db/schema';
+import { stripeEvents, orders } from '@/db/schema';
 import { constructWebhookEvent, paymentsMode, getStripeWebhookSecret } from '@/lib/stripe';
+import { verifyCheckoutSessionForOrder } from '@/lib/checkout-verify';
 import { finalizeOrderPaid, refundOrder, OrderError } from '@/lib/orders';
 import { activatePlan, cancelPlan, markPaymentFailed } from '@/lib/billing';
 import { audit } from '@/lib/audit';
@@ -58,12 +59,25 @@ export async function POST(req: Request): Promise<Response> {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const orderId = session.metadata?.orderId;
-        if (orderId && session.payment_status === 'paid') {
-          await finalizeOrderPaid(orderId, {
-            provider: 'stripe',
-            reference: session.id,
-            raw: { payment_status: session.payment_status, mode: session.mode },
-          });
+        if (orderId) {
+          const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
+          if (order) {
+            const verdict = verifyCheckoutSessionForOrder(session, order);
+            if (verdict.ok) {
+              await finalizeOrderPaid(orderId, {
+                provider: 'stripe',
+                reference: session.id,
+                raw: { payment_status: session.payment_status, mode: session.mode },
+              });
+            } else if (order.status !== 'PAID') {
+              // A paid session that does not match its order is never finalized —
+              // recorded for review instead (should not happen in normal flows).
+              await audit('payment.claim_rejected', {
+                target: orderId,
+                meta: { sessionId: session.id, reason: verdict.reason, detail: verdict.detail, source: 'webhook' },
+              });
+            }
+          }
         }
         if (session.metadata?.kind === 'subscription' && session.metadata?.workspaceId) {
           await activatePlan(session.metadata.workspaceId, session.metadata.plan ?? 'PRO', {

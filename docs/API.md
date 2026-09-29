@@ -23,6 +23,12 @@ Public lead capture from published pages/funnels.
 - Dedupes by email per workspace, status `LEAD`, emits `lead.created` (runs automations).
 - 20/min/IP rate limit. → `201 {ok}` | `400 {error}` | `429`.
 
+### `GET /checkout/success?order=<id>[&session_id=<cs_…>]`
+Public receipt page. With a `session_id`, the session is verified server-side
+(`verifyCheckoutSessionForOrder`: same order, `paid`, matching amount and currency) before the
+order is finalized — a session paid for another order is refused and logged as
+`payment.claim_rejected`. Finalizing is idempotent; the webhook remains the source of truth.
+
 ### `POST /api/stripe/webhook`
 Stripe events (raw body + `stripe-signature`).
 - `400` invalid signature · `503` not configured · `200` processed/duplicate · `500` (Stripe retries).

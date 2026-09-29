@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -81,7 +81,7 @@ function BlockView({
       return (
         <section className={cn('px-6 py-12', d.align === 'center' ? 'mx-auto max-w-3xl text-center' : 'max-w-3xl')}>
           {d.heading ? <h2 className="mb-3 text-2xl font-semibold text-white">{d.heading}</h2> : null}
-          <div className="whitespace-pre-wrap text-leading-relaxed leading-relaxed text-zinc-400">{d.body}</div>
+          <div className="whitespace-pre-wrap leading-relaxed text-zinc-400">{d.body}</div>
         </section>
       );
 
@@ -379,20 +379,33 @@ function BuySection({
   );
 }
 
+/**
+ * Countdown block — counts down the next `days` days, live.
+ *
+ * Server and client both start from the same relative duration, so the first
+ * paint is identical (no hydration mismatch); a 1 s interval then updates it.
+ */
 function Countdown({ days, label }: { days: number; label: string }) {
-  const [now] = useState(() => Date.now());
-  const target = new Date();
-  target.setDate(target.getDate() + days);
-  const diff = Math.max(0, target.getTime() - now);
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
+  const totalMs = Math.max(0, Math.floor(days)) * 86400000;
+  const [remaining, setRemaining] = useState(totalMs);
+
+  useEffect(() => {
+    const target = Date.now() + totalMs;
+    const tick = () => setRemaining(Math.max(0, target - Date.now()));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [totalMs]);
+
+  const d = Math.floor(remaining / 86400000);
+  const h = Math.floor((remaining % 86400000) / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
 
   return (
     <section className="px-6 py-8 text-center">
       <div className="text-xs font-semibold uppercase tracking-wide text-zinc-600">{label}</div>
-      <div className="mt-2 flex justify-center gap-3">
+      <div className="mt-2 flex justify-center gap-3" data-nv-countdown>
         {[
           [d, 'days'],
           [h, 'hrs'],
@@ -405,11 +418,6 @@ function Countdown({ days, label }: { days: number; label: string }) {
           </div>
         ))}
       </div>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `setInterval(()=>{document.querySelectorAll('[data-nv-tick]').forEach(e=>e.textContent=String(Date.now()))},1000)`,
-        }}
-      />
     </section>
   );
 }

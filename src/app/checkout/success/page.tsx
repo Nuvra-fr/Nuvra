@@ -10,6 +10,8 @@ import { freeCommissionBps } from '@/lib/config';
 import { Logo } from '@/components/auth';
 import { Badge, StatusBadge, InlineAlert } from '@/components/ui';
 import { getSession } from '@/lib/auth';
+import { audit } from '@/lib/audit';
+import { verifyCheckoutSessionForOrder } from '@/lib/checkout-verify';
 
 export const metadata: Metadata = { title: 'Order confirmed' };
 
@@ -25,18 +27,27 @@ export default async function CheckoutSuccessPage({
   if (!order) notFound();
 
   // If Stripe returned here with a session, verify + finalize server-side (idempotent).
-  if (sp.session_id && order.status !== 'PAID') {
+  // The session is only allowed to finalize THIS order, for the exact amount the
+  // order asks for — otherwise a `cs_…` id paid for a cheap order could be
+  // replayed here against an expensive pending one.
+  if (sp.session_id && order.status === 'PENDING') {
     try {
       const { getStripe } = await import('@/lib/stripe');
       const stripe = getStripe();
       if (stripe) {
         const session = await stripe.checkout.sessions.retrieve(sp.session_id);
-        if (session.payment_status === 'paid') {
+        const verdict = verifyCheckoutSessionForOrder(session, order);
+        if (verdict.ok) {
           const { finalizeOrderPaid } = await import('@/lib/orders');
           await finalizeOrderPaid(order.id, {
             provider: 'stripe',
             reference: session.id,
             raw: { payment_status: session.payment_status },
+          });
+        } else {
+          await audit('payment.claim_rejected', {
+            target: order.id,
+            meta: { sessionId: sp.session_id, reason: verdict.reason, detail: verdict.detail },
           });
         }
       }

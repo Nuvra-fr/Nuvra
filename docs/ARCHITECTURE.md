@@ -41,6 +41,8 @@ docs/                  This documentation
 ```
 checkout action ─► createOrder (PENDING)
                      │
+                     ├─ verifyCheckoutSessionForOrder (src/lib/checkout-verify.ts):
+                     │    session.metadata.orderId === order.id, paid, amount + currency equal
 Stripe webhook ───────┼─► finalizeOrderPaid (idempotent)
 test-mode confirm ────┘        │
                                ├─ computeOrderSplit (plan/config driven — never frontend)

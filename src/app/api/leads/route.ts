@@ -35,6 +35,10 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
   if (!workspaceId) return jsonError('Unknown workspace.', 404);
+  // Validate before inserting: an unknown workspace used to surface as an
+  // unhandled foreign-key error (500) instead of a clean 404.
+  const workspace = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.id, workspaceId)).get();
+  if (!workspace) return jsonError('Unknown workspace.', 404);
 
   const email = parsed.data.email.toLowerCase().trim();
   let contact = await db

@@ -6,8 +6,8 @@ import { cookies } from 'next/headers';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { courses, orders, products, resellerProfiles, workspaces } from '@/db/schema';
-import { requireUser, getSession } from '@/lib/auth';
+import { courses, orderItems, orders, products, resellerProfiles, workspaces } from '@/db/schema';
+import { getSession } from '@/lib/auth';
 import { createOrder, finalizeOrderPaid, OrderError } from '@/lib/orders';
 import { paymentsMode, createPaymentCheckoutSession } from '@/lib/stripe';
 import { academyPriceCents, getConfig } from '@/lib/config';
@@ -55,7 +55,8 @@ export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInf
   if (!type || !id) return null;
   if (type === 'course') {
     const c = await db.select().from(courses).where(eq(courses.id, id)).get();
-    if (!c || c.status === 'ARCHIVED') return null;
+    // Only PUBLISHED items are sellable: DRAFT/REVIEW/ARCHIVED are not for sale.
+    if (!c || c.status !== 'PUBLISHED') return null;
     return {
       kind: 'course',
       id: c.id,
@@ -67,7 +68,7 @@ export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInf
   }
   if (type === 'product') {
     const p = await db.select().from(products).where(eq(products.id, id)).get();
-    if (!p || p.status === 'ARCHIVED') return null;
+    if (!p || p.status !== 'PUBLISHED') return null;
     return {
       kind: 'product',
       id: p.id,
@@ -187,6 +188,20 @@ export async function confirmTestPurchaseAction(orderId: string): Promise<void> 
   const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
   if (!order) throw new Error('Order not found');
   if (order.mode !== 'TEST') throw new Error('Not a test order');
+
+  // Authorization: the order id is not a credential. Course/Academy access is
+  // account-bound, so only the buyer may confirm such an order; guest product
+  // orders (no account required) stay confirmable by whoever holds the link.
+  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId)).all();
+  const requiresAccount =
+    order.kind === 'ACADEMY_SALE' || items.some((i) => i.kind === 'COURSE' || i.kind === 'ACADEMY');
+  if (order.buyerUserId && order.buyerUserId !== ctx?.user.id) {
+    throw new Error('This order belongs to another account');
+  }
+  if (requiresAccount && !order.buyerUserId) {
+    throw new Error('Sign in with the account used for this order to confirm it');
+  }
+
   if (order.status === 'PAID') {
     redirect(`/checkout/success?order=${orderId}`);
     return;
@@ -200,8 +215,9 @@ export async function confirmTestPurchaseAction(orderId: string): Promise<void> 
 export async function enrollFreeAction(
   courseId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const ctx = await getSession();
+  if (!ctx) return { ok: false, error: 'Please sign in to enroll in this course.' };
   try {
-    const ctx = await requireUser();
     const course = await db.select().from(courses).where(eq(courses.id, courseId)).get();
     if (!course || course.status !== 'PUBLISHED') return { ok: false, error: 'Course unavailable' };
     if (course.priceCents > 0) return { ok: false, error: 'This course is not free' };
