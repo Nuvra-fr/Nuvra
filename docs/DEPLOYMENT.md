@@ -52,6 +52,13 @@ Migrations and the first administrator are applied automatically — at build ti
 4. Verify: `https://<your-project>.vercel.app/api/health` →
    `{"ok":true,"db":"ok","database":"turso",…}`, then sign in at `/login` with `ADMIN_EMAIL`.
 
+5. **Automatic deploys — like an app update**: In **Vercel → Settings → Git**, the
+   **Production Branch** is `main`. Every merge to `main` (pull request merged or direct push)
+   triggers a new Production deployment automatically (~2-4 min). `vercel.json` keeps
+   `buildCommand = npm run db:migrate && npm run build`, so migrations run automatically on
+   each deploy — you never need to run them by hand. This is the normal way to update production:
+   open a branch → PR → merge to `main` → Vercel redeploys by itself.
+
 Vercel has no persistent disk, so the build **fails on purpose** if no hosted database is
 configured:
 
@@ -107,7 +114,7 @@ docker run -d --name nuvra -p 3000:3000 -v nuvra-data:/data \
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | first deploy | First administrator + platform workspace, provisioned **only while no admin exists** (an existing account with that email is promoted). Password ≥ 12 chars. Never logged |
 | `CRON_SECRET` | **prod** | `/api/cron/process` refuses to run in production without it |
 | `AUTO_MIGRATE` | no | `false` disables migrations at boot (then run `npm run db:migrate` yourself) |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | for live payments | absent ⇒ labeled TEST mode |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | for live payments | absent ⇒ labeled TEST mode. Exact names have priority, but any `*_STRIPE_SECRET_KEY` / `*_STRIPE_WEBHOOK_SECRET` (e.g. `Nuvra_STRIPE_SECRET_KEY` from Vercel Stripe integration) is auto-detected — same pattern as Turso (`src/lib/stripe.ts` / `src/lib/db.ts`) |
 | `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | for subscriptions | recurring price IDs |
 | `RESEND_API_KEY` | for email delivery | absent ⇒ outbox (rows in `email_logs`, visible in Admin → Emails) |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | optional | AI features |
@@ -133,12 +140,16 @@ or snapshot the volume.
 ## 5 — Stripe
 
 1. Create products/prices → put price IDs in env.
-2. Webhook endpoint: `https://your-domain.com/api/stripe/webhook` with events:
+2. **Secret key**: in Stripe Dashboard → Developers → API keys, copy `sk_test_…` (or `sk_live_…` for production) → set env var **exactly** `STRIPE_SECRET_KEY` in Vercel → Settings → Environment Variables (Production + Preview). The code also auto-detects prefixed names like `Nuvra_STRIPE_SECRET_KEY` injected by Vercel's Stripe integration, but exact name has priority — use the exact name to avoid confusion with an old `sk_live_…`.
+3. Webhook endpoint: `https://your-domain.com/api/stripe/webhook` with events:
    `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`,
    `customer.subscription.updated`, `customer.subscription.deleted`, `charge.refunded`.
-3. Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
-4. Until then the app runs in TEST mode — checkout creates clearly-labeled test orders that
-   exercise the **exact same** split/ledger/enrollment pipeline.
+4. Put the signing secret (`whsec_…`) in **exactly** `STRIPE_WEBHOOK_SECRET` (prefixed `*_STRIPE_WEBHOOK_SECRET` also works).
+5. Redeploy after each env change (Deployments → ⋯ → Redeploy). Check `/api/health` → `"payments":"stripe"`.
+6. Until keys are set the app runs in TEST mode — checkout creates clearly-labeled test orders that
+   exercise the **exact same** split/ledger/enrollment pipeline. Card payments are forced via
+   `payment_method_types: ['card']` in both `createPaymentCheckoutSession` and
+   `createSubscriptionCheckoutSession` (`src/lib/stripe.ts`) to avoid « No valid payment method for this session ».
 
 ## 6 — Cron
 

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { stripeEvents } from '@/db/schema';
-import { constructWebhookEvent, paymentsMode } from '@/lib/stripe';
+import { constructWebhookEvent, paymentsMode, getStripeWebhookSecret } from '@/lib/stripe';
 import { finalizeOrderPaid, refundOrder, OrderError } from '@/lib/orders';
 import { activatePlan, cancelPlan, markPaymentFailed } from '@/lib/billing';
 import { audit } from '@/lib/audit';
@@ -11,6 +11,18 @@ export async function POST(req: Request): Promise<Response> {
   if (paymentsMode() !== 'stripe') {
     return Response.json(
       { ok: false, error: 'Stripe is not configured (STRIPE_SECRET_KEY missing)' },
+      { status: 503 },
+    );
+  }
+
+  // Message explicite si le secret webhook manque (signature reste obligatoire après)
+  if (!getStripeWebhookSecret()) {
+    return Response.json(
+      {
+        ok: false,
+        error:
+          'STRIPE_WEBHOOK_SECRET is not configured — add STRIPE_WEBHOOK_SECRET (or a prefixed *_STRIPE_WEBHOOK_SECRET) in Vercel → Settings → Environment Variables with the signing secret from Stripe Dashboard → Developers → Webhooks, then Redeploy',
+      },
       { status: 503 },
     );
   }

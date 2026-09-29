@@ -76,6 +76,65 @@ C'est tout. Les déploiements suivants appliquent automatiquement les nouvelles 
 
 ---
 
+## Étape 4 — Activer les paiements (Stripe) — mode TEST recommandé
+
+Sans Stripe, Nuvra tourne en **mode TEST** : aucun argent réel ne bouge (c'est normal au début).
+
+Quand vous voulez de vrais paiements (même en test avec une carte `4242 4242 4242 4242`), faites ceci :
+
+### 4.1 — Mettre la clé secrète Stripe
+
+1. Allez sur **https://dashboard.stripe.com/test/apikeys** (mode TEST en haut à gauche).
+2. Copiez la **Secret key** qui commence par `sk_test_…` (ne copiez JAMAIS une `sk_live_…` si vous voulez rester en test).
+3. Ouvrez **Vercel → votre projet nuvra-aj2f → Settings → Environment Variables**.
+4. Cliquez **Add New**.
+   - **Name** : tapez EXACTEMENT `STRIPE_SECRET_KEY` (en majuscules, sans préfixe). C'est important : le code accepte aussi `Nuvra_STRIPE_SECRET_KEY` injecté par l'intégration Vercel, mais la priorité va au nom exact, donc utilisez le nom exact pour éviter les confusions.
+   - **Value** : collez `sk_test_…`
+   - Cochez **Production** + **Preview** + **Development** (ou au moins Production).
+   - **Save**.
+5. Allez dans **Deployments** → sur le dernier déploiement → **⋯ → Redeploy** → cochez **Use existing Build Cache** OFF si vous avez un doute → **Redeploy**.
+6. Attendez 2-4 minutes. Puis ouvrez `https://nuvra-aj2f.vercel.app/api/health` : vous devez voir `"payments":"stripe"` (au lieu de `"test"`).
+
+> Si `/api/health` dit encore `"test"`, c'est que la variable n'est pas présente en Production. Vérifiez bien le nom exact `STRIPE_SECRET_KEY`.
+
+### 4.2 — Créer le webhook Stripe
+
+Le webhook dit à Nuvra « le paiement est réussi ».
+
+1. Dans Stripe Dashboard : **Developers → Webhooks** (ou https://dashboard.stripe.com/test/webhooks).
+2. **Add endpoint** (ou *Add a destination*).
+3. **Endpoint URL** : collez EXACTEMENT `https://nuvra-aj2f.vercel.app/api/stripe/webhook`
+4. **Events to listen** : ajoutez ces 6 événements :
+   - `checkout.session.completed`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `charge.refunded`
+5. **Add endpoint**.
+6. Ouvrez le webhook que vous venez de créer → **Reveal signing secret** → copiez la valeur qui commence par `whsec_…`.
+7. Retournez dans **Vercel → Settings → Environment Variables → Add New** :
+   - **Name** : EXACTEMENT `STRIPE_WEBHOOK_SECRET`
+   - **Value** : `whsec_…`
+   - Cochez **Production** + **Preview** + **Development** → **Save**.
+8. **Deployments → ⋯ → Redeploy** à nouveau.
+9. Test : dans Stripe Dashboard → votre webhook → **Send test webhook** → choisissez `checkout.session.completed` → vous devez recevoir **200 OK**. Si vous recevez 503 avec « STRIPE_WEBHOOK_SECRET is not configured », c'est que la variable n'est pas encore déployée.
+
+### 4.3 — Tester un paiement
+
+1. Sur votre site, ajoutez un cours au panier → Checkout.
+2. Utilisez la carte de test Stripe : `4242 4242 4242 4242`, date future, CVC `123`.
+3. Si vous voyez l'erreur « Aucun mode de paiement valide pour cette session », c'est l'ancien bug : il est corrigé depuis que `payment_method_types: ['card']` a été ajouté dans `src/lib/stripe.ts` (2 endroits).
+4. Après paiement, la commande doit passer en **PAID** dans `/admin`.
+
+### Notes
+
+- **Ancienne clé live expirée** : si Stripe répond « Clé API expirée fournie : sk_live_… », c'est que l'ancien déploiement utilisait encore une `sk_live_…`. Supprimez toute variable `*_STRIPE_SECRET_KEY` contenant une `sk_live_…`, gardez seulement `STRIPE_SECRET_KEY = sk_test_…`, puis Redeploy.
+- **Devise** : le site est en USD par défaut. Ne passez en EUR que si vous le demandez explicitement.
+- **Compatibilité préfixée** : comme pour Turso (`STORAGE_TURSO_DATABASE_URL`), le code détecte automatiquement toute variable se terminant par `_STRIPE_SECRET_KEY` ou `_STRIPE_WEBHOOK_SECRET` (ex: `Nuvra_STRIPE_SECRET_KEY`). Mais utilisez toujours le nom exact sans préfixe pour éviter les doublons.
+
+---
+
 ## Dépannage
 
 | Symptôme | Cause probable | Solution |
