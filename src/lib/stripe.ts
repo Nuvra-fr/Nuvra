@@ -8,8 +8,38 @@ import Stripe from 'stripe';
 
 let stripeClient: Stripe | null = null;
 
+function readEnv(key: string): string | undefined {
+  const v = process.env[key]?.trim();
+  return v ? v : undefined;
+}
+
+/**
+ * Résolution compatible Vercel Marketplace :
+ * - priorité au nom exact (STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET)
+ * - sinon, accepte tout nom se terminant par _STRIPE_SECRET_KEY / _STRIPE_WEBHOOK_SECRET
+ *   ex: Nuvra_STRIPE_SECRET_KEY (comme le fait src/lib/db.ts pour Turso)
+ */
+function resolveStripeEnv(exactKey: string, suffix: string): string | undefined {
+  const exact = readEnv(exactKey);
+  if (exact) return exact;
+  for (const k of Object.keys(process.env)) {
+    if (!k.endsWith(suffix)) continue;
+    const v = readEnv(k);
+    if (v) return v;
+  }
+  return undefined;
+}
+
+export function getStripeSecretKey(): string | undefined {
+  return resolveStripeEnv('STRIPE_SECRET_KEY', '_STRIPE_SECRET_KEY');
+}
+
+export function getStripeWebhookSecret(): string | undefined {
+  return resolveStripeEnv('STRIPE_WEBHOOK_SECRET', '_STRIPE_WEBHOOK_SECRET');
+}
+
 export function paymentsMode(): 'stripe' | 'test' {
-  return process.env.STRIPE_SECRET_KEY?.trim() ? 'stripe' : 'test';
+  return getStripeSecretKey() ? 'stripe' : 'test';
 }
 
 export function stripeConfigured(): boolean {
@@ -19,7 +49,9 @@ export function stripeConfigured(): boolean {
 export function getStripe(): Stripe | null {
   if (!stripeConfigured()) return null;
   if (!stripeClient) {
-    stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    const secret = getStripeSecretKey();
+    if (!secret) return null;
+    stripeClient = new Stripe(secret, {
       apiVersion: undefined, // use account default
       appInfo: { name: 'Nuvra', version: '0.1.0' },
     });
@@ -28,10 +60,14 @@ export function getStripe(): Stripe | null {
 }
 
 export function constructWebhookEvent(payload: Buffer, signature: string): Stripe.Event {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+  const secret = getStripeWebhookSecret();
+  if (!secret) {
+    throw new Error(
+      'STRIPE_WEBHOOK_SECRET is not configured — add STRIPE_WEBHOOK_SECRET (or a prefixed *_STRIPE_WEBHOOK_SECRET) in Vercel Environment Variables and redeploy',
+    );
+  }
   const stripe = getStripe();
-  if (!stripe) throw new Error('Stripe is not configured');
+  if (!stripe) throw new Error('Stripe is not configured (set STRIPE_SECRET_KEY)');
   return stripe.webhooks.constructEvent(payload, signature, secret);
 }
 
@@ -48,6 +84,7 @@ export async function createPaymentCheckoutSession(params: {
   if (!stripe) throw new Error('Stripe is not configured (set STRIPE_SECRET_KEY)');
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
+    payment_method_types: ['card'],
     customer_email: params.customerEmail,
     line_items: [
       {
@@ -79,6 +116,7 @@ export async function createSubscriptionCheckoutSession(params: {
   if (!stripe) throw new Error('Stripe is not configured (set STRIPE_SECRET_KEY)');
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
+    payment_method_types: ['card'],
     customer_email: params.customerEmail,
     line_items: [
       {
