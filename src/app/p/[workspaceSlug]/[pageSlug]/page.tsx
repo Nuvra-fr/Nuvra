@@ -15,7 +15,11 @@ interface Props {
 }
 
 async function load(workspaceSlug: string, pageSlug: string) {
-  const ws = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug)).get();
+  const ws = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.slug, workspaceSlug))
+    .get();
   if (!ws) return null;
   const page = await db
     .select()
@@ -29,7 +33,8 @@ async function load(workspaceSlug: string, pageSlug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { workspaceSlug, pageSlug } = await params;
   const found = await load(workspaceSlug, pageSlug);
-  if (!found || found.page.status !== 'PUBLISHED') return { title: 'Page not found' };
+  if (!found || found.page.status !== 'PUBLISHED')
+    return { title: 'Page introuvable' };
   return {
     title: found.page.seoTitle || found.page.title,
     description: found.page.seoDescription || undefined,
@@ -49,7 +54,8 @@ export default async function PublicPage({ params, searchParams }: Props) {
   const visitorId =
     typeof sp.ref === 'string' && sp.ref.length < 80 ? sp.ref : null;
   try {
-    await db.insert(pageViews)
+    await db
+      .insert(pageViews)
       .values({
         pageId: page.id,
         visitorId,
@@ -57,7 +63,11 @@ export default async function PublicPage({ params, searchParams }: Props) {
         path: `/p/${workspaceSlug}/${pageSlug}`,
       })
       .run();
-    await db.update(pages).set({ views: sql`${pages.views} + 1` }).where(eq(pages.id, page.id)).run();
+    await db
+      .update(pages)
+      .set({ views: sql`${pages.views} + 1` })
+      .where(eq(pages.id, page.id))
+      .run();
   } catch {
     // tracking must never break rendering
   }
@@ -66,10 +76,19 @@ export default async function PublicPage({ params, searchParams }: Props) {
   if (typeof sp.aff === 'string' && sp.aff.length <= 64) {
     try {
       const { affiliates, affiliateClicks } = await import('@/db/schema');
-      const aff = await db.select().from(affiliates).where(eq(affiliates.code, sp.aff)).get();
+      const aff = await db
+        .select()
+        .from(affiliates)
+        .where(eq(affiliates.code, sp.aff))
+        .get();
       if (aff) {
-        await db.insert(affiliateClicks)
-          .values({ affiliateId: aff.id, visitorId, path: `/p/${workspaceSlug}/${pageSlug}` })
+        await db
+          .insert(affiliateClicks)
+          .values({
+            affiliateId: aff.id,
+            visitorId,
+            path: `/p/${workspaceSlug}/${pageSlug}`,
+          })
           .run();
       }
     } catch {
@@ -81,9 +100,15 @@ export default async function PublicPage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-ink-950">
-      <PageRenderer blocks={blocks} workspaceId={ws.id} basePath={`/p/${workspaceSlug}/${pageSlug}`} />
+      <PageRenderer
+        blocks={blocks}
+        workspaceId={ws.id}
+        basePath={`/p/${workspaceSlug}/${pageSlug}`}
+      />
       <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-zinc-700">
-        Powered by <BrandMark height={13} className="mx-1 inline-block align-[-2px]" /><span className="font-semibold text-zinc-500">Nuvra</span> · {ws.name}
+        Powered by{' '}
+        <BrandMark height={13} className="mx-1 inline-block align-[-2px]" />
+        <span className="font-semibold text-zinc-500">Nuvra</span> · {ws.name}
       </footer>
     </div>
   );

@@ -14,9 +14,28 @@ export default function ContactDrawer({
   activities,
   orders,
 }: {
-  contact: { id: string; email: string; name: string; status: string; tags: string[]; notes: string; phone: string };
-  activities: { id: string; type: string; summary: string | null; createdAt: string }[];
-  orders: { id: string; number: string; totalCents: number; status: string; mode: string }[];
+  contact: {
+    id: string;
+    email: string;
+    name: string;
+    status: string;
+    tags: string[];
+    notes: string;
+    phone: string;
+  };
+  activities: {
+    id: string;
+    type: string;
+    summary: string | null;
+    createdAt: string;
+  }[];
+  orders: {
+    id: string;
+    number: string;
+    totalCents: number;
+    status: string;
+    mode: string;
+  }[];
 }) {
   const router = useRouter();
   const [form, setForm] = useState(contact);
@@ -53,51 +72,86 @@ export default function ContactDrawer({
       <aside className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-ink-900 p-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase tracking-wide text-zinc-600">Contact</div>
-            <h2 className="text-lg font-semibold text-zinc-100">{form.name || form.email}</h2>
+            <div className="text-xs uppercase tracking-wide text-zinc-600">
+              Contact
+            </div>
+            <h2 className="text-lg font-semibold text-zinc-100">
+              {form.name || form.email}
+            </h2>
           </div>
-          <button className="btn-ghost !p-1.5" onClick={close} aria-label="Close">
+          <button
+            className="btn-ghost !p-1.5"
+            onClick={close}
+            aria-label="Fermer"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="mt-5 space-y-3.5">
+        <div className="mt-6 space-y-3.5">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Name</label>
-              <input className="input !py-2 text-sm" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <label className="label">Nom</label>
+              <input
+                className="input !py-2 text-sm"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </div>
             <div>
-              <label className="label">Status</label>
-              <select className="input !py-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                <option value="LEAD">Lead</option>
-                <option value="CUSTOMER">Customer</option>
-                <option value="STUDENT">Student</option>
-                <option value="UNSUBSCRIBED">Unsubscribed</option>
+              <label className="label">Statut</label>
+              <select
+                className="input !py-2 text-sm"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                <option value="LEAD">Prospect</option>
+                <option value="CUSTOMER">Client</option>
+                <option value="STUDENT">Élève</option>
+                <option value="UNSUBSCRIBED">Désinscrit</option>
               </select>
             </div>
           </div>
           <div>
             <label className="label">Email</label>
-            <input className="input !py-2 text-sm" value={form.email} readOnly />
+            <input
+              className="input !py-2 text-sm"
+              value={form.email}
+              readOnly
+            />
           </div>
           <div>
             <label className="label">Phone</label>
-            <input className="input !py-2 text-sm" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <input
+              className="input !py-2 text-sm"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
           </div>
           <div>
-            <label className="label">Tags (comma separated)</label>
+            <label className="label">Tags (séparés par des virgules)</label>
             <input
               className="input !py-2 text-sm"
               value={form.tags.join(', ')}
               onChange={(e) =>
-                setForm({ ...form, tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })
+                setForm({
+                  ...form,
+                  tags: e.target.value
+                    .split(',')
+                    .map((t) => t.trim())
+                    .filter(Boolean),
+                })
               }
             />
           </div>
           <div>
             <label className="label">Notes</label>
-            <textarea className="input !py-2 text-sm" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <textarea
+              className="input !py-2 text-sm"
+              rows={3}
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
           </div>
         </div>
 
@@ -108,7 +162,7 @@ export default function ContactDrawer({
             className="btn-danger !py-2 !text-xs"
             disabled={pending}
             onClick={() => {
-              if (!confirm('Delete this contact?')) return;
+              if (!confirm('Supprimer ce contact ?')) return;
               startTransition(async () => {
                 const res = await deleteContactAction(contact.id);
                 if (!res.ok) setError(res.error);
@@ -116,26 +170,37 @@ export default function ContactDrawer({
               });
             }}
           >
-            <Trash2 className="h-3.5 w-3.5" /> Delete
+            <Trash2 className="h-3.5 w-3.5" /> Supprimer
           </button>
           <div className="flex items-center gap-3">
-            {saved ? <span className="text-xs text-emerald-400">Saved ✓</span> : null}
-            <button className="btn-primary !py-2" onClick={save} disabled={pending}>
-              {pending ? 'Saving…' : 'Save'}
+            {saved ? (
+              <span className="text-xs text-emerald-400">Enregistré ✓</span>
+            ) : null}
+            <button
+              className="btn-primary !py-2"
+              onClick={save}
+              disabled={pending}
+            >
+              {pending ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           </div>
         </div>
 
         <div className="mt-6 border-t border-white/[0.07] pt-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Orders</h3>
+          <h3 className="eyebrow">Commandes</h3>
           {orders.length === 0 ? (
-            <p className="mt-2 text-xs text-zinc-600">No orders.</p>
+            <p className="mt-2 text-xs text-zinc-600">Aucune commande.</p>
           ) : (
             <div className="mt-2 space-y-2">
               {orders.map((o) => (
-                <div key={o.id} className="flex items-center justify-between rounded-lg border border-white/[0.07] px-3 py-2 text-xs">
+                <div
+                  key={o.id}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.07] px-3 py-2 text-xs"
+                >
                   <span className="text-zinc-300">{o.number}</span>
-                  <span className="tabular-nums text-zinc-400">{formatCents(o.totalCents)}</span>
+                  <span className="tabular-nums text-zinc-400">
+                    {formatCents(o.totalCents)}
+                  </span>
                   <StatusBadge status={o.status} />
                 </div>
               ))}
@@ -144,18 +209,29 @@ export default function ContactDrawer({
         </div>
 
         <div className="mt-6 border-t border-white/[0.07] pt-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Activity</h3>
+          <h3 className="eyebrow">Activity</h3>
           <div className="mt-2 space-y-2">
             {activities.length === 0 ? (
-              <p className="text-xs text-zinc-600">No activity yet.</p>
+              <p className="text-xs text-zinc-600">
+                Aucune activité pour l’instant.
+              </p>
             ) : (
               activities.map((a) => (
-                <div key={a.id} className="rounded-lg border border-white/[0.06] px-3 py-2">
+                <div
+                  key={a.id}
+                  className="rounded-lg border border-white/[0.06] px-3 py-2"
+                >
                   <div className="flex items-center justify-between">
                     <Badge>{a.type}</Badge>
-                    <span className="text-[10px] text-zinc-600">{formatDateTime(a.createdAt)}</span>
+                    <span className="text-[10px] text-zinc-600">
+                      {formatDateTime(a.createdAt)}
+                    </span>
                   </div>
-                  {a.summary ? <div className="mt-1 text-xs text-zinc-500">{a.summary}</div> : null}
+                  {a.summary ? (
+                    <div className="mt-1 text-xs text-zinc-500">
+                      {a.summary}
+                    </div>
+                  ) : null}
                 </div>
               ))
             )}

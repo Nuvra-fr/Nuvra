@@ -22,75 +22,75 @@ import { academyPriceCents, proPriceCents } from '@/lib/config';
 const FEATURES = [
   {
     icon: Layers,
-    title: 'Pages & funnels',
-    body: 'Drag-and-drop pages, complete funnels with step-by-step conversion tracking, A/B-ready structures.',
+    title: 'Pages & tunnels',
+    body: 'Pages et tunnels à assembler par glisser-déposer, avec suivi des conversions étape par étape.',
   },
   {
     icon: Store,
-    title: 'Digital store',
-    body: 'Sell products, courses and services with a built-in checkout, coupons and order management.',
+    title: 'Boutique digitale',
+    body: 'Produits, services et formations avec un checkout intégré.',
   },
   {
     icon: GraduationCap,
-    title: 'Courses & LMS',
-    body: 'Modules, lessons, videos, quizzes, progress tracking and certificates — your own academy.',
+    title: 'Formations & LMS',
+    body: 'Modules, leçons, quiz, progression et certificats.',
   },
   {
     icon: Users,
     title: 'CRM',
-    body: 'Contacts, leads, customers and students in one place with tags, segments and full activity history.',
+    body: 'Contacts, prospects et élèves au même endroit, avec tout l’historique.',
   },
   {
     icon: Mail,
     title: 'Email marketing',
-    body: 'Campaigns, sequences and a real outbox. Purchase and lifecycle automations out of the box.',
+    body: 'Campagnes, séquences et boîte d’envoi réelle, prêtes à partir.',
   },
   {
     icon: Zap,
-    title: 'Automations',
-    body: 'Visual workflow triggers: signup, purchase, course progress, subscription events — running 24/7.',
+    title: 'Automatisations',
+    body: 'Déclencheurs sur inscription, achat et progression — actifs 24 h/24.',
   },
   {
     icon: BarChart3,
-    title: 'Analytics',
-    body: 'Revenue, conversions, page views, funnel performance — computed from your real data.',
+    title: 'Statistiques',
+    body: 'Chiffre d’affaires, conversions et performance des tunnels, sur vos vraies données.',
   },
   {
     icon: Bot,
     title: 'Nuvra AI',
-    body: 'Funnel builder, course planner, copywriter and analytics assistant, with plan-based credit quotas.',
+    body: 'Générateur de tunnels, planificateur de formation, rédacteur et assistant d’analyse.',
   },
   {
     icon: Shield,
-    title: 'Own your economics',
-    body: 'Transparent platform fees, a real financial ledger and payouts you can audit at any time.',
+    title: 'Maîtrisez vos finances',
+    body: 'Un vrai grand livre, des frais transparents et des versements vérifiables.',
   },
 ];
 
 const FAQ = [
   {
-    q: 'Is the Nuvra platform really free?',
-    a: 'Yes. Creating an account, your dashboard, pages, funnels, products, courses, CRM and core tools is free — no credit card required. Nuvra earns when you earn: creators on the free plan pay a 10 % platform commission on sales of their own products.',
+    q: 'La plateforme Nuvra est-elle vraiment gratuite ?',
+    a: 'Oui. Compte, tableau de bord, pages, tunnels, produits, formations et CRM sont gratuits — sans carte bancaire. En gratuit, Nuvra prend 10 % de commission sur vos propres ventes ; Pro la supprime.',
   },
   {
-    q: 'What is Nuvra Academy?',
-    a: 'Nuvra Academy is our flagship paid training program covering business design, offers, funnels, copywriting, acquisition, email, scaling and the Nuvra toolset. Purchasing it also opens the optional reseller program (90 % / 10 % split on attributed sales).',
+    q: 'Qu’est-ce que l’Académie Nuvra ?',
+    a: 'Le programme payant de référence : business design, offre, tunnels, copywriting, acquisition, email et passage à l’échelle. L’achat ouvre aussi le programme revendeur, en option.',
   },
   {
-    q: 'How does the reseller program work?',
-    a: 'After buying Nuvra Academy and activating the program, you get a personal referral link, a reseller dashboard, tracking and payouts. Sales attributed to you are split 90 % to you, 10 % to Nuvra — displayed transparently, payment fees shown separately.',
+    q: 'Comment fonctionne le programme revendeur ?',
+    a: 'Vous recevez un lien personnel et un tableau de bord revendeur. Les ventes attribuées se partagent 90 % pour vous, 10 % pour Nuvra — frais de paiement affichés séparément.',
   },
   {
-    q: 'What does Nuvra Pro include?',
-    a: 'Nuvra Pro removes the 10 % platform commission on your own sales (you keep 100 % before payment-processing fees), and adds custom domains, advanced analytics, higher AI quotas, A/B testing, team seats, API access and priority support.',
+    q: 'Que comprend Nuvra Pro ?',
+    a: 'Pro supprime les 10 % de commission sur vos propres ventes et ajoute le domaine personnalisé, les statistiques avancées, plus de crédits IA et l’accès API.',
   },
   {
-    q: 'Can I bring my own domain?',
-    a: 'Yes — on Nuvra Pro you can connect a custom domain such as academy.yoursite.com. Free workspaces get a Nuvra subdomain.',
+    q: 'Puis-je utiliser mon propre domaine ?',
+    a: 'Oui — en Pro, connectez academie.monsite.com. Les espaces gratuits reçoivent un sous-domaine Nuvra.',
   },
   {
-    q: 'Do you lock my data in?',
-    a: 'No. Your customers, courses and content remain exportable. We believe retention should come from value, not hostages.',
+    q: 'Mes données sont-elles bloquées chez vous ?',
+    a: 'Non. Vos contacts, formations et contenus restent exportables — la fidélité doit venir de la valeur, pas de la contrainte.',
   },
 ];
 
@@ -103,17 +103,17 @@ export default async function LandingPage() {
       {/* Nav — floating liquid-glass capsule */}
       <LiquidGlassHeader
         items={[
-          { href: '#platform', label: 'Platform' },
-          { href: '#academy', label: 'Academy' },
-          { href: '/pricing', label: 'Pricing' },
+          { href: '#platform', label: 'Plateforme' },
+          { href: '#academy', label: 'Académie' },
+          { href: '/pricing', label: 'Tarifs' },
           { href: '#faq', label: 'FAQ' },
         ]}
       >
         <Link href="/login" className="btn-ghost hidden text-sm sm:inline-flex">
-          Sign in
+          Connexion
         </Link>
         <Link href="/register" className="btn-primary !py-2 text-sm">
-          Start for free
+          Commencer gratuitement
         </Link>
       </LiquidGlassHeader>
 
@@ -123,27 +123,29 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-6xl px-5 pb-20 pt-24 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-nuvra-500/30 bg-nuvra-500/10 px-3 py-1 text-xs font-medium text-nuvra-200">
             <Sparkles className="h-3.5 w-3.5" />
-            The operating system for digital business
+            Le système d’exploitation de votre activité digitale
           </div>
-          <h1 className="text-5xl font-bold tracking-tight text-white md:text-7xl">NUVRA</h1>
+          <h1 className="text-5xl font-bold tracking-tight text-white md:text-7xl">
+            NUVRA
+          </h1>
           <p className="mt-4 text-xl font-medium text-nuvra-300 md:text-2xl">
-            Create. Sell. Teach. Scale.
+            Créez. Vendez. Enseignez. Développez.
           </p>
           <p className="mx-auto mt-5 max-w-2xl text-base text-zinc-400 md:text-lg">
-            One platform to build your online identity, launch pages and funnels, sell products,
-            teach courses, manage customers and automate growth — without stitching ten tools
-            together.
+            Lancez vos pages et vos tunnels, vendez vos produits, enseignez et
+            automatisez votre croissance — sans brancher dix outils entre eux.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/register" className="btn-primary px-6 py-3 text-base">
-              Start for free <ArrowRight className="h-4 w-4" />
+              Commencer gratuitement <ArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/academy" className="btn-secondary px-6 py-3 text-base">
-              Explore Nuvra Academy
+              Découvrir l’Académie Nuvra
             </Link>
           </div>
           <p className="mt-4 text-xs text-zinc-600">
-            Free forever plan · No credit card · {formatCents(proPrice)}/mo Pro when you outgrow it
+            Plan gratuit à vie · Sans carte bancaire · {formatCents(proPrice)}
+            /mois en Pro quand vous en avez besoin
           </p>
         </div>
       </section>
@@ -151,20 +153,25 @@ export default async function LandingPage() {
       {/* Platform features */}
       <section id="platform" className="mx-auto max-w-6xl px-5 py-16">
         <div className="mb-10 max-w-2xl">
-          <h2 className="text-2xl font-semibold text-zinc-100 md:text-3xl">
-            Everything your digital activity needs — connected
+          <h2 className="text-2xl font-semibold tracking-[-0.02em] text-zinc-100 md:text-3xl">
+            Tout ce dont votre activité a besoin — connecté
           </h2>
-          <p className="mt-3 text-zinc-500">
-            Product → funnel → landing → lead → CRM → email → checkout → payment → enrollment → LMS
-            → analytics → automation. One coherent system, not a stack of disconnected apps.
+          <p className="page-subtitle text-base">
+            Produit, tunnel, prospect, paiement, inscription, statistiques : un
+            seul système au lieu de dix outils.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.title} className="card p-5 transition hover:border-nuvra-500/30">
+            <div
+              key={f.title}
+              className="card p-5 transition hover:border-nuvra-500/30"
+            >
               <f.icon className="mb-3 h-5 w-5 text-nuvra-400" />
               <h3 className="text-sm font-semibold text-zinc-100">{f.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">{f.body}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">
+                {f.body}
+              </p>
             </div>
           ))}
         </div>
@@ -174,68 +181,102 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-6xl px-5 py-16">
         <div className="grid gap-6 md:grid-cols-3">
           <div className="card p-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Free plan</div>
-            <div className="mt-2 text-3xl font-semibold text-zinc-100">Keep 90 %</div>
-            <p className="mt-2 text-sm text-zinc-500">
-              Use Nuvra free. When you sell your own course, the platform fee is 10 % — clearly
-              displayed, never hidden.
+            <div className="eyebrow">Plan gratuit</div>
+            <div className="mt-2 text-3xl font-semibold text-zinc-100">
+              Vous gardez 90 %
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+              Utilisez Nuvra gratuitement. La plateforme ne prend 10 % que
+              lorsque vous vendez — jamais caché.
             </p>
           </div>
           <div className="card card-hover border-nuvra-500/25 p-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-nuvra-400">Nuvra Pro</div>
-            <div className="mt-2 text-3xl font-semibold text-white">Keep 100 %</div>
-            <p className="mt-2 text-sm text-zinc-400">
-              {formatCents(proPrice)}/month removes the platform commission on your own sales — you
-              only keep what payment processing takes (shown separately).
+            <div className="text-xs font-semibold uppercase tracking-wide text-nuvra-400">
+              Nuvra Pro
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-white">
+              Vous gardez 100 %
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              {formatCents(proPrice)}/mois supprime la commission plateforme.
+              Les frais de paiement restent séparés.
             </p>
           </div>
           <div className="card p-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Academy resellers</div>
-            <div className="mt-2 text-3xl font-semibold text-zinc-100">Keep 90 %</div>
-            <p className="mt-2 text-sm text-zinc-500">
-              Sell Nuvra Academy with your personal link. Attributed sales split 90 % to you,
-              10 % to Nuvra — tracked in your reseller dashboard.
+            <div className="eyebrow">Revendeurs Académie</div>
+            <div className="mt-2 text-3xl font-semibold text-zinc-100">
+              Vous gardez 90 %
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+              Vendez l’Académie avec votre lien : 90 % pour vous, 10 % pour
+              Nuvra.
             </p>
           </div>
         </div>
       </section>
 
       {/* Academy */}
-      <section id="academy" className="border-y border-white/[0.06] bg-ink-900/60">
+      <section
+        id="academy"
+        className="border-y border-white/[0.06] bg-ink-900/60"
+      >
         <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2 md:items-center">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-300">
-              <GraduationCap className="h-4 w-4" /> Nuvra Academy
+              <GraduationCap className="h-4 w-4" /> Académie Nuvra
             </div>
             <h2 className="text-2xl font-semibold text-zinc-100 md:text-3xl">
-              The paid program to build and sell — with resale rights
+              Le programme payant pour construire et vendre — avec droits de
+              revente
             </h2>
-            <p className="mt-4 text-zinc-400">
-              15 modules: business design, offer, positioning, funnels, landing pages, copywriting,
-              acquisition, email marketing, automations, course creation, sales, analytics, scaling,
-              the reseller system and advanced Nuvra usage.
+            <p className="mt-4 max-w-md leading-relaxed text-zinc-400">
+              15 modules, du business design au passage à l’échelle — avec le
+              programme revendeur en option.
             </p>
-            <ul className="mt-5 space-y-2 text-sm text-zinc-400">
-              <li className="flex gap-2"><InfinityIcon className="h-4 w-4 text-nuvra-400" /> Lifetime access to your learning space</li>
-              <li className="flex gap-2"><GitBranch className="h-4 w-4 text-nuvra-400" /> Optional reseller program: 90 % / 10 %</li>
-              <li className="flex gap-2"><BarChart3 className="h-4 w-4 text-nuvra-400" /> Reseller dashboard, tracking and payouts</li>
+            <ul className="mt-6 space-y-2 text-sm text-zinc-400">
+              <li className="flex gap-2">
+                <InfinityIcon className="h-4 w-4 text-nuvra-400" /> Accès à vie
+                à votre espace d’apprentissage
+              </li>
+              <li className="flex gap-2">
+                <GitBranch className="h-4 w-4 text-nuvra-400" /> Programme
+                revendeur en option : 90 % / 10 %
+              </li>
+              <li className="flex gap-2">
+                <BarChart3 className="h-4 w-4 text-nuvra-400" /> Tableau de bord
+                revendeur, suivi et versements
+              </li>
             </ul>
             <div className="mt-6 flex items-center gap-3">
               <Link href="/academy" className="btn-primary">
-                Get Nuvra Academy — {formatCents(academyPrice)}
+                Obtenir l’Académie Nuvra — {formatCents(academyPrice)}
               </Link>
             </div>
           </div>
           <div className="card p-6">
-            <div className="text-sm font-semibold text-zinc-200">What you&apos;ll master</div>
+            <div className="section-title">Ce que vous allez maîtriser</div>
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-zinc-400">
               {[
-                'Business digital', 'Offre & positionnement', 'Funnels', 'Landing pages',
-                'Copywriting', 'Acquisition', 'Email marketing', 'Automations',
-                'Création de formation', 'Vente', 'Analytics', 'Scaling',
-                'Reseller system', 'Nuvra avancé', 'Lancement',
+                'Business digital',
+                'Offre & positionnement',
+                'Tunnels',
+                'Pages de vente',
+                'Copywriting',
+                'Acquisition',
+                'Email marketing',
+                'Automatisations',
+                'Création de formation',
+                'Vente',
+                'Statistiques',
+                'Passage à l’échelle',
+                'Système revendeur',
+                'Nuvra avancé',
+                'Lancement',
               ].map((m) => (
-                <div key={m} className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2.5 py-2">
+                <div
+                  key={m}
+                  className="rounded-md border border-white/[0.06] bg-white/[0.03] px-2.5 py-2"
+                >
                   {m}
                 </div>
               ))}
@@ -247,52 +288,68 @@ export default async function LandingPage() {
       {/* Pricing teaser */}
       <section id="pricing" className="mx-auto max-w-6xl px-5 py-16">
         <div className="mb-8 text-center">
-          <h2 className="text-2xl font-semibold text-zinc-100">Simple, honest pricing</h2>
-          <p className="mt-2 text-zinc-500">Start free. Upgrade only when it pays for itself.</p>
+          <h2 className="text-2xl font-semibold text-zinc-100">
+            Des tarifs simples et honnêtes
+          </h2>
+          <p className="mt-2 text-zinc-500">
+            Commencez gratuitement. Passez au payant quand c’est rentable.
+          </p>
         </div>
         <div className="mx-auto grid max-w-4xl gap-5 md:grid-cols-2">
           <div className="card p-6">
-            <div className="text-sm font-semibold text-zinc-300">Free</div>
+            <div className="text-sm font-semibold text-zinc-300">Gratuit</div>
             <div className="mt-1 text-3xl font-semibold text-white">$0</div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-400">
-              <li>· Full platform access</li>
-              <li>· Pages, funnels, courses, CRM, automations</li>
-              <li>· 10 % platform fee on your sales</li>
-              <li>· {formatCents(academyPrice)} Academy (optional)</li>
+              <li>· Accès complet à la plateforme</li>
+              <li>· Pages, tunnels, formations, CRM, automatisations</li>
+              <li>· 10 % de commission sur vos ventes</li>
+              <li>· Académie à {formatCents(academyPrice)} (option)</li>
             </ul>
-            <Link href="/register" className="btn-secondary mt-6 w-full">Start for free</Link>
+            <Link href="/register" className="btn-secondary mt-6 w-full">
+              Commencer gratuitement
+            </Link>
           </div>
           <div className="card card-hover border-nuvra-500/30 p-6">
             <div className="text-sm font-semibold text-nuvra-300">Pro</div>
             <div className="mt-1 text-3xl font-semibold text-white">
-              {formatCents(proPrice)}<span className="text-base font-normal text-zinc-500">/mo</span>
+              {formatCents(proPrice)}
+              <span className="text-base font-normal text-zinc-500">/mois</span>
             </div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-300">
-              <li>· 0 % platform fee on your own sales</li>
-              <li>· Custom domain & white-label touches</li>
-              <li>· Advanced analytics, A/B testing, API</li>
-              <li>· Higher AI quotas & priority support</li>
+              <li>· 0 % de commission sur vos ventes</li>
+              <li>· Domaine personnalisé & marque blanche</li>
+              <li>· Statistiques avancées, tests A/B, API</li>
+              <li>· Plus de crédits IA & support prioritaire</li>
             </ul>
-            <Link href="/register?plan=pro" className="btn-primary mt-6 w-full">Go Pro</Link>
+            <Link href="/register?plan=pro" className="btn-primary mt-6 w-full">
+              Passer en Pro
+            </Link>
           </div>
         </div>
         <div className="mt-6 text-center">
-          <Link href="/pricing" className="text-sm text-nuvra-400 hover:text-nuvra-300">
-            Compare all plans →
+          <Link
+            href="/pricing"
+            className="text-sm text-nuvra-400 hover:text-nuvra-300"
+          >
+            Comparer tous les plans →
           </Link>
         </div>
       </section>
 
       {/* FAQ */}
       <section id="faq" className="mx-auto max-w-3xl px-5 py-16">
-        <h2 className="mb-8 text-center text-2xl font-semibold text-zinc-100">FAQ</h2>
+        <h2 className="mb-8 text-center text-2xl font-semibold text-zinc-100">
+          FAQ
+        </h2>
         <div className="space-y-3">
           {FAQ.map((item) => (
             <details key={item.q} className="card group p-5">
-              <summary className="cursor-pointer list-none text-sm font-semibold text-zinc-200 marker:hidden">
+              <summary className="cursor-pointer list-none section-title marker:hidden">
                 {item.q}
               </summary>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500">{item.a}</p>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+                {item.a}
+              </p>
             </details>
           ))}
         </div>
@@ -302,11 +359,15 @@ export default async function LandingPage() {
       <section className="border-t border-white/[0.06] bg-ink-900/60">
         <div className="mx-auto max-w-4xl px-5 py-16 text-center">
           <h2 className="text-2xl font-semibold text-zinc-100 md:text-3xl">
-            Build the business. Nuvra runs the system.
+            Construisez votre activité. Nuvra s’occupe du système.
           </h2>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/register" className="btn-primary px-6 py-3">Start for free</Link>
-            <Link href="/academy" className="btn-secondary px-6 py-3">Explore Nuvra Academy</Link>
+            <Link href="/register" className="btn-primary px-6 py-3">
+              Commencer gratuitement
+            </Link>
+            <Link href="/academy" className="btn-secondary px-6 py-3">
+              Découvrir l’Académie Nuvra
+            </Link>
           </div>
         </div>
       </section>
@@ -316,11 +377,20 @@ export default async function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-zinc-600 md:flex-row">
           <BrandLogo size="sm" />
           <div className="flex gap-5">
-            <Link href="/pricing" className="hover:text-zinc-400">Pricing</Link>
-            <Link href="/academy" className="hover:text-zinc-400">Academy</Link>
-            <a href="#faq" className="hover:text-zinc-400">FAQ</a>
+            <Link href="/pricing" className="hover:text-zinc-400">
+              Tarifs
+            </Link>
+            <Link href="/academy" className="hover:text-zinc-400">
+              Académie
+            </Link>
+            <a href="#faq" className="hover:text-zinc-400">
+              FAQ
+            </a>
           </div>
-          <div>© {new Date().getFullYear()} Nuvra. Create. Sell. Teach. Scale.</div>
+          <div>
+            © {new Date().getFullYear()} Nuvra. Créez. Vendez. Enseignez.
+            Développez.
+          </div>
         </div>
       </footer>
     </div>

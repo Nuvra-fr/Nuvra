@@ -17,7 +17,12 @@ export default function SendCampaignButton({ id }: { id: string }) {
         className="btn-primary !px-3 !py-1.5 !text-xs"
         disabled={pending}
         onClick={() => {
-          if (!confirm('Send this campaign to the selected segment now?')) return;
+          if (
+            !confirm(
+              'Envoyer cette campagne au segment sélectionné maintenant ?',
+            )
+          )
+            return;
           startTransition(async () => {
             const res = await sendCampaignAction(id);
             if (!res.ok) setError(res.error);
@@ -25,7 +30,7 @@ export default function SendCampaignButton({ id }: { id: string }) {
           });
         }}
       >
-        <Send className="h-3.5 w-3.5" /> {pending ? 'Sending…' : 'Send'}
+        <Send className="h-3.5 w-3.5" /> {pending ? 'Sending…' : 'Envoyer'}
       </button>
       <FormError error={error} />
     </div>

@@ -8,7 +8,7 @@ import { courseModules, courses, lessons, quizzes } from '@/db/schema';
 import { PageHeader, StatusBadge } from '@/components/ui';
 import CurriculumEditor from './CurriculumEditor';
 
-export const metadata: Metadata = { title: 'Curriculum' };
+export const metadata: Metadata = { title: 'Programme' };
 
 export default async function CurriculumPage({
   params,
@@ -17,7 +17,11 @@ export default async function CurriculumPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const course = await db.select().from(courses).where(eq(courses.id, id)).get();
+  const course = await db
+    .select()
+    .from(courses)
+    .where(eq(courses.id, id))
+    .get();
   if (!course || course.workspaceId !== ctx.workspace.id) notFound();
 
   const mods = await db
@@ -27,7 +31,12 @@ export default async function CurriculumPage({
     .orderBy(asc(courseModules.position))
     .all();
 
-  const lessonRows = await db.select().from(lessons).where(eq(lessons.courseId, id)).orderBy(asc(lessons.position)).all();
+  const lessonRows = await db
+    .select()
+    .from(lessons)
+    .where(eq(lessons.courseId, id))
+    .orderBy(asc(lessons.position))
+    .all();
   const quizRows = await db.select().from(quizzes).all();
 
   const data = mods.map((m) => ({
@@ -49,17 +58,25 @@ export default async function CurriculumPage({
     <div>
       <PageHeader
         title={course.title}
-        description="Curriculum — modules and lessons. Learners progress through them in order."
+        description="Programme — modules et leçons. Les apprenants avancent dans l’ordre."
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge status={course.status} />
             <Link href={`/dashboard/courses/${id}`} className="btn-secondary">
-              Course settings
+              Paramètres de la formation
             </Link>
           </div>
         }
       />
-      <CurriculumEditor courseId={id} modules={data} orphanLessons={orphans.map((l) => ({ id: l.id, title: l.title, type: l.type }))} />
+      <CurriculumEditor
+        courseId={id}
+        modules={data}
+        orphanLessons={orphans.map((l) => ({
+          id: l.id,
+          title: l.title,
+          type: l.type,
+        }))}
+      />
     </div>
   );
 }

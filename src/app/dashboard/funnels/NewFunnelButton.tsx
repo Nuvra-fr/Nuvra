@@ -30,32 +30,43 @@ export default function NewFunnelButton() {
   return (
     <>
       <button className="btn-primary" onClick={() => setOpen(true)}>
-        <Plus className="h-4 w-4" /> New funnel
+        <Plus className="h-4 w-4" /> Nouveau tunnel
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="absolute inset-0" onClick={() => setOpen(false)} />
           <div className="relative w-full max-w-md rounded-xl border border-white/10 bg-ink-850 p-6 shadow-card">
-            <h2 className="text-base font-semibold text-zinc-100">Create a funnel</h2>
+            <h2 className="text-base font-semibold text-zinc-100">
+              Créer un tunnel
+            </h2>
             <p className="mt-1 text-xs text-zinc-500">
-              Nuvra creates a ready-made structure: Landing → Sales → Checkout → Thank you.
+              Nuvra crée une structure prête à l&apos;emploi : Page de vente →
+              Vente → Paiement → Remerciement.
             </p>
             <div className="mt-4">
-              <label className="label" htmlFor="fn-name">Funnel name</label>
+              <label className="label" htmlFor="fn-name">
+                Nom du tunnel
+              </label>
               <input
                 id="fn-name"
                 className="input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Course launch"
+                placeholder="Lancement de formation"
                 autoFocus
               />
             </div>
             <FormError error={error} />
-            <div className="mt-5 flex justify-end gap-2">
-              <button className="btn-ghost" onClick={() => setOpen(false)}>Cancel</button>
-              <button className="btn-primary" onClick={submit} disabled={pending || name.trim().length < 2}>
-                {pending ? 'Creating…' : 'Create funnel'}
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setOpen(false)}>
+                Annuler
+              </button>
+              <button
+                className="btn-primary"
+                onClick={submit}
+                disabled={pending || name.trim().length < 2}
+              >
+                {pending ? 'Creating…' : 'Créer le tunnel'}
               </button>
             </div>
           </div>

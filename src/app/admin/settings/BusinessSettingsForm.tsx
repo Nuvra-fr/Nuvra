@@ -6,7 +6,11 @@ import { adminSaveBusinessSettingsAction } from '@/server/actions/admin';
 import { FormError } from '@/components/auth';
 import { Card } from '@/components/ui';
 
-export default function BusinessSettingsForm({ initial }: { initial: Record<string, number> }) {
+export default function BusinessSettingsForm({
+  initial,
+}: {
+  initial: Record<string, number>;
+}) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
   const [error, setError] = useState<string | null>(null);
@@ -44,19 +48,22 @@ export default function BusinessSettingsForm({ initial }: { initial: Record<stri
   }
 
   const fields: { key: string; label: string; step?: string }[] = [
-    { key: 'academyPrice', label: 'Academy price (cents)' },
-    { key: 'proPrice', label: 'Pro price (cents)' },
-    { key: 'businessPrice', label: 'Business price (cents)' },
-    { key: 'freeCommissionBps', label: 'Free plan commission (bps — 1000 = 10 %)' },
-    { key: 'resellerBps', label: 'Reseller share (bps — 9000 = 90 %)' },
-    { key: 'payoutHoldDays', label: 'Payout hold (days)' },
-    { key: 'aiFreeCredits', label: 'AI credits — Free / month' },
-    { key: 'aiProCredits', label: 'AI credits — Pro / month' },
+    { key: 'academyPrice', label: 'Prix de l’Académie (centimes)' },
+    { key: 'proPrice', label: 'Prix Pro (centimes)' },
+    { key: 'businessPrice', label: 'Prix Business (centimes)' },
+    {
+      key: 'freeCommissionBps',
+      label: 'Commission du plan gratuit (bps — 1000 = 10 %)',
+    },
+    { key: 'resellerBps', label: 'Part revendeur (bps — 9000 = 90 %)' },
+    { key: 'payoutHoldDays', label: 'Délai de versement (jours)' },
+    { key: 'aiFreeCredits', label: 'Crédits IA — gratuit / mois' },
+    { key: 'aiProCredits', label: 'Crédits IA — Pro / mois' },
   ];
 
   return (
     <Card padded>
-      <div className="mb-4 text-sm font-semibold text-zinc-200">Business model</div>
+      <div className="mb-4 section-title">Business model</div>
       <div className="grid gap-3.5 sm:grid-cols-2">
         {fields.map((f) => (
           <div key={f.key}>
@@ -72,9 +79,11 @@ export default function BusinessSettingsForm({ initial }: { initial: Record<stri
       </div>
       <FormError error={error} />
       <div className="mt-4 flex items-center justify-end gap-3">
-        {saved ? <span className="text-xs text-emerald-400">Saved ✓</span> : null}
+        {saved ? (
+          <span className="text-xs text-emerald-400">Enregistré ✓</span>
+        ) : null}
         <button className="btn-primary !py-2" onClick={save} disabled={pending}>
-          {pending ? 'Saving…' : 'Save settings'}
+          {pending ? 'Enregistrement…' : 'Enregistrer'}
         </button>
       </div>
     </Card>

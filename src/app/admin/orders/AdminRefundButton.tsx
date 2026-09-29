@@ -10,10 +10,15 @@ export default function AdminRefundButton({ orderId }: { orderId: string }) {
 
   return (
     <button
-      className="btn-ghost !px-2.5 !py-1 !text-xs !text-red-300"
+      className="btn-ghost btn-sm !text-red-300"
       disabled={pending}
       onClick={() => {
-        if (!confirm('Refund this order? The ledger will be reversed proportionally.')) return;
+        if (
+          !confirm(
+            'Rembourser cette commande ? Le grand livre sera contre-passé au prorata.',
+          )
+        )
+          return;
         startTransition(async () => {
           const res = await adminRefundAction(orderId);
           if (res.ok) router.refresh();
@@ -21,7 +26,7 @@ export default function AdminRefundButton({ orderId }: { orderId: string }) {
         });
       }}
     >
-      {pending ? '…' : 'Refund'}
+      {pending ? '…' : 'Rembourser'}
     </button>
   );
 }

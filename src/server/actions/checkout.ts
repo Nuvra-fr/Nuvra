@@ -6,7 +6,14 @@ import { cookies } from 'next/headers';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { courses, orderItems, orders, products, resellerProfiles, workspaces } from '@/db/schema';
+import {
+  courses,
+  orderItems,
+  orders,
+  products,
+  resellerProfiles,
+  workspaces,
+} from '@/db/schema';
 import { getSession } from '@/lib/auth';
 import { createOrder, finalizeOrderPaid, OrderError } from '@/lib/orders';
 import { paymentsMode, createPaymentCheckoutSession } from '@/lib/stripe';
@@ -31,11 +38,21 @@ export interface CheckoutItemInfo {
 }
 
 /** Server-side resolution of what is being bought (never trust client prices). */
-export async function resolveCheckoutItem(item: string): Promise<CheckoutItemInfo | null> {
+export async function resolveCheckoutItem(
+  item: string,
+): Promise<CheckoutItemInfo | null> {
   if (item === 'academy') {
     const platform =
-      await db.select().from(workspaces).where(eq(workspaces.isPlatform, true)).get() ??
-      await db.select().from(workspaces).where(eq(workspaces.slug, 'nuvra')).get();
+      (await db
+        .select()
+        .from(workspaces)
+        .where(eq(workspaces.isPlatform, true))
+        .get()) ??
+      (await db
+        .select()
+        .from(workspaces)
+        .where(eq(workspaces.slug, 'nuvra'))
+        .get());
     const academyCourse = await db
       .select()
       .from(courses)
@@ -91,16 +108,18 @@ export async function startCheckoutAction(input: {
 }): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   try {
     const parsed = checkoutSchema.safeParse(input);
-    if (!parsed.success) return { ok: false, error: 'Invalid checkout request' };
+    if (!parsed.success)
+      return { ok: false, error: 'Demande de paiement invalide' };
 
     const item = await resolveCheckoutItem(parsed.data.item);
-    if (!item) return { ok: false, error: 'Item not found or no longer available' };
+    if (!item)
+      return { ok: false, error: 'Article introuvable ou plus disponible' };
 
     const ctx = await getSession();
     if (item.requiresAccount && !ctx) {
       return {
         ok: false,
-        error: `Please sign in to purchase ${item.title}.`,
+        error: `Connectez-vous pour acheter ${item.title}.`,
       };
     }
 
@@ -112,9 +131,11 @@ export async function startCheckoutAction(input: {
 
     let resellerId: string | null = null;
     if (item.kind === 'academy') {
-      const candidates = [parsed.data.reseller, cookieReseller, cookieRef].filter(
-        (c): c is string => !!c,
-      );
+      const candidates = [
+        parsed.data.reseller,
+        cookieReseller,
+        cookieRef,
+      ].filter((c): c is string => !!c);
       for (const code of candidates) {
         const rp = await db
           .select()
@@ -138,14 +159,24 @@ export async function startCheckoutAction(input: {
       kind: item.kind === 'academy' ? 'ACADEMY_SALE' : 'CREATOR_SALE',
       items: [
         {
-          kind: item.kind === 'academy' ? 'ACADEMY' : item.kind === 'course' ? 'COURSE' : 'PRODUCT',
-          courseId: item.kind === 'course' || item.kind === 'academy' ? item.id : null,
+          kind:
+            item.kind === 'academy'
+              ? 'ACADEMY'
+              : item.kind === 'course'
+                ? 'COURSE'
+                : 'PRODUCT',
+          courseId:
+            item.kind === 'course' || item.kind === 'academy' ? item.id : null,
           productId: item.kind === 'product' ? item.id : null,
           title: item.title,
           priceCents: item.priceCents,
         },
       ],
-      buyerEmail: ctx?.user.email ?? String(input.email ?? '').toLowerCase().trim(),
+      buyerEmail:
+        ctx?.user.email ??
+        String(input.email ?? '')
+          .toLowerCase()
+          .trim(),
       buyerName: input.name || ctx?.user.name || null,
       buyerUserId: ctx?.user.id ?? null,
       couponCode: parsed.data.coupon || null,
@@ -155,7 +186,10 @@ export async function startCheckoutAction(input: {
     });
 
     if (order.totalCents === 0) {
-      await finalizeOrderPaid(order.id, { provider: 'test', reference: 'zero-amount' });
+      await finalizeOrderPaid(order.id, {
+        provider: 'test',
+        reference: 'zero-amount',
+      });
       redirect(`/checkout/success?order=${order.id}`);
     }
 
@@ -165,8 +199,12 @@ export async function startCheckoutAction(input: {
         amountCents: order.totalCents,
         currency: order.currency,
         customerEmail: order.buyerEmail,
-        successUrl: appUrl(`/checkout/success?order=${order.id}&session_id={CHECKOUT_SESSION_ID}`),
-        cancelUrl: appUrl(`/checkout?item=${encodeURIComponent(parsed.data.item)}&canceled=1`),
+        successUrl: appUrl(
+          `/checkout/success?order=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+        ),
+        cancelUrl: appUrl(
+          `/checkout?item=${encodeURIComponent(parsed.data.item)}&canceled=1`,
+        ),
         metadata: { kind: item.kind },
       });
       redirect(url.url);
@@ -177,37 +215,60 @@ export async function startCheckoutAction(input: {
   } catch (e) {
     if (e && typeof e === 'object' && 'digest' in e) throw e; // next redirect
     if (e instanceof OrderError) return { ok: false, error: e.message };
-    return { ok: false, error: e instanceof Error ? e.message : 'Checkout failed' };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : 'Paiement impossible',
+    };
   }
 }
 
 /** Explicit TEST MODE confirmation — labeled as test everywhere. */
-export async function confirmTestPurchaseAction(orderId: string): Promise<void> {
-  if (paymentsMode() === 'stripe') throw new Error('Test mode disabled while Stripe is configured');
+export async function confirmTestPurchaseAction(
+  orderId: string,
+): Promise<void> {
+  if (paymentsMode() === 'stripe')
+    throw new Error('Mode test désactivé tant que Stripe est configuré');
   const ctx = await getSession();
-  const order = await db.select().from(orders).where(eq(orders.id, orderId)).get();
-  if (!order) throw new Error('Order not found');
+  const order = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .get();
+  if (!order) throw new Error('Commande introuvable');
   if (order.mode !== 'TEST') throw new Error('Not a test order');
 
   // Authorization: the order id is not a credential. Course/Academy access is
   // account-bound, so only the buyer may confirm such an order; guest product
   // orders (no account required) stay confirmable by whoever holds the link.
-  const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId)).all();
+  const items = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .all();
   const requiresAccount =
-    order.kind === 'ACADEMY_SALE' || items.some((i) => i.kind === 'COURSE' || i.kind === 'ACADEMY');
+    order.kind === 'ACADEMY_SALE' ||
+    items.some((i) => i.kind === 'COURSE' || i.kind === 'ACADEMY');
   if (order.buyerUserId && order.buyerUserId !== ctx?.user.id) {
-    throw new Error('This order belongs to another account');
+    throw new Error('Cette commande appartient à un autre compte');
   }
   if (requiresAccount && !order.buyerUserId) {
-    throw new Error('Sign in with the account used for this order to confirm it');
+    throw new Error(
+      'Connectez-vous avec le compte utilisé pour cette commande afin de la confirmer',
+    );
   }
 
   if (order.status === 'PAID') {
     redirect(`/checkout/success?order=${orderId}`);
     return;
   }
-  await finalizeOrderPaid(orderId, { provider: 'test', reference: `test_${orderId.slice(0, 8)}` });
-  await audit('checkout.test_confirmed', { actorUserId: ctx?.user.id ?? null, target: orderId });
+  await finalizeOrderPaid(orderId, {
+    provider: 'test',
+    reference: `test_${orderId.slice(0, 8)}`,
+  });
+  await audit('checkout.test_confirmed', {
+    actorUserId: ctx?.user.id ?? null,
+    target: orderId,
+  });
   redirect(`/checkout/success?order=${orderId}`);
 }
 
@@ -216,24 +277,40 @@ export async function enrollFreeAction(
   courseId: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const ctx = await getSession();
-  if (!ctx) return { ok: false, error: 'Please sign in to enroll in this course.' };
+  if (!ctx)
+    return {
+      ok: false,
+      error: 'Connectez-vous pour vous inscrire à cette formation.',
+    };
   try {
-    const course = await db.select().from(courses).where(eq(courses.id, courseId)).get();
-    if (!course || course.status !== 'PUBLISHED') return { ok: false, error: 'Course unavailable' };
-    if (course.priceCents > 0) return { ok: false, error: 'This course is not free' };
+    const course = await db
+      .select()
+      .from(courses)
+      .where(eq(courses.id, courseId))
+      .get();
+    if (!course || course.status !== 'PUBLISHED')
+      return { ok: false, error: 'Formation indisponible' };
+    if (course.priceCents > 0)
+      return { ok: false, error: 'Cette formation n’est pas gratuite' };
     const { enrollments } = await import('@/db/schema');
     const existing = await db
       .select({ id: enrollments.id })
       .from(enrollments)
-      .where(and(eq(enrollments.userId, ctx.user.id), eq(enrollments.courseId, courseId)))
+      .where(
+        and(
+          eq(enrollments.userId, ctx.user.id),
+          eq(enrollments.courseId, courseId),
+        ),
+      )
       .get();
     if (existing) return { ok: true };
-    await db.insert(enrollments)
+    await db
+      .insert(enrollments)
       .values({ userId: ctx.user.id, courseId, source: 'FREE' })
       .run();
     revalidatePath(`/dashboard/learn/${courseId}`);
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

@@ -14,16 +14,24 @@ import { processWaitingRuns } from '@/lib/events';
 export async function POST(req: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
   const bearer = req.headers.get('authorization');
-  const provided = req.headers.get('x-cron-secret') ?? (bearer?.startsWith('Bearer ') ? bearer.slice(7) : null);
+  const provided =
+    req.headers.get('x-cron-secret') ??
+    (bearer?.startsWith('Bearer ') ? bearer.slice(7) : null);
   const isDev = process.env.NODE_ENV === 'development';
 
   if (secret) {
     if (provided !== secret) {
-      return Response.json({ ok: false, error: 'Invalid cron secret' }, { status: 401 });
+      return Response.json(
+        { ok: false, error: 'Secret cron invalide' },
+        { status: 401 },
+      );
     }
   } else if (!isDev) {
     return Response.json(
-      { ok: false, error: 'CRON_SECRET is not configured — refusing to run in production' },
+      {
+        ok: false,
+        error: 'CRON_SECRET n’est pas configuré — exécution refusée en production',
+      },
       { status: 503 },
     );
   }

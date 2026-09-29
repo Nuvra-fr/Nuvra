@@ -27,7 +27,7 @@ export default function EnrollButton({ courseId }: { courseId: string }) {
           })
         }
       >
-        {pending ? 'Enrolling…' : 'Enroll for free'}
+        {pending ? 'Enrolling…' : 'S’inscrire gratuitement'}
       </button>
     </div>
   );

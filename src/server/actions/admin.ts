@@ -19,12 +19,16 @@ export async function adminUpdateSettingAction(
   try {
     const ctx = await requireAdmin();
     await setConfig(key, value);
-    await audit('admin.setting_updated', { actorUserId: ctx.user.id, target: key, meta: { value } });
+    await audit('admin.setting_updated', {
+      actorUserId: ctx.user.id,
+      target: key,
+      meta: { value },
+    });
     revalidatePath('/admin/settings');
     revalidatePath('/admin');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -52,7 +56,7 @@ export async function adminSaveBusinessSettingsAction(input: {
   try {
     const ctx = await requireAdmin();
     const parsed = settingsSchema.safeParse(input);
-    if (!parsed.success) return { ok: false, error: 'Invalid values' };
+    if (!parsed.success) return { ok: false, error: 'Valeurs invalides' };
     const v = parsed.data;
     await setConfig('academy.priceCents', v.academyPrice);
     await setConfig('pro.priceCents', v.proPrice);
@@ -62,11 +66,14 @@ export async function adminSaveBusinessSettingsAction(input: {
     await setConfig('payouts.holdDays', v.payoutHoldDays);
     await setConfig('ai.freeCredits', v.aiFreeCredits);
     await setConfig('ai.proCredits', v.aiProCredits);
-    await audit('admin.business_settings', { actorUserId: ctx.user.id, meta: v });
+    await audit('admin.business_settings', {
+      actorUserId: ctx.user.id,
+      meta: v,
+    });
     revalidatePath('/admin/settings');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -76,16 +83,21 @@ export async function adminModerateListingAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    await db.update(marketplaceListings)
+    await db
+      .update(marketplaceListings)
       .set({ status, updatedAt: new Date() })
       .where(eq(marketplaceListings.id, listingId))
       .run();
-    await audit('admin.listing_moderated', { actorUserId: ctx.user.id, target: listingId, meta: { status } });
+    await audit('admin.listing_moderated', {
+      actorUserId: ctx.user.id,
+      target: listingId,
+      meta: { status },
+    });
     revalidatePath('/admin/marketplace');
     revalidatePath('/marketplace');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -97,11 +109,14 @@ export async function adminPayoutAction(
     const ctx = await requireAdmin();
     if (action === 'paid') await markPayoutPaid(payoutId);
     else await markPayoutFailed(payoutId, 'admin rejected');
-    await audit(`admin.payout_${action}`, { actorUserId: ctx.user.id, target: payoutId });
+    await audit(`admin.payout_${action}`, {
+      actorUserId: ctx.user.id,
+      target: payoutId,
+    });
     revalidatePath('/admin/payouts');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -111,12 +126,12 @@ export async function adminRefundAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    await refundOrder(orderId, { reason: reason ?? 'admin refund' });
+    await refundOrder(orderId, { reason: reason ?? 'remboursement admin' });
     await audit('admin.refund', { actorUserId: ctx.user.id, target: orderId });
     revalidatePath('/admin/orders');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -126,24 +141,39 @@ export async function adminToggleUserAction(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireAdmin();
-    if (userId === ctx.user.id) return { ok: false, error: 'You cannot suspend yourself' };
-    await db.update(users).set({ status, updatedAt: new Date() }).where(eq(users.id, userId)).run();
-    if (status === 'SUSPENDED') await db.delete(sessions).where(eq(sessions.userId, userId)).run();
-    await audit('admin.user_status', { actorUserId: ctx.user.id, target: userId, meta: { status } });
+    if (userId === ctx.user.id)
+      return {
+        ok: false,
+        error: 'Vous ne pouvez pas vous suspendre vous-même',
+      };
+    await db
+      .update(users)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .run();
+    if (status === 'SUSPENDED')
+      await db.delete(sessions).where(eq(sessions.userId, userId)).run();
+    await audit('admin.user_status', {
+      actorUserId: ctx.user.id,
+      target: userId,
+      meta: { status },
+    });
     revalidatePath('/admin/users');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
-export async function adminRunEmailQueueAction(): Promise<{ ok: true; processed: number } | { ok: false; error: string }> {
+export async function adminRunEmailQueueAction(): Promise<
+  { ok: true; processed: number } | { ok: false; error: string }
+> {
   try {
     await requireAdmin();
     const res = await processDueEmails();
     revalidatePath('/admin/emails');
     return { ok: true, processed: res.processed };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

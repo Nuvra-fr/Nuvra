@@ -5,50 +5,50 @@ import { PageHeader, Card, InlineAlert } from '@/components/ui';
 import { paymentsMode } from '@/lib/stripe';
 import { emailProvider } from '@/lib/email';
 
-export const metadata: Metadata = { title: 'Help' };
+export const metadata: Metadata = { title: 'Aide' };
 
 const GUIDES = [
   {
     icon: Rocket,
-    title: 'Launch in 30 minutes',
-    body: 'Create a product → build a landing page with a Form and Checkout block → publish → share the link.',
+    title: 'Lancez-vous en 30 minutes',
+    body: 'Créez un produit → construisez une page de vente avec un bloc Formulaire et un bloc Paiement → publiez → partagez le lien.',
     href: '/dashboard/pages?new=1',
-    cta: 'Build a page',
+    cta: 'Créer une page',
   },
   {
     icon: BookOpen,
-    title: 'Sell your first course',
-    body: 'Courses → New course → add modules and lessons → publish → it appears in your store and marketplace.',
+    title: 'Vendez votre première formation',
+    body: 'Formations → Nouvelle formation → ajoutez modules et leçons → publiez → elle apparaît dans votre boutique et la marketplace.',
     href: '/dashboard/courses?new=1',
-    cta: 'New course',
+    cta: 'Nouvelle formation',
   },
   {
     icon: Zap,
-    title: 'Automate follow-ups',
-    body: 'Automations → new → trigger lead.created → action send_email. Fires on real events, 24/7.',
+    title: 'Automatisez les relances',
+    body: 'Automatisations → nouvelle → déclencheur lead.created → action send_email. Déclenché par de vrais événements, 24 h/24.',
     href: '/dashboard/automations',
-    cta: 'Create automation',
+    cta: 'Créer l’automatisation',
   },
   {
     icon: CreditCard,
-    title: 'Understand your money',
-    body: 'Payments → Financial ledger: every split, fee and reversal is an append-only entry you can audit.',
+    title: 'Comprenez votre argent',
+    body: 'Paiements → grand livre : chaque répartition, frais et remboursement est une écriture en append-only que vous pouvez auditer.',
     href: '/dashboard/payments?tab=ledger',
-    cta: 'Open ledger',
+    cta: 'Ouvrir le grand livre',
   },
   {
     icon: Shield,
-    title: 'Go Pro, keep 100 %',
-    body: 'Pro removes the 10 % platform commission on your own sales and adds domains, analytics and API.',
+    title: 'Passez en Pro, gardez 100 %',
+    body: 'Pro supprime la commission de 10 % sur vos propres ventes et ajoute les domaines, les statistiques et l’API.',
     href: '/dashboard/settings/billing',
-    cta: 'See billing',
+    cta: 'Voir la facturation',
   },
   {
     icon: Mail,
-    title: 'Email delivery',
-    body: 'Without a provider, every email lands in the Outbox (Admin → Emails) — connect Resend to deliver for real.',
+    title: 'Délivrabilité des emails',
+    body: 'Sans prestataire, chaque email reste dans la file d’envoi (Admin → Emails) — connectez Resend pour livrer réellement.',
     href: '/dashboard/emails?tab=outbox',
-    cta: 'Open outbox',
+    cta: 'Ouvrir la file d’envoi',
   },
 ];
 
@@ -58,42 +58,71 @@ export default async function HelpPage() {
 
   return (
     <div>
-      <PageHeader title="Help" description="How Nuvra works — and what's connected right now." />
+      <PageHeader
+        title="Aide"
+        description="Comment Nuvra fonctionne — et ce qui est connecté aujourd’hui."
+      />
 
       <div className="mb-5">
         <InlineAlert tone="info">
-          <strong>Environment status:</strong> Payments ={' '}
-          <strong>{mode === 'stripe' ? 'Stripe live' : 'TEST MODE (no STRIPE_SECRET_KEY)'}</strong> ·
-          Email = <strong>{email === 'RESEND' ? 'Resend live' : 'Outbox (no RESEND_API_KEY)'}</strong>.
-          See <code>.env.example</code> for every variable Nuvra reads.
+          <strong>État de l’environnement :</strong> Payments ={' '}
+          <strong>
+            {mode === 'stripe'
+              ? 'Stripe actif'
+              : 'MODE TEST (pas de STRIPE_SECRET_KEY)'}
+          </strong>{' '}
+          · Email ={' '}
+          <strong>
+            {email === 'RESEND'
+              ? 'Resend actif'
+              : 'File d’envoi (pas de RESEND_API_KEY)'}
+          </strong>
+          . Voir <code>.env.example</code> pour toutes les variables lues par
+          Nuvra.
         </InlineAlert>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {GUIDES.map((g) => (
-          <Link key={g.title} href={g.href} className="card p-5 transition hover:border-nuvra-500/40">
+          <Link
+            key={g.title}
+            href={g.href}
+            className="card p-5 transition hover:border-nuvra-500/40"
+          >
             <g.icon className="mb-3 h-5 w-5 text-nuvra-400" />
-            <div className="text-sm font-semibold text-zinc-200">{g.title}</div>
-            <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">{g.body}</p>
-            <span className="mt-3 inline-block text-xs font-medium text-nuvra-400">{g.cta} →</span>
+            <div className="section-title">{g.title}</div>
+            <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+              {g.body}
+            </p>
+            <span className="mt-3 inline-block text-xs font-medium text-nuvra-400">
+              {g.cta} →
+            </span>
           </Link>
         ))}
       </div>
 
       <Card padded className="mt-6">
-        <div className="text-sm font-semibold text-zinc-200">The Nuvra business model, in plain words</div>
+        <div className="section-title">
+          Le modèle économique de Nuvra, en clair
+        </div>
         <div className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
           <div className="rounded-lg border border-white/[0.07] p-4 text-zinc-400">
-            <div className="font-semibold text-zinc-200">Platform = free</div>
-            Pages, funnels, CRM, courses, LMS, automations, analytics.
+            <div className="font-semibold text-zinc-200">
+              Plateforme = gratuite
+            </div>
+            Pages, tunnels, CRM, formations, automatisations, statistiques.
           </div>
           <div className="rounded-lg border border-white/[0.07] p-4 text-zinc-400">
-            <div className="font-semibold text-zinc-200">Academy = paid</div>
-            The 15-module program + optional reseller (90/10).
+            <div className="font-semibold text-zinc-200">
+              Académie = payante
+            </div>
+            Le programme de 15 modules + statut revendeur optionnel (90/10).
           </div>
           <div className="rounded-lg border border-nuvra-500/30 bg-nuvra-500/[0.05] p-4 text-zinc-400">
-            <div className="font-semibold text-nuvra-200">Pro = subscription</div>
-            0 % commission on your sales + advanced tools.
+            <div className="font-semibold text-nuvra-200">
+              Pro = subscription
+            </div>
+            0 % de commission sur vos ventes + outils avancés.
           </div>
         </div>
       </Card>

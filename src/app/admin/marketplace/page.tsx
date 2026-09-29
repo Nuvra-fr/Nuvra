@@ -9,7 +9,7 @@ import { timeAgo } from '@/lib/utils';
 import ModerateListingButton from './ModerateListingButton';
 import { Store } from 'lucide-react';
 
-export const metadata: Metadata = { title: 'Admin — Moderation' };
+export const metadata: Metadata = { title: 'Admin — Modération' };
 
 export default async function AdminModerationPage() {
   await requireAdmin();
@@ -23,20 +23,26 @@ export default async function AdminModerationPage() {
 
   return (
     <div>
-      <PageHeader title="Marketplace moderation" description="Approve or reject submitted listings." />
+      <PageHeader
+        title="Modération marketplace"
+        description="Validez ou refusez les annonces soumises."
+      />
 
       {rows.length === 0 ? (
-        <EmptyState icon={<Store className="h-8 w-8" />} title="No listings submitted yet" />
+        <EmptyState
+          icon={<Store className="h-8 w-8" />}
+          title="Aucune annonce soumise"
+        />
       ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
                 <th>Listing</th>
-                <th>Creator</th>
-                <th>Price</th>
-                <th>Views</th>
-                <th>Status</th>
+                <th>Créateur</th>
+                <th>Prix</th>
+                <th>Vues</th>
+                <th>Statut</th>
                 <th>Submitted</th>
                 <th />
               </tr>
@@ -46,17 +52,29 @@ export default async function AdminModerationPage() {
                 <tr key={l.id}>
                   <td>
                     <div className="font-medium text-zinc-200">{l.title}</div>
-                    <div className="text-xs text-zinc-600">{l.category ?? 'no category'}</div>
+                    <div className="text-xs text-zinc-600">
+                      {l.category ?? 'sans catégorie'}
+                    </div>
                   </td>
                   <td className="text-zinc-500">{ws?.name ?? '—'}</td>
                   <td className="tabular-nums">{formatCents(l.priceCents)}</td>
                   <td className="tabular-nums">{l.views}</td>
-                  <td><StatusBadge status={l.status} /></td>
+                  <td>
+                    <StatusBadge status={l.status} />
+                  </td>
                   <td className="text-zinc-500">{timeAgo(l.createdAt)}</td>
                   <td>
                     <div className="flex justify-end gap-1.5">
-                      <ModerateListingButton id={l.id} action="APPROVED" label="Approve" />
-                      <ModerateListingButton id={l.id} action="REJECTED" label="Reject" />
+                      <ModerateListingButton
+                        id={l.id}
+                        action="APPROVED"
+                        label="Valider"
+                      />
+                      <ModerateListingButton
+                        id={l.id}
+                        action="REJECTED"
+                        label="Refuser"
+                      />
                     </div>
                   </td>
                 </tr>

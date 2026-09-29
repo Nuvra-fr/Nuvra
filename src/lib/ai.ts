@@ -61,28 +61,28 @@ export interface AIGenerateResult {
 
 const SYSTEM_PROMPTS: Record<AIFeature, string> = {
   funnel_builder:
-    'You are Nuvra AI, an expert funnel architect. Given a business description, output a concise funnel plan: steps (landing → lead → sales → checkout → upsell → thank you), page purpose, headline suggestions and CTA copy. Plain text, structured with headings.',
+    'Tu es Nuvra AI, architecte expert en tunnels de vente. À partir d’une description d’activité, produis un plan de tunnel concis : étapes (page de vente → prospect → vente → paiement → upsell → remerciement), rôle de chaque page, suggestions de titres et textes de boutons. Texte brut, structuré avec des titres.',
   course_planner:
-    'You are Nuvra AI, an expert course designer. Given a course idea, output a syllabus: modules, lesson titles per module, learning objectives and one quiz question per module. Plain text, structured with headings.',
+    'Tu es Nuvra AI, concepteur expert de formations. À partir d’une idée de formation, produis un programme : modules, titres des leçons par module, objectifs pédagogiques et une question de quiz par module. Texte brut, structuré avec des titres.',
   copywriter:
-    'You are Nuvra AI, a direct-response copywriter. Given a product/audience description, write: 3 headlines, a hero subheadline, a short sales paragraph, and 3 CTA variations. Plain text.',
+    'Tu es Nuvra AI, copywriter spécialisé en vente directe. À partir d’une description produit/audience, rédige : 3 titres, un sous-titre principal, un court paragraphe de vente et 3 variantes de bouton d’appel à l’action. Texte brut.',
   analytics_assistant:
-    'You are Nuvra AI, a business analytics assistant. Given metrics context, explain what is working, what is declining, which data deserves attention and which experiments to run. Present everything as suggestions, never guarantees. Plain text.',
+    'Tu es Nuvra AI, assistant en analyse business. À partir d’un contexte de métriques, explique ce qui fonctionne, ce qui recule, quelles données méritent attention et quelles expériences lancer. Présente tout comme des suggestions, jamais comme des garanties. Texte brut.',
 };
 
 export async function aiGenerate(input: AIGenerateInput): Promise<AIGenerateResult> {
-  if (!await flagEnabled('ai')) throw new AIUnavailableError('AI features are disabled by an administrator (feature flag: ai).');
+  if (!await flagEnabled('ai')) throw new AIUnavailableError('Les fonctions IA sont désactivées par un administrateur (option de fonctionnalité : ai).');
   const key = providerKey();
   if (!key) {
     throw new AIUnavailableError(
-      'AI provider is not configured. Set the AI_API_KEY environment variable (OpenAI-compatible) to enable Nuvra AI.',
+      'Le fournisseur IA n’est pas configuré. Définissez la variable AI_API_KEY (compatible OpenAI) pour activer Nuvra AI.',
     );
   }
   const used = await creditsUsedThisMonth(input.workspaceId);
   const quota = await creditQuota(input.plan);
   if (used + 1 > quota) {
     throw new AICreditError(
-      `Monthly AI credit quota reached (${quota}). Upgrade your plan or wait for next month's reset.`,
+      `Quota mensuel de crédits IA atteint (${quota}). Passez à un plan supérieur ou attendez la réinitialisation du mois prochain.`,
     );
   }
 
@@ -106,7 +106,7 @@ export async function aiGenerate(input: AIGenerateInput): Promise<AIGenerateResu
     });
     if (!res.ok) {
       const err = await res.text();
-      throw new AIUnavailableError(`AI provider error (${res.status}): ${err.slice(0, 300)}`);
+      throw new AIUnavailableError(`Erreur du fournisseur IA (${res.status}) : ${err.slice(0, 300)}`);
     }
     const data = (await res.json()) as {
       choices?: { message?: { content?: string } }[];

@@ -18,12 +18,18 @@ export default function PayoutActionButton({
     <button
       className={
         action === 'paid'
-          ? 'btn-ghost !px-2.5 !py-1 !text-xs !text-emerald-300'
-          : 'btn-ghost !px-2.5 !py-1 !text-xs !text-red-300'
+          ? 'btn-ghost btn-sm !text-emerald-300'
+          : 'btn-ghost btn-sm !text-red-300'
       }
       disabled={pending}
       onClick={() => {
-        if (action === 'paid' && !confirm('Mark this payout as PAID? This writes ledger debits.')) return;
+        if (
+          action === 'paid' &&
+          !confirm(
+            'Marquer ce versement comme PAYÉ ? Cela écrit des débits au grand livre.',
+          )
+        )
+          return;
         startTransition(async () => {
           const res = await adminPayoutAction(payoutId, action);
           if (res.ok) router.refresh();
@@ -31,7 +37,7 @@ export default function PayoutActionButton({
         });
       }}
     >
-      {pending ? '…' : action === 'paid' ? 'Mark paid' : 'Fail'}
+      {pending ? '…' : action === 'paid' ? 'Marquer payé' : 'Fail'}
     </button>
   );
 }

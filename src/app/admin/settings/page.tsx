@@ -5,7 +5,7 @@ import { PageHeader, InlineAlert } from '@/components/ui';
 import BusinessSettingsForm from './BusinessSettingsForm';
 import FlagsForm from './FlagsForm';
 
-export const metadata: Metadata = { title: 'Admin — Settings' };
+export const metadata: Metadata = { title: 'Admin — Paramètres' };
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
@@ -14,18 +14,18 @@ export default async function AdminSettingsPage() {
   return (
     <div>
       <PageHeader
-        title="Platform settings"
-        description="Prices, commissions, quotas and feature flags — editable without touching code."
+        title="Paramètres plateforme"
+        description="Prix, commissions, quotas et options — modifiables sans toucher au code."
       />
 
       <div className="mb-5">
         <InlineAlert tone="info">
-          Every value below is read live by checkout, the ledger and the UI. Nothing is hardcoded in
-          the frontend.
+          Chaque valeur ci-dessous est lue en direct par le paiement, le grand
+          livre et l&apos;interface. Nothing is hardcoded in the frontend.
         </InlineAlert>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <BusinessSettingsForm
           initial={{
             academyPrice: Number(cfg['academy.priceCents'] ?? 19700),

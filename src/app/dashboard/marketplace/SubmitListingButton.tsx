@@ -34,27 +34,44 @@ export default function SubmitListingButton({
   return (
     <>
       <button className="btn-primary" onClick={() => setOpen(true)}>
-        <Plus className="h-4 w-4" /> Submit listing
+        <Plus className="h-4 w-4" /> Proposer l&apos;offre
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="absolute inset-0" onClick={() => setOpen(false)} />
           <div className="relative w-full max-w-md rounded-xl border border-white/10 bg-ink-850 p-6 shadow-card">
-            <h2 className="text-base font-semibold text-zinc-100">Submit to marketplace</h2>
-            <p className="mt-1 text-xs text-zinc-500">Only published courses can be listed. Moderation reviews every submission.</p>
+            <h2 className="text-base font-semibold text-zinc-100">
+              Proposer à la marketplace
+            </h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Seules les formations publiées peuvent être proposées. Chaque
+              envoi est modéré.
+            </p>
             <div className="mt-4">
-              <label className="label">Course</label>
-              <select className="input" value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+              <label className="label">Formation</label>
+              <select
+                className="input"
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+              >
                 {courses.map((c) => (
-                  <option key={c.id} value={c.id}>{c.title}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
                 ))}
               </select>
             </div>
             <FormError error={error} />
-            <div className="mt-5 flex justify-end gap-2">
-              <button className="btn-ghost" onClick={() => setOpen(false)}>Cancel</button>
-              <button className="btn-primary" onClick={submit} disabled={pending}>
-                {pending ? 'Submitting…' : 'Submit for review'}
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn-ghost" onClick={() => setOpen(false)}>
+                Annuler
+              </button>
+              <button
+                className="btn-primary"
+                onClick={submit}
+                disabled={pending}
+              >
+                {pending ? 'Submitting…' : 'Envoyer pour validation'}
               </button>
             </div>
           </div>

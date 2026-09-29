@@ -9,7 +9,7 @@ import { PageHeader, StatusBadge, Stat, InlineAlert } from '@/components/ui';
 import { formatCents } from '@/lib/money';
 import CourseSettingsForm from './CourseSettingsForm';
 
-export const metadata: Metadata = { title: 'Course settings' };
+export const metadata: Metadata = { title: 'Paramètres de la formation' };
 
 export default async function CourseSettingsPage({
   params,
@@ -18,20 +18,33 @@ export default async function CourseSettingsPage({
 }) {
   const ctx = await requireUser();
   const { id } = await params;
-  const course = await db.select().from(courses).where(eq(courses.id, id)).get();
+  const course = await db
+    .select()
+    .from(courses)
+    .where(eq(courses.id, id))
+    .get();
   if (!course || course.workspaceId !== ctx.workspace.id) notFound();
 
-  const students = (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, id)).all()).length;
+  const students = (
+    await db
+      .select({ id: enrollments.id })
+      .from(enrollments)
+      .where(eq(enrollments.courseId, id))
+      .all()
+  ).length;
 
   return (
     <div>
       <PageHeader
         title={course.title}
-        description="Pricing, publication and marketing settings."
+        description="Prix, publication et réglages marketing."
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge status={course.status} />
-            <Link href={`/dashboard/courses/${id}/curriculum`} className="btn-secondary">
+            <Link
+              href={`/dashboard/courses/${id}/curriculum`}
+              className="btn-secondary"
+            >
               Curriculum
             </Link>
           </div>
@@ -39,12 +52,19 @@ export default async function CourseSettingsPage({
       />
 
       <div className="grid gap-4 sm:grid-cols-3 mb-6">
-        <Stat label="Price" value={formatCents(course.priceCents, course.currency)} />
-        <Stat label="Students" value={String(students)} />
-        <Stat label="Published" value={course.publishedAt ? 'Yes' : 'No'} hint={course.publishedAt?.toISOString().slice(0, 10)} />
+        <Stat
+          label="Prix"
+          value={formatCents(course.priceCents, course.currency)}
+        />
+        <Stat label="Élèves" value={String(students)} />
+        <Stat
+          label="Publiées"
+          value={course.publishedAt ? 'Yes' : 'No'}
+          hint={course.publishedAt?.toISOString().slice(0, 10)}
+        />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <CourseSettingsForm
           courseId={id}
           initial={{
@@ -59,25 +79,32 @@ export default async function CourseSettingsPage({
         />
 
         <div className="space-y-4">
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-zinc-200">Public link</h3>
+          <div className="card card-body">
+            <h3 className="section-title">Public link</h3>
             <p className="mt-1 text-xs text-zinc-600">
               {course.status === 'PUBLISHED' ? (
                 <>
                   Your course is live at{' '}
-                  <a href={`/c/${course.slug}`} target="_blank" className="text-nuvra-400 hover:underline">
+                  <a
+                    href={`/c/${course.slug}`}
+                    target="_blank"
+                    className="text-nuvra-400 hover:underline"
+                  >
                     /c/{course.slug}
                   </a>
                 </>
               ) : (
-                'Publish the course to make /c/' + course.slug + ' accessible.'
+                'Publiez la formation pour activer /c/' +
+                course.slug +
+                ' accessible.'
               )}
             </p>
           </div>
           <InlineAlert tone="info">
-            Platform fee reminder: on the <strong>Free</strong> plan Nuvra takes{' '}
-            <strong>10 %</strong> of each sale. On <strong>Pro</strong> it&apos;s{' '}
-            <strong>0 %</strong> (payment-processing fees stay separate). Your plan:{' '}
+            Rappel des frais plateforme : avec le <strong>Gratuit</strong> plan
+            Gratuit, Nuvra prélève <strong>10 %</strong> de chaque vente. Avec{' '}
+            <strong>Pro</strong> c&apos;est <strong>0 %</strong> (les frais de
+            paiement restent séparés). Votre plan :{' '}
             <strong>{ctx.workspace.plan}</strong>.
           </InlineAlert>
         </div>

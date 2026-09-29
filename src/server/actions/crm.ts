@@ -11,8 +11,8 @@ import { audit } from '@/lib/audit';
 
 async function ownedContact(ctx: AuthContext, id: string) {
   const c = await db.select().from(contacts).where(eq(contacts.id, id)).get();
-  if (!c) throw new Error('Contact not found');
-  if (c.workspaceId !== ctx.workspace.id) throw new Error('Not authorized');
+  if (!c) throw new Error('Contact introuvable');
+  if (c.workspaceId !== ctx.workspace.id) throw new Error('Non autorisé');
   return c;
 }
 
@@ -25,14 +25,21 @@ export async function upsertContactAction(input: {
   try {
     const ctx = await requireUser();
     const email = input.email.toLowerCase().trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'Invalid email' };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return { ok: false, error: 'Email invalide' };
     const existing = await db
       .select()
       .from(contacts)
-      .where(and(eq(contacts.workspaceId, ctx.workspace.id), eq(contacts.email, email)))
+      .where(
+        and(
+          eq(contacts.workspaceId, ctx.workspace.id),
+          eq(contacts.email, email),
+        ),
+      )
       .get();
     if (existing) {
-      await db.update(contacts)
+      await db
+        .update(contacts)
         .set({ name: input.name ?? existing.name, updatedAt: new Date() })
         .where(eq(contacts.id, existing.id))
         .run();
@@ -52,31 +59,47 @@ export async function upsertContactAction(input: {
       })
       .returning({ id: contacts.id })
       .get();
-    await db.insert(contactActivities)
-      .values({ contactId: created.id, type: 'lead.created', summary: 'Added manually' })
+    await db
+      .insert(contactActivities)
+      .values({
+        contactId: created.id,
+        type: 'lead.created',
+        summary: 'Added manually',
+      })
       .run();
     await emitEvent({
       name: 'lead.created',
       workspaceId: ctx.workspace.id,
       payload: { email, name: input.name ?? '', contactId: created.id },
     });
-    await audit('contact.created', { actorUserId: ctx.user.id, target: created.id });
+    await audit('contact.created', {
+      actorUserId: ctx.user.id,
+      target: created.id,
+    });
     revalidatePath('/dashboard/customers');
     revalidatePath('/dashboard/leads');
     return { ok: true, id: created.id };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
 export async function updateContactAction(
   id: string,
-  input: Partial<{ name: string; status: string; tags: string[]; notes: string; phone: string }>,
+  input: Partial<{
+    name: string;
+    status: string;
+    tags: string[];
+    notes: string;
+    phone: string;
+  }>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
     await ownedContact(ctx, id);
-    const updates: Partial<typeof contacts.$inferInsert> = { updatedAt: new Date() };
+    const updates: Partial<typeof contacts.$inferInsert> = {
+      updatedAt: new Date(),
+    };
     if (input.name !== undefined) updates.name = input.name;
     if (input.status !== undefined) updates.status = input.status;
     if (input.tags !== undefined) updates.tags = JSON.stringify(input.tags);
@@ -87,11 +110,13 @@ export async function updateContactAction(
     revalidatePath('/dashboard/leads');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
-export async function deleteContactAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function deleteContactAction(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
     await ownedContact(ctx, id);
@@ -99,7 +124,7 @@ export async function deleteContactAction(id: string): Promise<{ ok: true } | { 
     revalidatePath('/dashboard/customers');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -113,7 +138,8 @@ export async function createCampaignAction(input: {
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    if (!input.name.trim() || !input.subject.trim()) return { ok: false, error: 'Name and subject required' };
+    if (!input.name.trim() || !input.subject.trim())
+      return { ok: false, error: 'Nom et objet requis' };
     const created = await db
       .insert(emailCampaigns)
       .values({
@@ -129,7 +155,7 @@ export async function createCampaignAction(input: {
     revalidatePath('/dashboard/emails');
     return { ok: true, id: created.id };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
@@ -138,11 +164,20 @@ export async function sendCampaignAction(
 ): Promise<{ ok: true; sent: number } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const campaign = await db.select().from(emailCampaigns).where(eq(emailCampaigns.id, campaignId)).get();
-    if (!campaign || campaign.workspaceId !== ctx.workspace.id) return { ok: false, error: 'Campaign not found' };
+    const campaign = await db
+      .select()
+      .from(emailCampaigns)
+      .where(eq(emailCampaigns.id, campaignId))
+      .get();
+    if (!campaign || campaign.workspaceId !== ctx.workspace.id)
+      return { ok: false, error: 'Campagne introuvable' };
     if (campaign.status === 'SENT') return { ok: false, error: 'Already sent' };
 
-    const all = await db.select().from(contacts).where(eq(contacts.workspaceId, ctx.workspace.id)).all();
+    const all = await db
+      .select()
+      .from(contacts)
+      .where(eq(contacts.workspaceId, ctx.workspace.id))
+      .all();
     const targets = all.filter((c) => {
       if (c.status === 'UNSUBSCRIBED') return false;
       if (campaign.segment === 'ALL') return true;
@@ -170,27 +205,47 @@ export async function sendCampaignAction(
       });
     }
 
-    await db.update(emailCampaigns)
-      .set({ status: 'SENT', sentAt: new Date(), sentCount: targets.length, updatedAt: new Date() })
+    await db
+      .update(emailCampaigns)
+      .set({
+        status: 'SENT',
+        sentAt: new Date(),
+        sentCount: targets.length,
+        updatedAt: new Date(),
+      })
       .where(eq(emailCampaigns.id, campaignId))
       .run();
-    await audit('campaign.sent', { actorUserId: ctx.user.id, target: campaignId, meta: { count: targets.length } });
+    await audit('campaign.sent', {
+      actorUserId: ctx.user.id,
+      target: campaignId,
+      meta: { count: targets.length },
+    });
     revalidatePath('/dashboard/emails');
     return { ok: true, sent: targets.length };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }
 
-export async function deleteCampaignAction(campaignId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function deleteCampaignAction(
+  campaignId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const ctx = await requireUser();
-    const campaign = await db.select().from(emailCampaigns).where(eq(emailCampaigns.id, campaignId)).get();
-    if (!campaign || campaign.workspaceId !== ctx.workspace.id) return { ok: false, error: 'Not found' };
-    await db.delete(emailCampaigns).where(eq(emailCampaigns.id, campaignId)).run();
+    const campaign = await db
+      .select()
+      .from(emailCampaigns)
+      .where(eq(emailCampaigns.id, campaignId))
+      .get();
+    if (!campaign || campaign.workspaceId !== ctx.workspace.id)
+      return { ok: false, error: 'Introuvable' };
+    await db
+      .delete(emailCampaigns)
+      .where(eq(emailCampaigns.id, campaignId))
+      .run();
     revalidatePath('/dashboard/emails');
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : 'Failed' };
+    return { ok: false, error: e instanceof Error ? e.message : 'Échec' };
   }
 }

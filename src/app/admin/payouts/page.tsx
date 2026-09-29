@@ -8,11 +8,17 @@ import { PageHeader, StatusBadge, Stat } from '@/components/ui';
 import { formatDateTime } from '@/lib/utils';
 import PayoutActionButton from './PayoutActionButton';
 
-export const metadata: Metadata = { title: 'Admin — Payouts' };
+export const metadata: Metadata = { title: 'Admin — Versements' };
 
 export default async function AdminPayoutsPage() {
   await requireAdmin();
-  const rows = await db.select({ payout: payouts, user: users }).from(payouts).innerJoin(users, eq(payouts.userId, users.id)).orderBy(desc(payouts.createdAt)).limit(200).all();
+  const rows = await db
+    .select({ payout: payouts, user: users })
+    .from(payouts)
+    .innerJoin(users, eq(payouts.userId, users.id))
+    .orderBy(desc(payouts.createdAt))
+    .limit(200)
+    .all();
 
   const pendingAmount = rows
     .filter((r) => r.payout.status === 'PENDING')
@@ -20,28 +26,47 @@ export default async function AdminPayoutsPage() {
 
   return (
     <div>
-      <PageHeader title="Payouts" description="Approve payouts — each approval debits the payable ledger account." />
+      <PageHeader
+        title="Versements"
+        description="Validez les versements — chaque validation débite le compte de tiers correspondant."
+      />
       <div className="mb-5 grid gap-4 sm:grid-cols-3">
-        <Stat label="Pending requests" value={String(rows.filter((r) => r.payout.status === 'PENDING').length)} />
-        <Stat label="Pending amount" value={formatCents(pendingAmount)} />
-        <Stat label="Paid (all time)" value={formatCents(rows.filter((r) => r.payout.status === 'PAID').reduce((s, r) => s + r.payout.amountCents, 0))} />
+        <Stat
+          label="Demandes en attente"
+          value={String(
+            rows.filter((r) => r.payout.status === 'PENDING').length,
+          )}
+        />
+        <Stat label="Montant en attente" value={formatCents(pendingAmount)} />
+        <Stat
+          label="Payées (total)"
+          value={formatCents(
+            rows
+              .filter((r) => r.payout.status === 'PAID')
+              .reduce((s, r) => s + r.payout.amountCents, 0),
+          )}
+        />
       </div>
 
       <div className="table-wrap">
         <table className="data">
           <thead>
             <tr>
-              <th>User</th>
-              <th>Amount</th>
-              <th>Account hint</th>
-              <th>Status</th>
+              <th>Utilisateur</th>
+              <th>Montant</th>
+              <th>Aide du compte</th>
+              <th>Statut</th>
               <th>Requested</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={6} className="text-center text-zinc-600">No payout requests.</td></tr>
+              <tr>
+                <td colSpan={6} className="text-center text-zinc-600">
+                  Aucune demande de versement.
+                </td>
+              </tr>
             ) : (
               rows.map(({ payout: p, user: u }) => (
                 <tr key={p.id}>
@@ -50,9 +75,15 @@ export default async function AdminPayoutsPage() {
                     <div className="text-xs text-zinc-600">{u.email}</div>
                   </td>
                   <td className="tabular-nums">{formatCents(p.amountCents)}</td>
-                  <td className="font-mono text-[11px] text-zinc-500">{p.note ?? '—'}</td>
-                  <td><StatusBadge status={p.status} /></td>
-                  <td className="text-zinc-500">{formatDateTime(p.createdAt)}</td>
+                  <td className="font-mono text-[11px] text-zinc-500">
+                    {p.note ?? '—'}
+                  </td>
+                  <td>
+                    <StatusBadge status={p.status} />
+                  </td>
+                  <td className="text-zinc-500">
+                    {formatDateTime(p.createdAt)}
+                  </td>
                   <td>
                     <div className="flex justify-end gap-1.5">
                       {p.status === 'PENDING' || p.status === 'PROCESSING' ? (

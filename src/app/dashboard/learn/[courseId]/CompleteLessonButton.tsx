@@ -37,7 +37,7 @@ export default function CompleteLessonButton({
       }
     >
       <Circle className="h-4 w-4" />
-      {pending ? 'Saving…' : 'Mark complete'}
+      {pending ? 'Enregistrement…' : 'Marquer comme terminée'}
     </button>
   );
 }

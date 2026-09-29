@@ -6,21 +6,22 @@ import { formatCents } from '@/lib/money';
 import { getAllConfig } from '@/lib/config';
 
 export const metadata: Metadata = {
-  title: 'Pricing',
-  description: 'Nuvra pricing — a free platform, an optional Pro subscription and the paid Academy.',
+  title: 'Tarifs',
+  description:
+    'Tarifs Nuvra — une plateforme gratuite, un abonnement Pro en option et l’Académie en produit payant.',
 };
 
 const PLAN_MATRIX: { label: string; free: string; pro: string }[] = [
-  { label: 'Pages, funnels, courses, CRM', free: 'Included', pro: 'Included' },
-  { label: 'Platform fee on your sales', free: '10 %', pro: '0 %' },
-  { label: 'Custom domain', free: '—', pro: '✓' },
-  { label: 'Advanced analytics', free: 'Core', pro: 'Advanced' },
-  { label: 'AI credits / month', free: '20', pro: '200' },
-  { label: 'A/B testing', free: '—', pro: '✓' },
-  { label: 'Team members', free: '1', pro: 'Per plan' },
+  { label: 'Pages, tunnels, formations, CRM', free: 'Inclus', pro: 'Inclus' },
+  { label: 'Commission sur vos ventes', free: '10 %', pro: '0 %' },
+  { label: 'Domaine personnalisé', free: '—', pro: '✓' },
+  { label: 'Statistiques avancées', free: 'Essentielles', pro: 'Avancées' },
+  { label: 'Crédits IA / mois', free: '20', pro: '200' },
+  { label: 'Tests A/B', free: '—', pro: '✓' },
+  { label: 'Membres d’équipe', free: '1', pro: 'Selon le plan' },
   { label: 'API & webhooks', free: '—', pro: '✓' },
-  { label: 'Priority support', free: '—', pro: '✓' },
-  { label: 'White-label touches', free: '—', pro: '✓' },
+  { label: 'Support prioritaire', free: '—', pro: '✓' },
+  { label: 'Marque blanche', free: '—', pro: '✓' },
 ];
 
 export default async function PricingPage() {
@@ -35,50 +36,81 @@ export default async function PricingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <BrandLogo href="/" />
           <div className="flex items-center gap-2">
-            <Link href="/login" className="btn-ghost">Sign in</Link>
-            <Link href="/register" className="btn-primary">Start for free</Link>
+            <Link href="/login" className="btn-ghost">
+              Connexion
+            </Link>
+            <Link href="/register" className="btn-primary">
+              Commencer gratuitement
+            </Link>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-16">
         <div className="text-center">
-          <h1 className="text-3xl font-semibold text-zinc-100">Pricing that grows with you</h1>
+          <h1 className="text-3xl font-semibold text-zinc-100">
+            Des tarifs qui évoluent avec vous
+          </h1>
           <p className="mt-3 text-zinc-500">
-            The Nuvra platform is free. You pay only when you choose Pro or Academy — and Nuvra
-            earns a transparent share when you sell.
+            La plateforme Nuvra est gratuite. Vous ne payez qu&apos;en
+            choisissant Pro ou l&apos;Académie — et Nuvra prélève une part
+            transparente sur vos ventes.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
           <div className="card p-6">
-            <div className="text-sm font-semibold text-zinc-300">Free</div>
+            <div className="text-sm font-semibold text-zinc-300">Gratuit</div>
             <div className="mt-2 text-4xl font-semibold text-white">$0</div>
-            <div className="text-xs text-zinc-600">forever</div>
-            <ul className="mt-5 space-y-2.5 text-sm text-zinc-400">
-              {['Full platform access', 'Pages, funnels, store', 'Courses & LMS', 'CRM & email', '10 % platform fee on sales'].map((f) => (
-                <li key={f} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />{f}</li>
+            <div className="text-xs text-zinc-600">pour toujours</div>
+            <ul className="mt-6 space-y-2.5 text-sm text-zinc-400">
+              {[
+                'Accès complet à la plateforme',
+                'Pages, tunnels, boutique',
+                'Formations & LMS',
+                'CRM & email',
+                '10 % de commission sur vos ventes',
+              ].map((f) => (
+                <li key={f} className="flex gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />
+                  {f}
+                </li>
               ))}
             </ul>
-            <Link href="/register" className="btn-secondary mt-6 w-full">Start for free</Link>
+            <Link href="/register" className="btn-secondary mt-6 w-full">
+              Commencer gratuitement
+            </Link>
           </div>
 
           <div className="card card-hover relative border-nuvra-500/30 p-6">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-nuvra-600 px-3 py-0.5 text-[11px] font-semibold text-white">
               MOST POPULAR
             </div>
-            <div className="text-sm font-semibold text-nuvra-300">Nuvra Pro</div>
+            <div className="text-sm font-semibold text-nuvra-300">
+              Nuvra Pro
+            </div>
             <div className="mt-2 text-4xl font-semibold text-white">
               {formatCents(proPrice)}
               <span className="text-base font-normal text-zinc-500">/mo</span>
             </div>
-            <div className="text-xs text-zinc-600">cancel anytime</div>
-            <ul className="mt-5 space-y-2.5 text-sm text-zinc-300">
-              {['0 % platform fee on your sales', 'Custom domain', 'Advanced analytics & A/B tests', '200 AI credits / month', 'API, webhooks, priority support'].map((f) => (
-                <li key={f} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />{f}</li>
+            <div className="text-xs text-zinc-600">sans engagement</div>
+            <ul className="mt-6 space-y-2.5 text-sm text-zinc-300">
+              {[
+                '0 % de commission sur vos ventes',
+                'Domaine personnalisé',
+                'Statistiques avancées & tests A/B',
+                '200 crédits IA / mois',
+                'API, webhooks, support prioritaire',
+              ].map((f) => (
+                <li key={f} className="flex gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />
+                  {f}
+                </li>
               ))}
             </ul>
-            <Link href="/dashboard/billing" className="btn-primary mt-6 w-full">Upgrade to Pro</Link>
+            <Link href="/dashboard/billing" className="btn-primary mt-6 w-full">
+              Passer en Pro
+            </Link>
           </div>
 
           <div className="card p-6">
@@ -87,13 +119,27 @@ export default async function PricingPage() {
               {formatCents(businessPrice)}
               <span className="text-base font-normal text-zinc-500">/mo</span>
             </div>
-            <div className="text-xs text-zinc-600">teams & agencies</div>
-            <ul className="mt-5 space-y-2.5 text-sm text-zinc-400">
-              {['Everything in Pro', '10+ team seats', '1,000 AI credits / month', 'Multi-workspace ready', 'Dedicated onboarding'].map((f) => (
-                <li key={f} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />{f}</li>
+            <div className="text-xs text-zinc-600">équipes & agences</div>
+            <ul className="mt-6 space-y-2.5 text-sm text-zinc-400">
+              {[
+                'Tout ce qui est inclus dans Pro',
+                '10+ sièges d’équipe',
+                '1 000 crédits IA / mois',
+                'Multi-espaces de travail',
+                'Accompagnement dédié',
+              ].map((f) => (
+                <li key={f} className="flex gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />
+                  {f}
+                </li>
               ))}
             </ul>
-            <Link href="/dashboard/billing" className="btn-secondary mt-6 w-full">Choose Business</Link>
+            <Link
+              href="/dashboard/billing"
+              className="btn-secondary mt-6 w-full"
+            >
+              Choisir Business
+            </Link>
           </div>
         </div>
 
@@ -102,8 +148,8 @@ export default async function PricingPage() {
           <table className="data">
             <thead>
               <tr>
-                <th>Feature</th>
-                <th>Free</th>
+                <th>Fonctionnalité</th>
+                <th>Gratuit</th>
                 <th>Pro</th>
               </tr>
             </thead>
@@ -120,24 +166,40 @@ export default async function PricingPage() {
         </div>
 
         {/* Academy */}
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
+        <div className="mt-12 grid gap-4 md:grid-cols-2">
           <div className="card p-6">
-            <div className="text-sm font-semibold text-amber-300">Nuvra Academy</div>
-            <div className="mt-2 text-3xl font-semibold text-white">{formatCents(academyPrice)}</div>
+            <div className="text-sm font-semibold text-amber-300">
+              Académie Nuvra
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-white">
+              {formatCents(academyPrice)}
+            </div>
             <p className="mt-2 text-sm text-zinc-500">
-              One-time purchase. 15 modules, lifetime learning access and eligibility for the
-              reseller program (90 % / 10 % on attributed sales).
+              Achat unique. 15 modules, accès à vie et éligibilité au programme
+              revendeur (90 % / 10 % sur les ventes attribuées).
             </p>
-            <Link href="/academy" className="btn-secondary mt-5 inline-flex">Explore Academy</Link>
+            <Link href="/academy" className="btn-secondary mt-5 inline-flex">
+              Découvrir l’Académie
+            </Link>
           </div>
           <div className="card p-6">
-            <div className="text-sm font-semibold text-zinc-300">Nuvra Academy Reseller</div>
-            <div className="mt-2 text-3xl font-semibold text-white">90 / 10</div>
+            <div className="text-sm font-semibold text-zinc-300">
+              Revendeur Académie Nuvra
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-white">
+              90 / 10
+            </div>
             <p className="mt-2 text-sm text-zinc-500">
-              You keep 90 % of every Academy sale attributed to your link. Nuvra keeps 10 %.
-              Payment-processing fees are always shown separately.
+              Vous conservez 90 % de chaque vente de l’Académie attribuée à
+              votre lien. Nuvra en garde 10 %. Les frais de paiement sont
+              toujours affichés séparément.
             </p>
-            <Link href="/academy#reseller" className="btn-secondary mt-5 inline-flex">Reseller details</Link>
+            <Link
+              href="/academy#reseller"
+              className="btn-secondary mt-5 inline-flex"
+            >
+              Détails du revendeur
+            </Link>
           </div>
         </div>
       </main>

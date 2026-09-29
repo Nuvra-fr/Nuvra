@@ -9,19 +9,39 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { ProgressBar } from '@/components/ui';
 
 const GOALS = [
-  { id: 'sell', label: 'Sell products', desc: 'Digital products, services, merch.' },
-  { id: 'course', label: 'Create a course', desc: 'Teach and sell your knowledge.' },
-  { id: 'reseller', label: 'Become a reseller', desc: 'Sell Nuvra Academy (90/10).' },
-  { id: 'audience', label: 'Grow an audience', desc: 'Link-in-bio, email, community.' },
-  { id: 'business', label: 'Build a full business', desc: 'Funnels, CRM, automations, the works.' },
+  {
+    id: 'sell',
+    label: 'Vendre des produits',
+    desc: 'Produits digitaux, services, merch.',
+  },
+  {
+    id: 'course',
+    label: 'Créer une formation',
+    desc: 'Transmettez et vendez votre savoir.',
+  },
+  {
+    id: 'reseller',
+    label: 'Devenir revendeur',
+    desc: 'Vendez l’Académie Nuvra (90/10).',
+  },
+  {
+    id: 'audience',
+    label: 'Développer une audience',
+    desc: 'Lien en bio, email, communauté.',
+  },
+  {
+    id: 'business',
+    label: 'Construire une vraie activité',
+    desc: 'Tunnels, CRM, automatisations — tout.',
+  },
 ];
 
 const CHECKLIST = [
-  'Connect your payment provider (Settings → Payments)',
-  'Create your first product or course',
-  'Publish a landing page',
-  'Set up your Nuvra Link (/@username)',
-  'Explore Nuvra Academy',
+  'Connecter votre prestataire de paiement (Paramètres → Paiements)',
+  'Créer votre premier produit ou votre première formation',
+  'Publier une page de vente',
+  'Configurer votre lien Nuvra (/@pseudo)',
+  'Découvrir l’Académie Nuvra',
 ];
 
 export default function OnboardingClient({ username }: { username: string }) {
@@ -36,10 +56,15 @@ export default function OnboardingClient({ username }: { username: string }) {
   const [handle, setHandle] = useState(username);
   const [checked, setChecked] = useState<number[]>([]);
 
-  function next(mutations: Partial<Parameters<typeof saveOnboardingStep>[0]> = {}) {
+  function next(
+    mutations: Partial<Parameters<typeof saveOnboardingStep>[0]> = {},
+  ) {
     setError(null);
     startTransition(async () => {
-      const res = await saveOnboardingStep({ ...mutations, step: mutations.step ?? step });
+      const res = await saveOnboardingStep({
+        ...mutations,
+        step: mutations.step ?? step,
+      });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -56,7 +81,7 @@ export default function OnboardingClient({ username }: { username: string }) {
       <div className="card w-full max-w-xl p-7">
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
-            <span>Step {step} of 5</span>
+            <span>Étape {step} sur 5</span>
             <span>{Math.round((step / 5) * 100)}%</span>
           </div>
           <ProgressBar value={step} max={5} />
@@ -66,16 +91,22 @@ export default function OnboardingClient({ username }: { username: string }) {
 
         {step === 1 && (
           <div>
-            <h1 className="text-lg font-semibold text-zinc-100">What should we call you?</h1>
-            <p className="mt-1 text-sm text-zinc-500">This appears on your public pages.</p>
+            <h1 className="text-lg font-semibold text-zinc-100">
+              Comment devons-nous vous appeler ?
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Ce nom apparaîtra sur vos pages publiques.
+            </p>
             <div className="mt-5">
-              <label className="label" htmlFor="ob-name">Your name</label>
+              <label className="label" htmlFor="ob-name">
+                Votre nom
+              </label>
               <input
                 id="ob-name"
                 className="input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Martin"
+                placeholder="Camille Martin"
                 minLength={2}
                 required
               />
@@ -85,40 +116,52 @@ export default function OnboardingClient({ username }: { username: string }) {
               disabled={pending || name.trim().length < 2}
               onClick={() => next({ step: 1, name: name.trim() })}
             >
-              Continue
+              Continuer
             </button>
           </div>
         )}
 
         {step === 2 && (
           <div>
-            <h1 className="text-lg font-semibold text-zinc-100">What&apos;s your activity?</h1>
-            <p className="mt-1 text-sm text-zinc-500">A short line about what you do.</p>
+            <h1 className="text-lg font-semibold text-zinc-100">
+              Quelle est votre activité ?
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Une phrase courte sur ce que vous faites.
+            </p>
             <div className="mt-5">
-              <label className="label" htmlFor="ob-activity">Activity</label>
+              <label className="label" htmlFor="ob-activity">
+                Activité
+              </label>
               <input
                 id="ob-activity"
                 className="input"
                 value={activity}
                 onChange={(e) => setActivity(e.target.value)}
-                placeholder="Fitness coaching, design courses, indie games…"
+                placeholder="Coaching sportif, formations design, jeux indés…"
               />
             </div>
             <button
               className="btn-primary mt-5 w-full"
               disabled={pending}
-              onClick={() => next({ step: 2, activity: activity || 'Digital creator' })}
+              onClick={() =>
+                next({ step: 2, activity: activity || 'Créateur digital' })
+              }
             >
-              Continue
+              Continuer
             </button>
           </div>
         )}
 
         {step === 3 && (
           <div>
-            <h1 className="text-lg font-semibold text-zinc-100">What&apos;s your main goal?</h1>
-            <p className="mt-1 text-sm text-zinc-500">We&apos;ll tailor your dashboard and checklist.</p>
-            <div className="mt-5 grid gap-2.5">
+            <h1 className="text-lg font-semibold text-zinc-100">
+              Quel est votre objectif principal ?
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Nous adaptons votre tableau de bord et votre checklist.
+            </p>
+            <div className="mt-6 grid gap-2.5">
               {GOALS.map((g) => (
                 <button
                   key={g.id}
@@ -129,7 +172,7 @@ export default function OnboardingClient({ username }: { username: string }) {
                       : 'border-white/10 bg-white/[0.03] hover:border-white/20'
                   }`}
                 >
-                  <div className="text-sm font-semibold text-zinc-200">{g.label}</div>
+                  <div className="section-title">{g.label}</div>
                   <div className="text-xs text-zinc-500">{g.desc}</div>
                 </button>
               ))}
@@ -139,28 +182,36 @@ export default function OnboardingClient({ username }: { username: string }) {
               disabled={pending || !goal}
               onClick={() => next({ step: 3, goal })}
             >
-              Continue
+              Continuer
             </button>
           </div>
         )}
 
         {step === 4 && (
           <div>
-            <h1 className="text-lg font-semibold text-zinc-100">Personalize your workspace</h1>
-            <p className="mt-1 text-sm text-zinc-500">You can change these anytime in Settings.</p>
-            <div className="mt-5 space-y-4">
+            <h1 className="text-lg font-semibold text-zinc-100">
+              Personnalisez votre espace
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Modifiable à tout moment dans les paramètres.
+            </p>
+            <div className="mt-6 space-y-4">
               <div>
-                <label className="label" htmlFor="ob-ws">Workspace name</label>
+                <label className="label" htmlFor="ob-ws">
+                  Nom de l’espace
+                </label>
                 <input
                   id="ob-ws"
                   className="input"
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
-                  placeholder="Alex Studio"
+                  placeholder="Studio Camille"
                 />
               </div>
               <div>
-                <label className="label" htmlFor="ob-handle">Your Nuvra Link handle</label>
+                <label className="label" htmlFor="ob-handle">
+                  Votre identifiant de lien Nuvra
+                </label>
                 <div className="flex items-center gap-0">
                   <span className="rounded-l-lg border border-r-0 border-white/10 bg-ink-900 px-3 py-2.5 text-sm text-zinc-500">
                     /@
@@ -169,8 +220,10 @@ export default function OnboardingClient({ username }: { username: string }) {
                     id="ob-handle"
                     className="input rounded-l-none"
                     value={handle}
-                    onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
-                    placeholder="alex"
+                    onChange={(e) =>
+                      setHandle(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))
+                    }
+                    placeholder="camille"
                   />
                 </div>
               </div>
@@ -178,18 +231,29 @@ export default function OnboardingClient({ username }: { username: string }) {
             <button
               className="btn-primary mt-5 w-full"
               disabled={pending}
-              onClick={() => next({ step: 4, workspaceName: workspaceName || undefined, username: handle })}
+              onClick={() =>
+                next({
+                  step: 4,
+                  workspaceName: workspaceName || undefined,
+                  username: handle,
+                })
+              }
             >
-              Continue
+              Continuer
             </button>
           </div>
         )}
 
         {step === 5 && (
           <div>
-            <h1 className="text-lg font-semibold text-zinc-100">Launch checklist</h1>
-            <p className="mt-1 text-sm text-zinc-500">Tick things off as you go — your dashboard tracks progress too.</p>
-            <div className="mt-5 space-y-2">
+            <h1 className="text-lg font-semibold text-zinc-100">
+              Checklist de lancement
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              Cochez au fur et à mesure — votre tableau de bord suit aussi la
+              progression.
+            </p>
+            <div className="mt-6 space-y-2">
               {CHECKLIST.map((item, i) => (
                 <label
                   key={item}
@@ -199,7 +263,9 @@ export default function OnboardingClient({ username }: { username: string }) {
                     type="checkbox"
                     checked={checked.includes(i)}
                     onChange={() =>
-                      setChecked((c) => (c.includes(i) ? c.filter((x) => x !== i) : [...c, i]))
+                      setChecked((c) =>
+                        c.includes(i) ? c.filter((x) => x !== i) : [...c, i],
+                      )
                     }
                     className="h-4 w-4 accent-[#1B51F5]"
                   />
@@ -218,7 +284,7 @@ export default function OnboardingClient({ username }: { username: string }) {
                 });
               }}
             >
-              <Rocket className="h-4 w-4" /> Open my dashboard
+              <Rocket className="h-4 w-4" /> Ouvrir mon tableau de bord
             </button>
           </div>
         )}

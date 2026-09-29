@@ -3,7 +3,11 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
-import { createProductAction, updateProductAction, deleteProductAction } from '@/server/actions/products';
+import {
+  createProductAction,
+  updateProductAction,
+  deleteProductAction,
+} from '@/server/actions/products';
 import { FormError } from '@/components/auth';
 import { StatusBadge } from '@/components/ui';
 
@@ -48,7 +52,7 @@ export default function ProductDialog({
     setError(null);
     const priceCents = Math.round(parseFloat(form.price || '0') * 100);
     if (!Number.isFinite(priceCents) || priceCents < 0) {
-      setError('Invalid price');
+      setError('Prix invalide');
       return;
     }
     startTransition(async () => {
@@ -75,7 +79,8 @@ export default function ProductDialog({
 
   function remove() {
     if (!product) return;
-    if (!confirm('Delete this product? This cannot be undone.')) return;
+    if (!confirm('Supprimer ce produit ? Cette action est irréversible.'))
+      return;
     startTransition(async () => {
       const res = await deleteProductAction(product.id);
       if (!res.ok) setError(res.error);
@@ -92,11 +97,15 @@ export default function ProductDialog({
       <div className="relative w-full max-w-lg rounded-xl border border-white/10 bg-ink-850 p-6 shadow-card">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-zinc-100">
-            {product ? 'Edit product' : 'New product'}
+            {product ? 'Modifier le produit' : 'Nouveau produit'}
           </h2>
           <div className="flex items-center gap-2">
             {product ? <StatusBadge status={product.status} /> : null}
-            <button className="btn-ghost !p-1.5" onClick={close} aria-label="Close">
+            <button
+              className="btn-ghost !p-1.5"
+              onClick={close}
+              aria-label="Fermer"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -104,8 +113,13 @@ export default function ProductDialog({
 
         <div className="mt-4 space-y-3.5">
           <div>
-            <label className="label">Name</label>
-            <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Notion template pack" />
+            <label className="label">Nom</label>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Pack de modèles Notion"
+            />
           </div>
           <div>
             <label className="label">Description</label>
@@ -113,14 +127,20 @@ export default function ProductDialog({
               className="input"
               rows={3}
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="What does the buyer get?"
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              placeholder="Que reçoit l’acheteur ?"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Type</label>
-              <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+              <select
+                className="input"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              >
                 <option value="DIGITAL">Digital</option>
                 <option value="TEMPLATE">Template</option>
                 <option value="AUDIO">Audio</option>
@@ -128,7 +148,7 @@ export default function ProductDialog({
               </select>
             </div>
             <div>
-              <label className="label">Price (USD)</label>
+              <label className="label">Prix (USD)</label>
               <input
                 className="input"
                 type="number"
@@ -140,19 +160,27 @@ export default function ProductDialog({
             </div>
           </div>
           <div>
-            <label className="label">Delivery URL (download / access)</label>
+            <label className="label">
+              URL de livraison (téléchargement / accès)
+            </label>
             <input
               className="input"
               value={form.downloadUrl}
-              onChange={(e) => setForm({ ...form, downloadUrl: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, downloadUrl: e.target.value })
+              }
               placeholder="https://…"
             />
           </div>
           <div>
-            <label className="label">Status</label>
-            <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
+            <label className="label">Statut</label>
+            <select
+              className="input"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
+              <option value="DRAFT">Brouillon</option>
+              <option value="PUBLISHED">Publié</option>
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
@@ -160,18 +188,32 @@ export default function ProductDialog({
 
         <FormError error={error} />
 
-        <div className="mt-5 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between">
           {product ? (
-            <button className="btn-danger !py-2 !text-xs" onClick={remove} disabled={pending}>
-              Delete
+            <button
+              className="btn-danger !py-2 !text-xs"
+              onClick={remove}
+              disabled={pending}
+            >
+              Supprimer
             </button>
           ) : (
             <span />
           )}
           <div className="flex gap-2">
-            <button className="btn-ghost" onClick={close}>Cancel</button>
-            <button className="btn-primary" onClick={submit} disabled={pending || form.name.trim().length < 2}>
-              {pending ? 'Saving…' : product ? 'Save changes' : 'Create product'}
+            <button className="btn-ghost" onClick={close}>
+              Annuler
+            </button>
+            <button
+              className="btn-primary"
+              onClick={submit}
+              disabled={pending || form.name.trim().length < 2}
+            >
+              {pending
+                ? 'Enregistrement…'
+                : product
+                  ? 'Enregistrer'
+                  : 'Créer le produit'}
             </button>
           </div>
         </div>

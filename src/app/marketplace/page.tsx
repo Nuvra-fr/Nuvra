@@ -10,8 +10,8 @@ import { BrandLogo } from '@/components/BrandLogo';
 import { Badge, InlineAlert } from '@/components/ui';
 
 export const metadata: Metadata = {
-  title: 'Nuvra Marketplace',
-  description: 'Browse courses created by Nuvra creators.',
+  title: 'Marketplace Nuvra',
+  description: 'Découvrez les formations créées par les créateurs Nuvra.',
 };
 
 export default async function PublicMarketplace({
@@ -21,11 +21,13 @@ export default async function PublicMarketplace({
 }) {
   const sp = await searchParams;
 
-  if (!await flagEnabled('marketplace')) {
+  if (!(await flagEnabled('marketplace'))) {
     return (
       <div className="min-h-screen bg-ink-950">
         <main className="mx-auto max-w-3xl px-5 py-20 text-center">
-          <InlineAlert tone="warning">The marketplace is currently disabled.</InlineAlert>
+          <InlineAlert tone="warning">
+            La marketplace est momentanément désactivée.
+          </InlineAlert>
         </main>
       </div>
     );
@@ -41,7 +43,9 @@ export default async function PublicMarketplace({
   if (sp.q) {
     const q = sp.q.toLowerCase();
     listings = listings.filter(
-      (l) => l.title.toLowerCase().includes(q) || (l.description ?? '').toLowerCase().includes(q),
+      (l) =>
+        l.title.toLowerCase().includes(q) ||
+        (l.description ?? '').toLowerCase().includes(q),
     );
   }
   if (sp.category) {
@@ -50,11 +54,13 @@ export default async function PublicMarketplace({
 
   const categories = Array.from(
     new Set(
-      (await db
-        .select({ category: marketplaceListings.category })
-        .from(marketplaceListings)
-        .where(eq(marketplaceListings.status, 'APPROVED'))
-        .all())
+      (
+        await db
+          .select({ category: marketplaceListings.category })
+          .from(marketplaceListings)
+          .where(eq(marketplaceListings.status, 'APPROVED'))
+          .all()
+      )
         .map((l) => l.category)
         .filter(Boolean),
     ),
@@ -66,8 +72,12 @@ export default async function PublicMarketplace({
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <BrandLogo href="/" />
           <div className="flex items-center gap-2">
-            <Link href="/login" className="btn-ghost">Sign in</Link>
-            <Link href="/register" className="btn-primary">Start for free</Link>
+            <Link href="/login" className="btn-ghost">
+              Connexion
+            </Link>
+            <Link href="/register" className="btn-primary">
+              Commencer gratuitement
+            </Link>
           </div>
         </div>
       </header>
@@ -78,7 +88,8 @@ export default async function PublicMarketplace({
             <Store className="h-6 w-6 text-nuvra-400" /> Nuvra Marketplace
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Courses published by Nuvra creators. Creators keep 90 % on the Free plan and 100 % on Pro.
+            Des formations publiées par les créateurs Nuvra. Vous gardez 90 % sur
+            le plan Gratuit et 100 % avec Pro.
           </p>
         </div>
 
@@ -88,13 +99,16 @@ export default async function PublicMarketplace({
             <input
               name="q"
               defaultValue={sp.q ?? ''}
-              placeholder="Search courses…"
+              placeholder="Rechercher une formation…"
               className="input !w-64 !py-2"
             />
-            <button className="btn-secondary !py-2">Search</button>
+            <button className="btn-secondary !py-2">Rechercher</button>
           </form>
-          <Link href="/marketplace" className={`badge ${!sp.category ? '!border-nuvra-500/50 !bg-nuvra-500/15' : ''}`}>
-            All
+          <Link
+            href="/marketplace"
+            className={`badge ${!sp.category ? '!border-nuvra-500/50 !bg-nuvra-500/15' : ''}`}
+          >
+            Tous
           </Link>
           {categories.map((c) => (
             <Link
@@ -113,39 +127,65 @@ export default async function PublicMarketplace({
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {await Promise.all(listings.map(async (l) => {
-              const students = l.courseId
-                ? (await db.select({ id: enrollments.id }).from(enrollments).where(eq(enrollments.courseId, l.courseId)).all()).length
-                : 0;
-              const ratingRows = await db.select().from(reviews).where(eq(reviews.listingId, l.id)).all();
-              const avg =
-                ratingRows.length > 0
-                  ? Math.round((ratingRows.reduce((s, r) => s + r.rating, 0) / ratingRows.length) * 10) / 10
-                  : null;
-              return (
-                <Link key={l.id} href={`/marketplace/${l.id}`} className="card p-5 transition hover:border-nuvra-500/40">
-                  <div className="flex items-start justify-between gap-2">
-                    <Badge tone="blue">{l.category ?? 'Course'}</Badge>
-                    <span className="text-lg font-semibold text-zinc-100">{formatCents(l.priceCents)}</span>
-                  </div>
-                  <div className="mt-3 line-clamp-2 text-sm font-semibold text-zinc-200">{l.title}</div>
-                  <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{l.description}</p>
-                  <div className="mt-4 flex items-center justify-between text-xs text-zinc-600">
-                    <span>{l.creatorName ?? 'Creator'}</span>
-                    <span className="flex items-center gap-3">
-                      {avg ? (
-                        <span className="flex items-center gap-1 text-amber-400">
-                          <Star className="h-3 w-3" /> {avg}
-                        </span>
-                      ) : null}
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {students}
+            {await Promise.all(
+              listings.map(async (l) => {
+                const students = l.courseId
+                  ? (
+                      await db
+                        .select({ id: enrollments.id })
+                        .from(enrollments)
+                        .where(eq(enrollments.courseId, l.courseId))
+                        .all()
+                    ).length
+                  : 0;
+                const ratingRows = await db
+                  .select()
+                  .from(reviews)
+                  .where(eq(reviews.listingId, l.id))
+                  .all();
+                const avg =
+                  ratingRows.length > 0
+                    ? Math.round(
+                        (ratingRows.reduce((s, r) => s + r.rating, 0) /
+                          ratingRows.length) *
+                          10,
+                      ) / 10
+                    : null;
+                return (
+                  <Link
+                    key={l.id}
+                    href={`/marketplace/${l.id}`}
+                    className="card p-5 transition hover:border-nuvra-500/40"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <Badge tone="blue">{l.category ?? 'Formation'}</Badge>
+                      <span className="text-lg font-semibold text-zinc-100">
+                        {formatCents(l.priceCents)}
                       </span>
-                    </span>
-                  </div>
-                </Link>
-              );
-            }))}
+                    </div>
+                    <div className="mt-3 line-clamp-2 section-title">
+                      {l.title}
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
+                      {l.description}
+                    </p>
+                    <div className="mt-4 flex items-center justify-between text-xs text-zinc-600">
+                      <span>{l.creatorName ?? 'Créateur'}</span>
+                      <span className="flex items-center gap-3">
+                        {avg ? (
+                          <span className="flex items-center gap-1 text-amber-400">
+                            <Star className="h-3 w-3" /> {avg}
+                          </span>
+                        ) : null}
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" /> {students}
+                        </span>
+                      </span>
+                    </div>
+                  </Link>
+                );
+              }),
+            )}
           </div>
         )}
       </main>

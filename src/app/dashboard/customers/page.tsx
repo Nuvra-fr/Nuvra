@@ -9,7 +9,7 @@ import { timeAgo, safeJson } from '@/lib/utils';
 import ContactDialog from './ContactDialog';
 import ContactDrawer from './ContactDrawer';
 
-export const metadata: Metadata = { title: 'Customers' };
+export const metadata: Metadata = { title: 'Clients' };
 
 export default async function CustomersPage({
   searchParams,
@@ -27,7 +27,9 @@ export default async function CustomersPage({
     .all();
 
   const customers = rows.filter((c) => c.status !== 'LEAD');
-  const selected = sp.contact ? rows.find((r) => r.id === sp.contact) ?? null : null;
+  const selected = sp.contact
+    ? (rows.find((r) => r.id === sp.contact) ?? null)
+    : null;
   const activities = selected
     ? await db
         .select()
@@ -38,22 +40,27 @@ export default async function CustomersPage({
         .all()
     : [];
   const contactOrders = selected
-    ? await db.select().from(orders).where(eq(orders.contactId, selected.id)).orderBy(desc(orders.createdAt)).all()
+    ? await db
+        .select()
+        .from(orders)
+        .where(eq(orders.contactId, selected.id))
+        .orderBy(desc(orders.createdAt))
+        .all()
     : [];
 
   return (
     <div>
       <PageHeader
-        title="Customers"
-        description="Everyone who bought or engaged — with tags, activity and order history."
+        title="Clients"
+        description="Tous ceux qui ont acheté ou interagi — tags, activité et historique de commandes."
         actions={<ContactDialog />}
       />
 
       {customers.length === 0 ? (
         <EmptyState
           icon={<Users className="h-8 w-8" />}
-          title="No customers yet"
-          description="Customers appear automatically when orders are paid, or you can add them manually."
+          title="Aucun client"
+          description="Les clients apparaissent automatiquement dès qu’une commande est payée — ou ajoutez-les à la main."
           action={<ContactDialog />}
         />
       ) : (
@@ -62,17 +69,20 @@ export default async function CustomersPage({
             <thead>
               <tr>
                 <th>Contact</th>
-                <th>Status</th>
+                <th>Statut</th>
                 <th>Tags</th>
                 <th>Source</th>
-                <th>Updated</th>
+                <th>Mis à jour</th>
               </tr>
             </thead>
             <tbody>
               {customers.map((c) => (
                 <tr key={c.id}>
                   <td>
-                    <a href={`/dashboard/customers?contact=${c.id}`} className="font-medium text-zinc-200 hover:text-nuvra-300">
+                    <a
+                      href={`/dashboard/customers?contact=${c.id}`}
+                      className="font-medium text-zinc-200 hover:text-nuvra-300"
+                    >
                       {c.name ?? c.email}
                     </a>
                     <div className="text-xs text-zinc-600">{c.email}</div>
@@ -107,8 +117,19 @@ export default async function CustomersPage({
             notes: selected.notes ?? '',
             phone: selected.phone ?? '',
           }}
-          activities={activities.map((a) => ({ id: a.id, type: a.type, summary: a.summary, createdAt: a.createdAt.toISOString() }))}
-          orders={contactOrders.map((o) => ({ id: o.id, number: o.number, totalCents: o.totalCents, status: o.status, mode: o.mode }))}
+          activities={activities.map((a) => ({
+            id: a.id,
+            type: a.type,
+            summary: a.summary,
+            createdAt: a.createdAt.toISOString(),
+          }))}
+          orders={contactOrders.map((o) => ({
+            id: o.id,
+            number: o.number,
+            totalCents: o.totalCents,
+            status: o.status,
+            mode: o.mode,
+          }))}
         />
       ) : null}
     </div>

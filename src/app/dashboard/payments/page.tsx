@@ -9,16 +9,22 @@ import { formatCents } from '@/lib/money';
 import { availableBalance, grossBalance, minPayoutCents } from '@/lib/payouts';
 import { paymentsMode } from '@/lib/stripe';
 import { getConfig } from '@/lib/config';
-import { PageHeader, StatusBadge, Badge, InlineAlert, Tabs } from '@/components/ui';
+import {
+  PageHeader,
+  StatusBadge,
+  Badge,
+  InlineAlert,
+  Tabs,
+} from '@/components/ui';
 import { formatDateTime } from '@/lib/utils';
 import type { LedgerAccount } from '@/lib/constants';
 import RefundButton from './RefundButton';
 import PayoutButton from './PayoutButton';
 
-export const metadata: Metadata = { title: 'Payments' };
+export const metadata: Metadata = { title: 'Paiements' };
 
 const ACCOUNT_LABELS: Record<string, string> = {
-  CREATOR_PAYABLE: 'Creator earnings',
+  CREATOR_PAYABLE: 'Revenus du créateur',
   RESELLER_PAYABLE: 'Reseller earnings',
   AFFILIATE_PAYABLE: 'Affiliate earnings',
 };
@@ -30,7 +36,12 @@ export default async function PaymentsPage({
 }) {
   const ctx = await requireUser();
   const sp = await searchParams;
-  const tab = sp.tab === 'ledger' ? 'ledger' : sp.tab === 'payouts' ? 'payouts' : 'orders';
+  const tab =
+    sp.tab === 'ledger'
+      ? 'ledger'
+      : sp.tab === 'payouts'
+        ? 'payouts'
+        : 'orders';
   const mode = paymentsMode();
   const testMode = mode === 'test';
 
@@ -50,7 +61,11 @@ export default async function PaymentsPage({
     .limit(20)
     .all();
 
-  const accounts: LedgerAccount[] = ['CREATOR_PAYABLE', 'RESELLER_PAYABLE', 'AFFILIATE_PAYABLE'];
+  const accounts: LedgerAccount[] = [
+    'CREATOR_PAYABLE',
+    'RESELLER_PAYABLE',
+    'AFFILIATE_PAYABLE',
+  ];
   const balances = (
     await Promise.all(
       accounts.map(async (a) => ({
@@ -69,17 +84,21 @@ export default async function PaymentsPage({
     .limit(100)
     .all();
 
-  const selectedOrder = sp.order ? workspaceOrders.find((o) => o.id === sp.order) ?? null : null;
-  const holdDays = Number(await getConfig<number>('payouts.holdDays') ?? 7);
+  const selectedOrder = sp.order
+    ? (workspaceOrders.find((o) => o.id === sp.order) ?? null)
+    : null;
+  const holdDays = Number((await getConfig<number>('payouts.holdDays')) ?? 7);
 
   return (
     <div>
       <PageHeader
-        title="Payments"
-        description="Orders, the financial ledger, balances and payouts — all reconstructable from entries."
+        title="Paiements"
+        description="Commandes, grand livre, soldes et versements — tout est reconstituable depuis les écritures."
         actions={
           <Badge tone={testMode ? 'purple' : 'green'}>
-            {testMode ? 'TEST MODE — configure Stripe for live payments' : 'STRIPE LIVE'}
+            {testMode
+              ? 'MODE TEST — configurez Stripe pour encaisser en réel'
+              : 'STRIPE ACTIF'}
           </Badge>
         }
       />
@@ -88,8 +107,11 @@ export default async function PaymentsPage({
         active={`/dashboard/payments?tab=${tab}`}
         items={[
           { href: '/dashboard/payments', label: 'Orders' },
-          { href: '/dashboard/payments?tab=ledger', label: 'Financial ledger' },
-          { href: '/dashboard/payments?tab=payouts', label: 'Balances & payouts' },
+          { href: '/dashboard/payments?tab=ledger', label: 'Grand livre' },
+          {
+            href: '/dashboard/payments?tab=payouts',
+            label: 'Soldes & versements',
+          },
         ]}
       />
 
@@ -98,20 +120,26 @@ export default async function PaymentsPage({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-zinc-200">{selectedOrder.number}</h2>
+                <h2 className="section-title">{selectedOrder.number}</h2>
                 <StatusBadge status={selectedOrder.status} />
                 <StatusBadge status={selectedOrder.mode} />
               </div>
               <p className="mt-1 text-xs text-zinc-600">
-                {selectedOrder.buyerEmail} · {formatDateTime(selectedOrder.createdAt)}
+                {selectedOrder.buyerEmail} ·{' '}
+                {formatDateTime(selectedOrder.createdAt)}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-lg font-semibold text-zinc-100">{formatCents(selectedOrder.totalCents)}</div>
+                <div className="text-lg font-semibold text-zinc-100">
+                  {formatCents(selectedOrder.totalCents)}
+                </div>
                 <div className="text-xs text-zinc-600">
-                  Nuvra fee {formatCents(selectedOrder.platformFeeCents)} · seller{' '}
-                  {formatCents(selectedOrder.totalCents - selectedOrder.platformFeeCents)}
+                  Nuvra fee {formatCents(selectedOrder.platformFeeCents)} ·
+                  seller{' '}
+                  {formatCents(
+                    selectedOrder.totalCents - selectedOrder.platformFeeCents,
+                  )}
                 </div>
               </div>
               {selectedOrder.status === 'PAID' ? (
@@ -127,13 +155,13 @@ export default async function PaymentsPage({
           <table className="data">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Buyer</th>
+                <th>Commande</th>
+                <th>Acheteur</th>
                 <th>Kind</th>
                 <th>Total</th>
-                <th>Nuvra fee</th>
+                <th>Commission Nuvra</th>
                 <th>Mode</th>
-                <th>Status</th>
+                <th>Statut</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -148,21 +176,32 @@ export default async function PaymentsPage({
                 workspaceOrders.map((o) => (
                   <tr key={o.id}>
                     <td>
-                      <Link href={`/dashboard/payments?order=${o.id}`} className="font-medium text-zinc-200 hover:text-nuvra-300">
+                      <Link
+                        href={`/dashboard/payments?order=${o.id}`}
+                        className="font-medium text-zinc-200 hover:text-nuvra-300"
+                      >
                         {o.number}
                       </Link>
                     </td>
                     <td className="text-zinc-400">{o.buyerEmail}</td>
-                    <td className="text-zinc-500">{o.kind === 'ACADEMY_SALE' ? 'Academy' : 'Creator'}</td>
-                    <td className="tabular-nums">{formatCents(o.totalCents)}</td>
-                    <td className="tabular-nums text-zinc-500">{formatCents(o.platformFeeCents)}</td>
+                    <td className="text-zinc-500">
+                      {o.kind === 'ACADEMY_SALE' ? 'Academy' : 'Créateur'}
+                    </td>
+                    <td className="tabular-nums">
+                      {formatCents(o.totalCents)}
+                    </td>
+                    <td className="tabular-nums text-zinc-500">
+                      {formatCents(o.platformFeeCents)}
+                    </td>
                     <td>
                       <StatusBadge status={o.mode} />
                     </td>
                     <td>
                       <StatusBadge status={o.status} />
                     </td>
-                    <td className="text-zinc-500">{formatDateTime(o.createdAt)}</td>
+                    <td className="text-zinc-500">
+                      {formatDateTime(o.createdAt)}
+                    </td>
                   </tr>
                 ))
               )}
@@ -174,8 +213,9 @@ export default async function PaymentsPage({
       {tab === 'ledger' && (
         <div className="space-y-4">
           <InlineAlert tone="info">
-            Append-only ledger. Every balance on this platform is derived by summing these entries —
-            there is no mutable balance anywhere.
+            Grand livre en append-only. Chaque solde de la plateforme est
+            calculé en additionnant ces écritures — aucun solde n&apos;est
+            stocké en dur.
           </InlineAlert>
           <div className="table-wrap">
             <table className="data">
@@ -183,9 +223,9 @@ export default async function PaymentsPage({
                 <tr>
                   <th>Date</th>
                   <th>Type</th>
-                  <th>Account</th>
+                  <th>Compte</th>
                   <th>Direction</th>
-                  <th>Amount</th>
+                  <th>Montant</th>
                   <th>Description</th>
                   <th>Mode</th>
                 </tr>
@@ -194,23 +234,41 @@ export default async function PaymentsPage({
                 {ledger.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center text-zinc-600">
-                      No ledger entries yet.
+                      Aucune écriture pour l&apos;instant.
                     </td>
                   </tr>
                 ) : (
                   ledger.map((e) => (
                     <tr key={e.id}>
-                      <td className="text-zinc-500">{formatDateTime(e.createdAt)}</td>
+                      <td className="text-zinc-500">
+                        {formatDateTime(e.createdAt)}
+                      </td>
                       <td>
-                        <Badge tone={e.type === 'REFUND' || e.type === 'REVERSAL' ? 'red' : e.type === 'PLATFORM_FEE' ? 'blue' : 'default'}>
+                        <Badge
+                          tone={
+                            e.type === 'REFUND' || e.type === 'REVERSAL'
+                              ? 'red'
+                              : e.type === 'PLATFORM_FEE'
+                                ? 'blue'
+                                : 'default'
+                          }
+                        >
                           {e.type}
                         </Badge>
                       </td>
                       <td className="text-zinc-400">{e.account}</td>
-                      <td className={e.direction === 'CREDIT' ? 'text-emerald-400' : 'text-red-400'}>
+                      <td
+                        className={
+                          e.direction === 'CREDIT'
+                            ? 'text-emerald-400'
+                            : 'text-red-400'
+                        }
+                      >
                         {e.direction}
                       </td>
-                      <td className="tabular-nums">{formatCents(e.amountCents)}</td>
+                      <td className="tabular-nums">
+                        {formatCents(e.amountCents)}
+                      </td>
                       <td className="text-zinc-500">{e.description}</td>
                       <td>
                         <StatusBadge status={e.mode} />
@@ -225,28 +283,41 @@ export default async function PaymentsPage({
       )}
 
       {tab === 'payouts' && (
-        <div className="space-y-5">
+        <div className="stack-sections">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {balances.length === 0 ? (
               <div className="card p-5 text-sm text-zinc-600 sm:col-span-2 lg:col-span-3">
-                No earnings yet. Balances appear here as soon as sales are paid and the{' '}
-                {holdDays}-day hold period passes.
+                No earnings yet. Balances appear here as soon as sales are paid
+                and the {holdDays}-day hold period passes.
               </div>
             ) : (
-              await Promise.all(balances.map(async (b) => (
-                <div key={b.account} className="card p-5">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    <Wallet className="h-3.5 w-3.5" /> {ACCOUNT_LABELS[b.account] ?? b.account}
+              await Promise.all(
+                balances.map(async (b) => (
+                  <div key={b.account} className="card card-body">
+                    <div className="flex items-center gap-2 eyebrow">
+                      <Wallet className="h-3.5 w-3.5" />{' '}
+                      {ACCOUNT_LABELS[b.account] ?? b.account}
+                    </div>
+                    <div className="mt-2 text-2xl font-semibold text-zinc-100">
+                      {formatCents(b.gross)}
+                    </div>
+                    <div className="mt-1 text-xs text-zinc-600">
+                      Available after {holdDays}-day hold:{' '}
+                      <span className="text-emerald-300">
+                        {formatCents(b.available)}
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <PayoutButton
+                        account={b.account}
+                        available={b.available}
+                        min={await minPayoutCents()}
+                        mode={testMode ? 'TEST' : 'LIVE'}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2 text-2xl font-semibold text-zinc-100">{formatCents(b.gross)}</div>
-                  <div className="mt-1 text-xs text-zinc-600">
-                    Available after {holdDays}-day hold: <span className="text-emerald-300">{formatCents(b.available)}</span>
-                  </div>
-                  <div className="mt-3">
-                    <PayoutButton account={b.account} available={b.available} min={await minPayoutCents()} mode={testMode ? 'TEST' : 'LIVE'} />
-                  </div>
-                </div>
-              )))
+                )),
+              )
             )}
           </div>
 
@@ -254,9 +325,9 @@ export default async function PaymentsPage({
             <table className="data">
               <thead>
                 <tr>
-                  <th>Payout</th>
-                  <th>Amount</th>
-                  <th>Status</th>
+                  <th>Versement</th>
+                  <th>Montant</th>
+                  <th>Statut</th>
                   <th>Requested</th>
                   <th>Processed</th>
                 </tr>
@@ -265,19 +336,27 @@ export default async function PaymentsPage({
                 {myPayouts.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center text-zinc-600">
-                      No payout requests yet.
+                      Aucune demande de versement.
                     </td>
                   </tr>
                 ) : (
                   myPayouts.map((p) => (
                     <tr key={p.id}>
-                      <td className="font-mono text-xs text-zinc-500">{p.id.slice(0, 8)}</td>
-                      <td className="tabular-nums">{formatCents(p.amountCents)}</td>
+                      <td className="font-mono text-xs text-zinc-500">
+                        {p.id.slice(0, 8)}
+                      </td>
+                      <td className="tabular-nums">
+                        {formatCents(p.amountCents)}
+                      </td>
                       <td>
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="text-zinc-500">{formatDateTime(p.createdAt)}</td>
-                      <td className="text-zinc-500">{formatDateTime(p.processedAt)}</td>
+                      <td className="text-zinc-500">
+                        {formatDateTime(p.createdAt)}
+                      </td>
+                      <td className="text-zinc-500">
+                        {formatDateTime(p.processedAt)}
+                      </td>
                     </tr>
                   ))
                 )}

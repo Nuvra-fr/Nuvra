@@ -35,7 +35,9 @@ export function AuthShell({
         <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
         <div className="mt-6">{children}</div>
       </div>
-      {footer ? <div className="mt-5 text-center text-sm text-zinc-500">{footer}</div> : null}
+      {footer ? (
+        <div className="mt-6 text-center text-sm text-zinc-500">{footer}</div>
+      ) : null}
     </div>
   );
 }
@@ -77,17 +79,20 @@ export function LoginForm() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+        body: JSON.stringify({
+          email: form.get('email'),
+          password: form.get('password'),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Unable to sign in.');
+        setError(data.error ?? 'Impossible de vous connecter.');
         return;
       }
       router.push(data.next ?? '/dashboard');
       router.refresh();
     } catch {
-      setError('Network error. Please try again.');
+      setError('Erreur réseau. Merci de réessayer.');
     } finally {
       setLoading(false);
     }
@@ -96,9 +101,16 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit}>
       <FormError error={error} />
-      <Field label="Email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
       <Field
-        label="Password"
+        label="Email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        placeholder="vous@exemple.com"
+      />
+      <Field
+        label="Mot de passe"
         name="password"
         type="password"
         autoComplete="current-password"
@@ -106,12 +118,15 @@ export function LoginForm() {
         placeholder="••••••••"
       />
       <div className="mb-5 flex justify-end">
-        <Link href="/forgot-password" className="text-xs text-nuvra-400 hover:text-nuvra-300">
-          Forgot password?
+        <Link
+          href="/forgot-password"
+          className="text-xs text-nuvra-400 hover:text-nuvra-300"
+        >
+          Mot de passe oublié ?
         </Link>
       </div>
       <button className="btn-primary w-full" disabled={loading} type="submit">
-        {loading ? 'Signing in…' : 'Sign in'}
+        {loading ? 'Connexion…' : 'Se connecter'}
       </button>
     </form>
   );
@@ -139,13 +154,13 @@ export function RegisterForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Unable to create the account.');
+        setError(data.error ?? 'Impossible de créer le compte.');
         return;
       }
       router.push(data.next ?? '/dashboard');
       router.refresh();
     } catch {
-      setError('Network error. Please try again.');
+      setError('Erreur réseau. Merci de réessayer.');
     } finally {
       setLoading(false);
     }
@@ -154,10 +169,23 @@ export function RegisterForm() {
   return (
     <form onSubmit={onSubmit}>
       <FormError error={error} />
-      <Field label="Full name" name="name" autoComplete="name" required placeholder="Alex Martin" />
-      <Field label="Email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
       <Field
-        label="Password (8+ characters)"
+        label="Nom complet"
+        name="name"
+        autoComplete="name"
+        required
+        placeholder="Camille Martin"
+      />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        placeholder="vous@exemple.com"
+      />
+      <Field
+        label="Mot de passe (8 caractères minimum)"
         name="password"
         type="password"
         autoComplete="new-password"
@@ -166,10 +194,11 @@ export function RegisterForm() {
         placeholder="••••••••"
       />
       <button className="btn-primary w-full" disabled={loading} type="submit">
-        {loading ? 'Creating account…' : 'Start for free'}
+        {loading ? 'Création du compte…' : 'Commencer gratuitement'}
       </button>
       <p className="mt-4 text-center text-xs text-zinc-600">
-        By continuing you agree to our Terms and Privacy Policy.
+        En continuant, vous acceptez nos Conditions et notre Politique de
+        confidentialité.
       </p>
     </form>
   );
@@ -193,12 +222,12 @@ export function ForgotPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Unable to process the request.');
+        setError(data.error ?? 'Impossible de traiter la demande.');
         return;
       }
       setDone(true);
     } catch {
-      setError('Network error. Please try again.');
+      setError('Erreur réseau. Merci de réessayer.');
     } finally {
       setLoading(false);
     }
@@ -207,8 +236,9 @@ export function ForgotPasswordForm() {
   if (done) {
     return (
       <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-3 text-sm text-emerald-200">
-        If that account exists, a reset link has been sent. Check your inbox (and the Nuvra outbox in
-        Admin → Emails if no email provider is configured).
+        Si ce compte existe, un lien de réinitialisation vient d’être envoyé.
+        Consultez votre boîte de réception (et la boîte d’envoi Nuvra dans Admin
+        → Emails si aucun service d’email n’est configuré).
       </div>
     );
   }
@@ -216,9 +246,15 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={onSubmit}>
       <FormError error={error} />
-      <Field label="Email" name="email" type="email" required placeholder="you@example.com" />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        required
+        placeholder="vous@exemple.com"
+      />
       <button className="btn-primary w-full" disabled={loading} type="submit">
-        {loading ? 'Sending…' : 'Send reset link'}
+        {loading ? 'Envoi…' : 'Envoyer le lien de réinitialisation'}
       </button>
     </form>
   );
@@ -242,12 +278,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Unable to reset the password.');
+        setError(data.error ?? 'Impossible de réinitialiser le mot de passe.');
         return;
       }
       router.push('/login');
     } catch {
-      setError('Network error. Please try again.');
+      setError('Erreur réseau. Merci de réessayer.');
     } finally {
       setLoading(false);
     }
@@ -257,7 +293,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     <form onSubmit={onSubmit}>
       <FormError error={error} />
       <Field
-        label="New password (8+ characters)"
+        label="Nouveau mot de passe (8 caractères minimum)"
         name="password"
         type="password"
         autoComplete="new-password"
@@ -266,7 +302,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         placeholder="••••••••"
       />
       <button className="btn-primary w-full" disabled={loading} type="submit">
-        {loading ? 'Updating…' : 'Update password'}
+        {loading ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
       </button>
     </form>
   );

@@ -41,8 +41,7 @@ export type ClaimRejection =
   | 'order_not_live';
 
 export type ClaimVerdict =
-  | { ok: true }
-  | { ok: false; reason: ClaimRejection; detail: string };
+  { ok: true } | { ok: false; reason: ClaimRejection; detail: string };
 
 export function verifyCheckoutSessionForOrder(
   session: CheckoutSessionClaim,
@@ -52,7 +51,7 @@ export function verifyCheckoutSessionForOrder(
     return {
       ok: false,
       reason: 'not_paid',
-      detail: `session ${session.id ?? '?'} is ${session.payment_status ?? 'unknown'}`,
+      detail: `session ${session.id ?? '?'} : statut ${session.payment_status ?? 'inconnu'}`,
     };
   }
 
@@ -61,7 +60,7 @@ export function verifyCheckoutSessionForOrder(
     return {
       ok: false,
       reason: 'wrong_order',
-      detail: `session ${session.id ?? '?'} belongs to order ${claimedOrderId ?? '(none)'}, not ${order.id}`,
+      detail: `la session ${session.id ?? '?'} appartient à la commande ${claimedOrderId ?? '(aucune)'}, pas à ${order.id}`,
     };
   }
 
@@ -69,7 +68,7 @@ export function verifyCheckoutSessionForOrder(
     return {
       ok: false,
       reason: 'amount_mismatch',
-      detail: `session charged ${session.amount_total ?? '?'} ${session.currency ?? ''}, order asks for ${order.totalCents} ${order.currency}`,
+      detail: `la session a encaissé ${session.amount_total ?? '?'} ${session.currency ?? ''}, la commande demande ${order.totalCents} ${order.currency}`,
     };
   }
 
@@ -77,7 +76,7 @@ export function verifyCheckoutSessionForOrder(
     return {
       ok: false,
       reason: 'currency_mismatch',
-      detail: `session currency ${session.currency ?? '?'} ≠ order currency ${order.currency}`,
+      detail: `devise de la session ${session.currency ?? '?'} ≠ devise de la commande ${order.currency}`,
     };
   }
 
@@ -85,7 +84,7 @@ export function verifyCheckoutSessionForOrder(
     return {
       ok: false,
       reason: 'order_not_pending',
-      detail: `order ${order.id} is ${order.status}`,
+      detail: `commande ${order.id} : statut ${order.status}`,
     };
   }
 
@@ -93,7 +92,7 @@ export function verifyCheckoutSessionForOrder(
     return {
       ok: false,
       reason: 'order_not_live',
-      detail: `order ${order.id} is ${order.mode} — Stripe cannot finalize a test order`,
+      detail: `commande ${order.id} en mode ${order.mode} — Stripe ne peut pas finaliser une commande de test`,
     };
   }
 

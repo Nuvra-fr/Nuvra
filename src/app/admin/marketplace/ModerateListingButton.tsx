@@ -20,8 +20,8 @@ export default function ModerateListingButton({
     <button
       className={
         action === 'APPROVED'
-          ? 'btn-ghost !px-2.5 !py-1 !text-xs !text-emerald-300'
-          : 'btn-ghost !px-2.5 !py-1 !text-xs !text-red-300'
+          ? 'btn-ghost btn-sm !text-emerald-300'
+          : 'btn-ghost btn-sm !text-red-300'
       }
       disabled={pending}
       onClick={() =>

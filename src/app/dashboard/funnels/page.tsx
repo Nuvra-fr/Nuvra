@@ -9,7 +9,7 @@ import { EmptyState, PageHeader, StatusBadge } from '@/components/ui';
 import { timeAgo } from '@/lib/utils';
 import NewFunnelButton from './NewFunnelButton';
 
-export const metadata: Metadata = { title: 'Funnels' };
+export const metadata: Metadata = { title: 'Tunnels' };
 
 export default async function FunnelsPage() {
   const ctx = await requireUser();
@@ -20,30 +20,32 @@ export default async function FunnelsPage() {
     .orderBy(desc(funnels.updatedAt))
     .all();
 
-  const withCounts = await Promise.all(rows.map(async (f) => {
-    const steps = await db
-      .select({ step: funnelSteps, page: pages })
-      .from(funnelSteps)
-      .innerJoin(pages, eq(funnelSteps.pageId, pages.id))
-      .where(eq(funnelSteps.funnelId, f.id))
-      .all();
-    const views = steps.reduce((s, st) => s + st.page.views, 0);
-    return { ...f, stepCount: steps.length, views };
-  }));
+  const withCounts = await Promise.all(
+    rows.map(async (f) => {
+      const steps = await db
+        .select({ step: funnelSteps, page: pages })
+        .from(funnelSteps)
+        .innerJoin(pages, eq(funnelSteps.pageId, pages.id))
+        .where(eq(funnelSteps.funnelId, f.id))
+        .all();
+      const views = steps.reduce((s, st) => s + st.page.views, 0);
+      return { ...f, stepCount: steps.length, views };
+    }),
+  );
 
   return (
     <div>
       <PageHeader
-        title="Funnels"
-        description="Landing → lead → sales → checkout → upsell → thank you, with conversion between steps."
+        title="Tunnels"
+        description="Page de vente → prospect → vente → paiement → upsell → remerciement, avec la conversion entre chaque étape."
         actions={<NewFunnelButton />}
       />
 
       {withCounts.length === 0 ? (
         <EmptyState
           icon={<GitBranch className="h-8 w-8" />}
-          title="No funnels yet"
-          description="Create a funnel with a ready-made structure (landing, sales, checkout, thank you)."
+          title="Aucun tunnel"
+          description="Créez un tunnel avec une structure prête à l’emploi (page de vente, paiement, remerciement)."
           action={<NewFunnelButton />}
         />
       ) : (
@@ -58,9 +60,10 @@ export default async function FunnelsPage() {
                 <GitBranch className="h-5 w-5 text-nuvra-400" />
                 <StatusBadge status={f.status} />
               </div>
-              <div className="mt-3 text-sm font-semibold text-zinc-200">{f.name}</div>
+              <div className="mt-3 section-title">{f.name}</div>
               <div className="mt-1 text-xs text-zinc-600">
-                {f.stepCount} steps · {f.views} views · updated {timeAgo(f.updatedAt)}
+                {f.stepCount} steps · {f.views} views · updated{' '}
+                {timeAgo(f.updatedAt)}
               </div>
             </Link>
           ))}

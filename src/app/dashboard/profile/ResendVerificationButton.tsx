@@ -7,7 +7,8 @@ export default function ResendVerificationButton() {
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
 
-  if (done) return <span className="text-[11px] text-emerald-400">Sent ✓</span>;
+  if (done)
+    return <span className="text-[11px] text-emerald-400">Envoyé ✓</span>;
 
   return (
     <button
@@ -20,7 +21,7 @@ export default function ResendVerificationButton() {
         })
       }
     >
-      {pending ? 'Sending…' : 'Send link'}
+      {pending ? 'Sending…' : 'Envoyer le lien'}
     </button>
   );
 }
