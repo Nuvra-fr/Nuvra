@@ -6,7 +6,7 @@ import { FlaskConical, ArrowLeft } from 'lucide-react';
 import { db } from '@/lib/db';
 import { orderItems, orders } from '@/db/schema';
 import { formatCents } from '@/lib/money';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { InlineAlert, Badge } from '@/components/ui';
 import { confirmTestPurchaseAction } from '@/server/actions/checkout';
 
@@ -31,7 +31,7 @@ export default async function TestCheckoutPage({
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <Badge tone="purple">
             <FlaskConical className="h-3 w-3" /> TEST MODE
           </Badge>

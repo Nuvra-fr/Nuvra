@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { GraduationCap, Check, TrendingUp, LayoutDashboard, Link2 } from 'lucide-react';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge } from '@/components/ui';
 import { formatCents } from '@/lib/money';
 import { academyPriceCents, getAllConfig } from '@/lib/config';
@@ -40,9 +40,9 @@ export default async function AcademyPage() {
 
   return (
     <div className="min-h-screen bg-ink-950">
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/80 backdrop-blur">
+      <header className="glass-capsule sticky top-0 z-40 rounded-none border-x-0 border-t-0">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <div className="flex items-center gap-2">
             <Link href="/pricing" className="btn-ghost">Pricing</Link>
             <Link href="/register" className="btn-primary">Start for free</Link>

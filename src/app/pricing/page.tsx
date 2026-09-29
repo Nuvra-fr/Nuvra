@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { formatCents } from '@/lib/money';
 import { getAllConfig } from '@/lib/config';
 
@@ -31,9 +31,9 @@ export default async function PricingPage() {
 
   return (
     <div className="min-h-screen bg-ink-950">
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/80 backdrop-blur">
+      <header className="glass-capsule sticky top-0 z-40 rounded-none border-x-0 border-t-0">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <div className="flex items-center gap-2">
             <Link href="/login" className="btn-ghost">Sign in</Link>
             <Link href="/register" className="btn-primary">Start for free</Link>
@@ -63,7 +63,7 @@ export default async function PricingPage() {
             <Link href="/register" className="btn-secondary mt-6 w-full">Start for free</Link>
           </div>
 
-          <div className="card relative border-nuvra-500/40 p-6 shadow-glow">
+          <div className="card card-hover relative border-nuvra-500/30 p-6">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-nuvra-600 px-3 py-0.5 text-[11px] font-semibold text-white">
               MOST POPULAR
             </div>

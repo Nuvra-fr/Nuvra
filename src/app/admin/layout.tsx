@@ -13,6 +13,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/auth';
+import { BrandMark } from '@/components/BrandLogo';
 
 export const metadata: Metadata = { title: 'Admin' };
 
@@ -33,13 +34,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-ink-950">
-      <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-ink-900/80 backdrop-blur">
+      <header className="glass-capsule sticky top-0 z-30 rounded-none border-x-0 border-t-0">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-3">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-bold text-white">
-              A
-            </span>
+            <BrandMark size="sm" priority />
             <span className="text-sm font-semibold text-zinc-100">Nuvra Admin</span>
+            <span className="badge border-red-500/30 bg-red-500/10 text-red-300">Admin</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-zinc-600 sm:inline">{ctx.user.email}</span>

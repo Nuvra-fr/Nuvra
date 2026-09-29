@@ -7,7 +7,7 @@ import { db } from '@/lib/db';
 import { courseModules, courses, enrollments, lessons, workspaces } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 import { formatCents } from '@/lib/money';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge, InlineAlert } from '@/components/ui';
 import EnrollButton from './EnrollButton';
 
@@ -65,7 +65,7 @@ export default async function PublicCoursePage({ params }: Props) {
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <div className="flex items-center gap-2">
             <Link href="/marketplace" className="btn-ghost text-sm">Marketplace</Link>
             {ctx ? (

@@ -6,7 +6,7 @@ import { getSession } from '@/lib/auth';
 import { resolveCheckoutItem } from '@/server/actions/checkout';
 import { paymentsMode } from '@/lib/stripe';
 import { formatCents, estimateProcessorFee } from '@/lib/money';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge, InlineAlert } from '@/components/ui';
 import CheckoutForm from './CheckoutForm';
 
@@ -30,7 +30,7 @@ export default async function CheckoutPage({
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <Link href="/" className="btn-ghost text-sm">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>

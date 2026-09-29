@@ -6,7 +6,7 @@ import { Star, Users, Shield } from 'lucide-react';
 import { db } from '@/lib/db';
 import { courseModules, courses, enrollments, marketplaceListings, reviews, workspaces } from '@/db/schema';
 import { formatCents } from '@/lib/money';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge } from '@/components/ui';
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +56,7 @@ export default async function ListingDetail({
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <Link href="/marketplace" className="btn-ghost text-sm">← Marketplace</Link>
         </div>
       </header>

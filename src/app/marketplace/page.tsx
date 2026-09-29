@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { enrollments, marketplaceListings, reviews } from '@/db/schema';
 import { flagEnabled } from '@/lib/config';
 import { formatCents } from '@/lib/money';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge, InlineAlert } from '@/components/ui';
 
 export const metadata: Metadata = {
@@ -62,9 +62,9 @@ export default async function PublicMarketplace({
 
   return (
     <div className="min-h-screen bg-ink-950">
-      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-ink-950/85 backdrop-blur">
+      <header className="glass-capsule sticky top-0 z-30 rounded-none border-x-0 border-t-0">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <div className="flex items-center gap-2">
             <Link href="/login" className="btn-ghost">Sign in</Link>
             <Link href="/register" className="btn-primary">Start for free</Link>

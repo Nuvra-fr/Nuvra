@@ -4,7 +4,7 @@ import { eq, and, isNull, gt } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { users, emailVerificationTokens } from '@/db/schema';
 import { sha256 } from '@/lib/auth';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export const metadata: Metadata = { title: 'Verify email' };
 
@@ -43,7 +43,7 @@ export default async function VerifyEmailPage({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="mb-8">
-        <Logo />
+        <BrandLogo size="lg" orientation="stacked" />
       </div>
       <div className="card w-full max-w-md p-7 text-center">
         {status === 'ok' ? (

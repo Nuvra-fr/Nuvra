@@ -17,7 +17,11 @@ export const metadata: Metadata = {
       'One platform to build, sell and grow a digital business: pages, funnels, courses, CRM, automations and analytics.',
     type: 'website',
     siteName: 'Nuvra',
+    images: [{ url: '/brand/og.png', width: 1200, height: 630, alt: 'Nuvra — Create. Sell. Teach. Scale.' }],
   },
+  twitter: { card: 'summary_large_image' },
+  applicationName: 'Nuvra',
+  appleWebApp: { capable: true, title: 'Nuvra', statusBarStyle: 'black-translucent' },
   robots: { index: true, follow: true },
 };
 

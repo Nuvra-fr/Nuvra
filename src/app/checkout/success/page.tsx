@@ -7,7 +7,7 @@ import { db } from '@/lib/db';
 import { orderItems, orders, workspaces, ledgerEntries } from '@/db/schema';
 import { formatCents, creatorSplit } from '@/lib/money';
 import { freeCommissionBps } from '@/lib/config';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge, StatusBadge, InlineAlert } from '@/components/ui';
 import { getSession } from '@/lib/auth';
 import { audit } from '@/lib/audit';
@@ -81,7 +81,7 @@ export default async function CheckoutSuccessPage({
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
-          <Logo />
+          <BrandLogo href="/" />
           <StatusBadge status={fresh.mode} />
         </div>
       </header>

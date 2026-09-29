@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { ShoppingBag } from 'lucide-react';
 import { db } from '@/lib/db';
 import { courses, products, workspaces } from '@/db/schema';
 import { formatCents } from '@/lib/money';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { Badge } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
@@ -60,8 +59,7 @@ export default async function PublicStorePage({ params }: { params: Promise<{ sl
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
-          <Logo />
-          <Link href="/" className="btn-ghost text-sm">Nuvra</Link>
+          <BrandLogo href="/" />
         </div>
       </header>
 

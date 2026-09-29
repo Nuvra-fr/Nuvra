@@ -14,7 +14,8 @@ import {
   Shield,
   Infinity as InfinityIcon,
 } from 'lucide-react';
-import { Logo } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
+import { LiquidGlassHeader } from '@/components/LiquidGlassHeader';
 import { formatCents } from '@/lib/money';
 import { academyPriceCents, proPriceCents } from '@/lib/config';
 
@@ -99,22 +100,22 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-ink-950">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-          <Logo />
-          <nav className="hidden items-center gap-6 text-sm text-zinc-400 md:flex">
-            <a href="#platform" className="hover:text-zinc-200">Platform</a>
-            <a href="#academy" className="hover:text-zinc-200">Academy</a>
-            <Link href="/pricing" className="hover:text-zinc-200">Pricing</Link>
-            <a href="#faq" className="hover:text-zinc-200">FAQ</a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/login" className="btn-ghost text-sm">Sign in</Link>
-            <Link href="/register" className="btn-primary">Start for free</Link>
-          </div>
-        </div>
-      </header>
+      {/* Nav — floating liquid-glass capsule */}
+      <LiquidGlassHeader
+        items={[
+          { href: '#platform', label: 'Platform' },
+          { href: '#academy', label: 'Academy' },
+          { href: '/pricing', label: 'Pricing' },
+          { href: '#faq', label: 'FAQ' },
+        ]}
+      >
+        <Link href="/login" className="btn-ghost hidden text-sm sm:inline-flex">
+          Sign in
+        </Link>
+        <Link href="/register" className="btn-primary !py-2 text-sm">
+          Start for free
+        </Link>
+      </LiquidGlassHeader>
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -180,7 +181,7 @@ export default async function LandingPage() {
               displayed, never hidden.
             </p>
           </div>
-          <div className="card border-nuvra-500/30 p-6 shadow-glow">
+          <div className="card card-hover border-nuvra-500/25 p-6">
             <div className="text-xs font-semibold uppercase tracking-wide text-nuvra-400">Nuvra Pro</div>
             <div className="mt-2 text-3xl font-semibold text-white">Keep 100 %</div>
             <p className="mt-2 text-sm text-zinc-400">
@@ -261,7 +262,7 @@ export default async function LandingPage() {
             </ul>
             <Link href="/register" className="btn-secondary mt-6 w-full">Start for free</Link>
           </div>
-          <div className="card border-nuvra-500/40 p-6 shadow-glow">
+          <div className="card card-hover border-nuvra-500/30 p-6">
             <div className="text-sm font-semibold text-nuvra-300">Pro</div>
             <div className="mt-1 text-3xl font-semibold text-white">
               {formatCents(proPrice)}<span className="text-base font-normal text-zinc-500">/mo</span>
@@ -313,7 +314,7 @@ export default async function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-white/[0.06]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-zinc-600 md:flex-row">
-          <Logo size="sm" />
+          <BrandLogo size="sm" />
           <div className="flex gap-5">
             <Link href="/pricing" className="hover:text-zinc-400">Pricing</Link>
             <Link href="/academy" className="hover:text-zinc-400">Academy</Link>

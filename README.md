@@ -59,6 +59,7 @@ liveness probe for uptime monitors and load balancers.
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel + Turso, Docker/Railway, env vars, Stripe, cron |
 | [docs/VERCEL.fr.md](docs/VERCEL.fr.md) | Déployer sur Vercel + Turso, guide en français |
 | [docs/TESTING.md](docs/TESTING.md) | Test strategy and how to run each suite |
+| [docs/BRANDING.md](docs/BRANDING.md) | Logo assets and how to replace them, liquid-glass rules, design tokens, accessibility |
 
 ## Deploy
 

@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Rocket } from 'lucide-react';
 import { saveOnboardingStep } from '@/server/actions/onboarding';
-import { Logo, FormError } from '@/components/auth';
+import { FormError } from '@/components/auth';
+import { BrandLogo } from '@/components/BrandLogo';
 import { ProgressBar } from '@/components/ui';
 
 const GOALS = [
@@ -50,7 +51,7 @@ export default function OnboardingClient({ username }: { username: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-ink-950 px-4 py-10">
       <div className="mb-8">
-        <Logo />
+        <BrandLogo size="lg" orientation="stacked" />
       </div>
       <div className="card w-full max-w-xl p-7">
         <div className="mb-6">

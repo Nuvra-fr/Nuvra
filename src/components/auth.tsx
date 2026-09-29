@@ -3,19 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { BrandLogo } from '@/components/BrandLogo';
 
+/**
+ * @deprecated Use <BrandLogo> from '@/components/BrandLogo' directly — the brand
+ * component renders the official artwork and handles sizing/priority. Kept as a
+ * thin alias so existing auth screens keep working unchanged.
+ */
 export function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
-  const s = size === 'lg' ? 'h-9 w-9 text-lg' : size === 'sm' ? 'h-6 w-6 text-xs' : 'h-8 w-8 text-sm';
-  return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label="Nuvra home">
-      <span
-        className={`${s} flex items-center justify-center rounded-lg bg-nuvra-600 font-bold text-white shadow-glow`}
-      >
-        N
-      </span>
-      <span className="text-[15px] font-semibold tracking-tight text-zinc-100">Nuvra</span>
-    </Link>
-  );
+  return <BrandLogo size={size} />;
 }
 
 export function AuthShell({
@@ -32,7 +28,7 @@ export function AuthShell({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-ink-950 px-4 py-10">
       <div className="mb-8">
-        <Logo />
+        <BrandLogo size="lg" orientation="stacked" />
       </div>
       <div className="card w-full max-w-md p-7">
         <h1 className="text-lg font-semibold text-zinc-100">{title}</h1>

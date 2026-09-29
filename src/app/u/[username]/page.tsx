@@ -14,7 +14,7 @@ import {
 } from '@/db/schema';
 import { PageRenderer } from '@/components/PageRenderer';
 import { parseBlocks } from '@/components/blocks';
-import { Logo } from '@/components/auth';
+import { BrandLogo, BrandMark } from '@/components/BrandLogo';
 import { Badge } from '@/components/ui';
 import { formatCents } from '@/lib/money';
 import { initials } from '@/lib/utils';
@@ -86,8 +86,7 @@ export default async function UserPage({ params }: { params: Promise<{ username:
     <div className="min-h-screen bg-ink-950">
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex h-16 max-w-2xl items-center justify-between px-5">
-          <Logo />
-          <Link href="/" className="btn-ghost text-sm">Nuvra</Link>
+          <BrandLogo href="/" />
         </div>
       </header>
 
@@ -134,7 +133,7 @@ export default async function UserPage({ params }: { params: Promise<{ username:
       </main>
 
       <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-zinc-700">
-        Powered by <span className="font-semibold text-zinc-500">Nuvra</span>
+        Powered by <BrandMark height={13} className="mx-1 inline-block align-[-2px]" /><span className="font-semibold text-zinc-500">Nuvra</span>
       </footer>
     </div>
   );

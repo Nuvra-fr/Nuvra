@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { pages, pageViews, workspaces } from '@/db/schema';
+import { BrandMark } from '@/components/BrandLogo';
 import { PageRenderer } from '@/components/PageRenderer';
 import { parseBlocks } from '@/components/blocks';
 
@@ -82,7 +83,7 @@ export default async function PublicPage({ params, searchParams }: Props) {
     <div className="min-h-screen bg-ink-950">
       <PageRenderer blocks={blocks} workspaceId={ws.id} basePath={`/p/${workspaceSlug}/${pageSlug}`} />
       <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-zinc-700">
-        Powered by <span className="font-semibold text-zinc-500">Nuvra</span> · {ws.name}
+        Powered by <BrandMark height={13} className="mx-1 inline-block align-[-2px]" /><span className="font-semibold text-zinc-500">Nuvra</span> · {ws.name}
       </footer>
     </div>
   );

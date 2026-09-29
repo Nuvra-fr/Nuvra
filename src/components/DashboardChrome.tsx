@@ -30,6 +30,7 @@ import {
   TestTube,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandMark, BrandLogo } from '@/components/BrandLogo';
 import { globalSearch, type SearchHit } from '@/server/actions/search';
 
 const NAV = [
@@ -134,12 +135,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center justify-between px-5">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-nuvra-600 text-sm font-bold text-white">
-            N
-          </span>
-          <span className="text-[15px] font-semibold tracking-tight text-zinc-100">Nuvra</span>
-        </Link>
+        <BrandLogo href="/dashboard" size="md" />
         <button
           className="btn-ghost lg:hidden"
           onClick={() => setMobileOpen(false)}
@@ -156,7 +152,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition',
+                'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition duration-200 ease-smooth',
                 isActive(item.href)
                   ? 'bg-nuvra-600/15 text-nuvra-200'
                   : 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200',
@@ -174,7 +170,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition',
+                'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition duration-200 ease-smooth',
                 isActive(item.href)
                   ? 'bg-nuvra-600/15 text-nuvra-200'
                   : 'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200',
@@ -222,7 +218,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
   return (
     <div className="min-h-screen bg-ink-950">
       {/* Sidebar desktop */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-white/[0.07] bg-ink-900 lg:block">
+      <aside className="glass-panel fixed inset-y-0 left-0 z-30 hidden w-60 border-y-0 border-l-0 lg:block">
         {sidebar}
       </aside>
 
@@ -230,7 +226,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-64 border-r border-white/[0.07] bg-ink-900">
+          <aside className="glass-panel absolute inset-y-0 left-0 w-64 border-y-0 border-l-0">
             {sidebar}
           </aside>
         </div>
@@ -238,18 +234,19 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
 
       <div className="lg:pl-60">
         {/* Topbar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-white/[0.07] bg-ink-950/85 px-4 backdrop-blur md:px-6">
+        <header className="glass-capsule sticky top-0 z-20 flex h-16 items-center gap-3 rounded-none border-x-0 border-t-0 px-4 md:px-6">
           <button className="btn-ghost lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
             <Menu className="h-4 w-4" />
           </button>
+          <BrandMark size="sm" className="lg:hidden" />
 
           <button
             onClick={() => setPaletteOpen(true)}
-            className="flex h-9 flex-1 max-w-md items-center gap-2 rounded-lg border border-white/10 bg-ink-900 px-3 text-sm text-zinc-500 transition hover:border-white/20"
+            className="flex h-9 min-w-0 max-w-md flex-1 items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.04] px-3.5 text-sm text-zinc-500 transition duration-200 ease-smooth hover:border-white/20 hover:bg-white/[0.07]"
           >
             <Search className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Search anything…</span>
-            <kbd className="ml-auto hidden rounded border border-white/10 bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-500 sm:inline">
+            <span className="hidden truncate sm:inline">Search anything…</span>
+            <kbd className="ml-auto hidden shrink-0 rounded border border-white/10 bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-zinc-500 md:inline">
               ⌘K
             </kbd>
           </button>
@@ -272,7 +269,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
                 </span>
               )}
             </summary>
-            <div className="absolute right-0 top-11 w-80 rounded-xl border border-white/10 bg-ink-850 p-2 shadow-card">
+            <div className="glass-panel animate-panelIn absolute right-0 top-11 w-80 rounded-2xl p-2">
               <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Notifications
               </div>
@@ -285,9 +282,9 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-nuvra-600/30 text-xs font-semibold text-nuvra-200">
                 {user.name.slice(0, 1).toUpperCase()}
               </div>
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown className="hidden h-3.5 w-3.5 sm:block" />
             </summary>
-            <div className="absolute right-0 top-11 w-52 rounded-xl border border-white/10 bg-ink-850 p-1.5 shadow-card">
+            <div className="glass-panel animate-panelIn absolute right-0 top-11 w-52 rounded-2xl p-1.5">
               <div className="border-b border-white/[0.07] px-3 py-2">
                 <div className="truncate text-xs font-medium text-zinc-300">{user.email}</div>
                 <div className="text-[11px] text-zinc-600">{workspace.plan} plan</div>
@@ -320,7 +317,7 @@ export default function DashboardChrome({ user, workspace, unread, testMode, chi
       {paletteOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[12vh]">
           <div className="absolute inset-0" onClick={() => setPaletteOpen(false)} />
-          <div className="relative w-full max-w-lg overflow-hidden rounded-xl border border-white/10 bg-ink-850 shadow-card">
+          <div className="glass-panel animate-panelIn relative w-full max-w-lg overflow-hidden rounded-2xl">
             <div className="flex items-center gap-2 border-b border-white/[0.07] px-4">
               <Search className="h-4 w-4 text-zinc-500" />
               <input
