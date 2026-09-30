@@ -192,10 +192,19 @@ export const courseModules = sqliteTable(
     id: id(),
     courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
+    slug: text('slug'),
+    description: text('description'),
+    objectives: js('objectives', []),
+    coverUrl: text('cover_url'),
     position: int('position', 0),
+    published: bool('published', true),
     createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  (t) => [index('course_modules_course_idx').on(t.courseId, t.position)],
+  (t) => [
+    index('course_modules_course_idx').on(t.courseId, t.position),
+    uniqueIndex('course_modules_course_slug_uq').on(t.courseId, t.slug),
+  ],
 );
 
 export const lessons = sqliteTable(
@@ -205,16 +214,123 @@ export const lessons = sqliteTable(
     courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
     moduleId: text('module_id').references(() => courseModules.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
+    slug: text('slug'),
+    shortDescription: text('short_description'),
     type: text('type').notNull().default('text'), // text | video | file | quiz
     content: text('content'),
+    objectives: js('objectives', []),
+    resources: js('resources', []), // [{title, kind, description, url}]
+    exercise: text('exercise'),
+    nuvraAction: text('nuvra_action'), // {action, label, route, requiredEntity, completionCheck}
+    completionCriteria: js('completion_criteria', []),
+    difficulty: text('difficulty').notNull().default('beginner'), // beginner | intermediate | advanced
     resourceUrl: text('resource_url'),
     durationMin: int('duration_min'),
+    durationSec: int('duration_sec'),
     position: int('position', 0),
     isPreview: bool('is_preview', false),
+    published: bool('published', true),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index('lessons_course_idx').on(t.courseId, t.position)],
+  (t) => [
+    index('lessons_course_idx').on(t.courseId, t.position),
+    index('lessons_module_idx').on(t.moduleId, t.position),
+    uniqueIndex('lessons_course_slug_uq').on(t.courseId, t.slug),
+  ],
+);
+
+/// Video assets — one row per module video or per lesson video.
+/// status = SCRIPTED  → the production script/storyboard/transcript exist, the
+///                     rendered file has not been uploaded yet (the UI never
+///                     pretends a video is playable in that state).
+/// status = UPLOADED → playbackUrl points to a real, access-controlled file.
+export const videoAssets = sqliteTable(
+  'video_assets',
+  {
+    id: id(),
+    lessonId: text('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
+    moduleId: text('module_id').references(() => courseModules.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    slug: text('slug'),
+    description: text('description'),
+    status: text('status').notNull().default('SCRIPTED'), // SCRIPTED | UPLOADED
+    durationSec: int('duration_sec'),
+    playbackUrl: text('playback_url'),
+    storageKey: text('storage_key'),
+    thumbnailUrl: text('thumbnail_url'),
+    script: text('script'),
+    storyboard: js('storyboard', []), // [{time, visual, narration, onScreenText}]
+    chapters: js('chapters', []), // [{time, title}]
+    subtitlesUrl: text('subtitles_url'),
+    transcript: text('transcript'),
+    brand: text('brand').notNull().default('nuvra-dark-blue'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('video_assets_lesson_uq').on(t.lessonId),
+    uniqueIndex('video_assets_module_uq').on(t.moduleId),
+    index('video_assets_status_idx').on(t.status),
+  ],
+);
+
+/// Per-enrollment video playback position — powers "continue where you left off".
+export const videoProgress = sqliteTable(
+  'video_progress',
+  {
+    id: id(),
+    enrollmentId: text('enrollment_id').notNull().references(() => enrollments.id, { onDelete: 'cascade' }),
+    lessonId: text('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
+    positionSec: int('position_sec', 0),
+    durationSec: int('duration_sec', 0),
+    percent: int('percent', 0),
+    completedAt: integer('completed_at', { mode: 'timestamp_ms' }),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex('video_progress_enr_lesson_uq').on(t.enrollmentId, t.lessonId)],
+);
+
+/// Learner-authored content: workshop answers, exercise deliverables, notes.
+export const academySubmissions = sqliteTable(
+  'academy_submissions',
+  {
+    id: id(),
+    enrollmentId: text('enrollment_id').notNull().references(() => enrollments.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    lessonId: text('lesson_id').references(() => lessons.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(), // WORKSHOP | EXERCISE | NOTE
+    title: text('title'),
+    payload: js('payload', {}),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('academy_submissions_enr_idx').on(t.enrollmentId, t.kind),
+    uniqueIndex('academy_submissions_enr_kind_uq').on(t.enrollmentId, t.kind, t.lessonId),
+  ],
+);
+
+/// Paid access rights. An Academy enrollment alone is not enough to keep access
+/// after a refund: the entitlement is what every Academy page and API checks.
+export const entitlements = sqliteTable(
+  'entitlements',
+  {
+    id: id(),
+    userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(), // academy
+    status: text('status').notNull().default('ACTIVE'), // ACTIVE | REVOKED | SUSPENDED
+    source: text('source').notNull().default('PURCHASE'), // PURCHASE | ADMIN | SEED
+    orderId: text('order_id').references(() => orders.id, { onDelete: 'set null' }),
+    note: text('note'),
+    grantedAt: createdAt(),
+    revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('entitlements_user_key_uq').on(t.userId, t.key),
+    index('entitlements_status_idx').on(t.key, t.status),
+  ],
 );
 
 export const quizzes = sqliteTable('quizzes', {
@@ -828,3 +944,12 @@ export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type Contact = typeof contacts.$inferSelect;
 export type Enrollment = typeof enrollments.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
+export type CourseModule = typeof courseModules.$inferSelect;
+export type Lesson = typeof lessons.$inferSelect;
+export type VideoAsset = typeof videoAssets.$inferSelect;
+export type Entitlement = typeof entitlements.$inferSelect;
+export type AcademySubmission = typeof academySubmissions.$inferSelect;
+export type Quiz = typeof quizzes.$inferSelect;
+export type Certificate = typeof certificates.$inferSelect;
+export type LessonProgressRow = typeof lessonProgress.$inferSelect;
+export type VideoProgressRow = typeof videoProgress.$inferSelect;

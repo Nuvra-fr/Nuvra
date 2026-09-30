@@ -6,6 +6,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { affiliates, affiliatePrograms, automationActions, automations, contacts, courseModules, courses, emailSequenceSteps, emailSequences, funnels, funnelSteps, lessons, marketplaceListings, memberships, pages, products, profiles, orders, resellerProfiles, templates, users, workspaces } from '@/db/schema';
+import { seedAcademyContent } from './seed-academy';
 import { hashPassword } from '@/lib/auth';
 import { createOrder, finalizeOrderPaid } from '@/lib/orders';
 import { ensurePlans } from '@/lib/billing';
@@ -79,62 +80,36 @@ async function main() {
   await upsertWorkspace('sam-space', 'Espace de Sam', student.id, 'FREE');
 
   // ── Nuvra Academy (platform course) ────────────────
-  const ACADEMY_MODULES = [
-    'Business digital', 'Offre', 'Positionnement', 'Tunnel', 'Pages de vente',
-    'Copywriting', 'Acquisition', 'Email marketing', 'Automatisations', 'Créer sa formation',
-    'Vente', 'Statistiques', 'Passer à l’échelle', 'Programme revendeur', 'Nuvra avancé',
-  ];
-  let academy = await db.select().from(courses).where(eq(courses.slug, 'nuvra-academy')).get();
+  // The Academy curriculum lives in src/content/academy (typed content) and is
+  // projected into the database by scripts/seed-academy.ts: course → modules →
+  // lessons → videos → quizzes → resources. The legacy 15×2 curriculum created
+  // by the first seed run is removed here, once, before the projection.
+  let academy = await db
+    .select()
+    .from(courses)
+    .where(eq(courses.slug, 'nuvra-academy'))
+    .get();
   if (!academy) {
     academy = await db
       .insert(courses)
       .values({
         workspaceId: platformWs.id,
-        title: 'Académie Nuvra',
+        title: 'Nuvra Academy',
         slug: 'nuvra-academy',
         description:
-          'Le programme complet en 15 modules pour concevoir, lancer et faire grandir une activité digitale — avec le programme revendeur.',
+          'Le programme complet en 8 modules pour construire son activité digitale dans Nuvra : offre, tunnel, formation, acquisition, conversion, automatisation et croissance.',
         priceCents: 19700,
+        currency: 'usd',
         status: 'PUBLISHED',
         isAcademy: true,
-        level: 'intermediate',
+        level: 'beginner',
         category: 'Business',
         publishedAt: new Date(),
-        syllabus: JSON.stringify(ACADEMY_MODULES),
       })
       .returning()
       .get();
-    for (const [i, title] of ACADEMY_MODULES.entries()) {
-      const mod = await db
-        .insert(courseModules)
-        .values({ courseId: academy!.id, title, position: i })
-        .returning()
-        .get();
-      await db.insert(lessons)
-        .values({
-          courseId: academy!.id,
-          moduleId: mod.id,
-          title: `Intro — ${title}`,
-          type: 'text',
-          content: `Bienvenue dans le module « ${title} ».\n\nVous y découvrez les principes, les frameworks et les étapes concrètes pour les appliquer dans Nuvra.\n\nObjectifs :\n• Comprendre la stratégie\n• L’appliquer à votre activité\n• Mesurer le résultat`,
-          position: i * 2,
-          isPreview: i === 0,
-          durationMin: 15,
-        })
-        .run();
-      await db.insert(lessons)
-        .values({
-          courseId: academy!.id,
-          moduleId: mod.id,
-          title: `Atelier — ${title} en pratique`,
-          type: 'video',
-          content: 'https://example.com/videos/academy-workshop',
-          position: i * 2 + 1,
-          durationMin: 25,
-        })
-        .run();
-    };
   }
+  await seedAcademyContent();
 
   // ── Creator products & courses ─────────────────────
   if ((await db.select({ id: products.id }).from(products).where(eq(products.workspaceId, creatorWs.id)).all()).length === 0) {
@@ -514,11 +489,13 @@ async function main() {
   });
 
   console.log('');
-  console.log('✅ Données de démo prêtes. Comptes de démonstration (données identifiables) :');
-  console.log('   admin@nuvra.app    / admin2026!    (ADMIN)');
-  console.log('   creator@nuvra.app  / creator2026!  (FREE creator)');
-  console.log('   reseller@nuvra.app / reseller2026! (ACTIVE reseller)');
-  console.log('   student@nuvra.app  / student2026!  (student/customer)');
+  console.log('✅ Données de démo prêtes (données identifiables, à ne pas réutiliser en production).');
+  console.log('   Comptes de démonstration :');
+  console.log(`     admin@nuvra.app    / ${process.env.ADMIN_PASSWORD ?? '(non défini)'}    (ADMIN)`);
+  console.log('     creator@nuvra.app  / creator2026!   (créatrice FREE, sans accès Académie)');
+  console.log('     reseller@nuvra.app / reseller2026!  (revendeur actif, a acheté l\'Académie)');
+  console.log('     student@nuvra.app  / student2026!   (acheteuse via le revendeur)');
+  console.log('   Connexion : /login  ·  Programme : /dashboard/academy');
 }
 
 main()

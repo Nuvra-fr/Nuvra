@@ -2,7 +2,7 @@
   "name": "nuvra",
   "version": "0.1.0",
   "private": true,
-  "description": "Nuvra \u2014 Create. Sell. Teach. Scale. The all-in-one operating system for digital business.",
+  "description": "Nuvra — Create. Sell. Teach. Scale. The all-in-one operating system for digital business.",
   "engines": {
     "node": ">=22.14"
   },
@@ -19,6 +19,7 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed:academy": "tsx scripts/seed-academy.ts",
     "db:reset": "rm -f nuvra.db nuvra.db-wal nuvra.db-shm && tsx scripts/db-migrate.ts && tsx scripts/seed.ts"
   },
   "dependencies": {
