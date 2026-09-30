@@ -425,6 +425,29 @@ export async function finalizeOrderPaid(
     }
   }
 
+  // Nuvra Academy: paid access = ACTIVE entitlement (this is what the
+  // Academy routes and APIs check) + the onboarding email sequence.
+  if (order.kind === 'ACADEMY_SALE' && order.buyerUserId) {
+    try {
+      const academy = await import('@/lib/academy');
+      const emails = await import('@/lib/academy-emails');
+      await academy.grantAcademyAccess(order.buyerUserId, {
+        orderId,
+        source: order.resellerId ? 'RESELLER' : 'PURCHASE',
+        note: order.resellerId
+          ? 'Accès Académie via revendeur'
+          : 'Achat direct de l’Académie',
+      });
+      await emails.ensureAcademySequence();
+      await emails.startAcademySequence({
+        userId: order.buyerUserId,
+        email: order.buyerEmail,
+      });
+    } catch (e) {
+      console.error('[nuvra:orders] onboarding Académie', e);
+    }
+  }
+
   // Affiliate commission
   if (order.affiliateCode) {
     try {
@@ -589,8 +612,28 @@ export async function refundOrder(
     .run();
 
   if (full) {
-    // Revoke course access granted by this order
-    await db.delete(enrollments).where(eq(enrollments.orderId, orderId)).run();
+    if (order.kind === 'ACADEMY_SALE') {
+      // Academy: history is preserved. The enrollment, the progress and the
+      // quiz attempts stay in the database (they are part of the learner's
+      // record); access is cut by revoking the entitlement, which every
+      // Academy route and API re-checks server-side.
+      try {
+        const academy = await import('@/lib/academy');
+        if (order.buyerUserId) {
+          await academy.revokeAcademyAccess(
+            order.buyerUserId,
+            `Remboursement intégral de la commande ${order.number}`,
+          );
+          // Reseller effects recomputed from the remaining paid Academy orders.
+          await recomputeResellerAccess(order.buyerUserId);
+        }
+      } catch (e) {
+        console.error('[nuvra:orders] révocation Académie', e);
+      }
+    } else {
+      // Standard course: access granted by this order is dropped.
+      await db.delete(enrollments).where(eq(enrollments.orderId, orderId)).run();
+    }
     await db
       .update(affiliateSales)
       .set({ status: 'REVERSED' })
@@ -611,6 +654,42 @@ export async function refundOrder(
   });
 
   return (await db.select().from(orders).where(eq(orders.id, orderId)).get())!;
+}
+
+/**
+ * Reseller rights follow the *remaining* paid Academy orders. Refunds
+ * recompute them instead of deleting the profile: a buyer who keeps another
+ * Academy purchase stays ACTIVE, otherwise the profile is set to PENDING
+ * (history, code and commissions are preserved).
+ */
+export async function recomputeResellerAccess(userId: string): Promise<void> {
+  const profile = await db
+    .select()
+    .from(resellerProfiles)
+    .where(eq(resellerProfiles.userId, userId))
+    .get();
+  if (!profile) return;
+  const stillPaid = (
+    await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.buyerUserId, userId),
+          eq(orders.kind, 'ACADEMY_SALE'),
+          eq(orders.status, 'PAID'),
+        ),
+      )
+      .all()
+  ).length;
+  if (stillPaid > 0) return;
+  if (profile.status === 'ACTIVE') {
+    await db
+      .update(resellerProfiles)
+      .set({ status: 'PENDING', updatedAt: new Date() })
+      .where(eq(resellerProfiles.id, profile.id))
+      .run();
+  }
 }
 
 /** After an Academy purchase the buyer becomes an ACTIVE reseller. */

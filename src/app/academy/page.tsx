@@ -7,7 +7,11 @@ import {
   Check,
   LayoutDashboard,
   Link2,
+  Rocket,
   TrendingUp,
+  Play,
+  Hammer,
+  FileCheck2,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/BrandLogo';
 import { AcademyCover } from '@/components/AcademyCover';
@@ -63,6 +67,18 @@ export default async function AcademyPage() {
     title: m.title,
     lessonCount: academyLessons.filter((l) => l.moduleId === m.id).length,
   }));
+  const totalMinutes = academyLessons.reduce((s, l) => s + l.durationMin, 0);
+  const labCount = academyLessons.filter((l) => l.type === 'lab' || l.type === 'workshop').length;
+  const published = academy?.status === 'PUBLISHED' && modules.length > 0;
+
+  const FLOW = [
+    { step: 'COMPRENDRE', text: 'Le modèle économique, le marché, l’audience, le problème.' },
+    { step: 'APPRENDRE', text: 'Les méthodes, avec des exemples chiffrés et des contre-exemples.' },
+    { step: 'VOIR', text: 'Chaque module ouvre sur sa vidéo : storyboard, chapitres, transcription.' },
+    { step: 'FAIRE', text: 'L’atelier : vous construisez l’objet réel dans votre espace Nuvra.' },
+    { step: 'VALIDER', text: 'Quiz corrigé, critères de réussite, vérification automatique dans Nuvra.' },
+    { step: 'PASSER À LA SUITE', text: 'La progression est enregistrée — vous reprenez exactement où vous étiez.' },
+  ];
 
   return (
     <div className="min-h-screen bg-ink-950">
@@ -84,17 +100,48 @@ export default async function AcademyPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-5 pb-20 pt-8">
+        {!published ? (
+          <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            Le programme est en cours de mise en ligne. Les inscriptions restent
+            ouvertes — contactez-nous pour l&apos;accès anticipé.
+          </div>
+        ) : null}
         {/* ── Couverture ───────────────────────────────────────────────── */}
         <AcademyCover
           mode="discover"
-          moduleCount={modules.length || 15}
-          lessonCount={academyLessons.length || 30}
+          moduleCount={modules.length}
+          lessonCount={academyLessons.length}
           priceLabel={formatCents(price)}
           ctaHref="/checkout?item=academy"
           ctaLabel="Commencer l'Académie"
           secondaryHref="#programme"
           secondaryLabel="Voir le programme"
         />
+
+        {/* ── Méthode ──────────────────────────────────────────────────── */}
+        <section className="mt-6 card overflow-hidden">
+          <div className="card-head">
+            <div>
+              <h2 className="section-title">La méthode, à chaque leçon</h2>
+              <p className="section-subtitle">
+                Le même cycle, du début à la fin du programme
+              </p>
+            </div>
+          </div>
+          <ol className="grid gap-px bg-white/[0.05] sm:grid-cols-2 lg:grid-cols-3">
+            {FLOW.map((f, i) => (
+              <li key={f.step} className="bg-ink-900 px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-nuvra-500/30 bg-nuvra-500/10 text-[11px] font-semibold text-nuvra-200">
+                    {i + 1}
+                  </span>
+                  <span className="eyebrow">{f.step}</span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{f.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
 
         {/* ── Programme ────────────────────────────────────────────────── */}
         <section
@@ -106,8 +153,8 @@ export default async function AcademyPage() {
               <div>
                 <h2 className="section-title">Le programme</h2>
                 <p className="section-subtitle">
-                  {modules.length || 15} modules · {academyLessons.length || 30}{' '}
-                  leçons · accès à vie
+                  {modules.length} modules · {academyLessons.length} leçons ·{' '}
+                  {Math.round(totalMinutes / 60)} h de travail guidé · accès à vie
                 </p>
               </div>
               <Badge tone="blue">Certificat à la fin</Badge>
@@ -120,10 +167,11 @@ export default async function AcademyPage() {
               <h2 className="section-title">Ce que vous obtenez</h2>
               <ul className="mt-3.5 space-y-2.5 text-sm text-zinc-400">
                 {[
-                  'Le programme complet, module par module',
-                  'Votre espace d’apprentissage avec suivi de progression',
-                  'Ressources et quiz à chaque étape',
-                  'Certificat de fin de parcours',
+                  `${academyLessons.length} leçons réparties en ${modules.length} modules`,
+                  `${labCount} ateliers pratiques où vous construisez dans Nuvra`,
+                  `Vidéos : storyboard, chapitres, transcription — et le lecteur dès que le fichier est publié`,
+                  'Progression enregistrée : vous reprenez exactement où vous vous étiez arrêté',
+                  'Certificat de fin de parcours avec page de vérification publique',
                   'Éligibilité au programme revendeur',
                 ].map((f) => (
                   <li key={f} className="flex gap-2.5">
@@ -148,13 +196,45 @@ export default async function AcademyPage() {
             <div className="card card-body">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-amber-400" />
-                <h2 className="section-title">Accompagnement</h2>
+                <h2 className="section-title">Dans votre espace</h2>
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-500">
-                Chaque module se termine par un livrable concret : votre offre,
-                votre page, votre séquence email.
+              <ul className="mt-3 space-y-2.5 text-sm text-zinc-400">
+                {[
+                  { icon: Play, t: 'Lecteur vidéo avec position mémorisée' },
+                  { icon: Hammer, t: 'Actions Nuvra : vous construisez dans les vrais ateliers' },
+                  { icon: FileCheck2, t: 'Quiz corrigés, notes privées, critères de réussite' },
+                ].map((f) => (
+                  <li key={f.t} className="flex gap-2.5">
+                    <f.icon className="mt-0.5 h-4 w-4 shrink-0 text-nuvra-400" />
+                    {f.t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Projet final ─────────────────────────────────────────────── */}
+        <section className="mt-6 card card-body">
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-nuvra-500/30 bg-nuvra-500/10">
+              <Rocket className="h-5 w-5 text-nuvra-300" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="eyebrow text-nuvra-300">Projet final</p>
+              <h2 className="mt-1.5 text-lg font-semibold tracking-[-0.01em] text-zinc-100">
+                THE NUVRA LAUNCH PROJECT
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
+                Le parcours ne s&apos;arrête pas à des vidéos. Il se termine par un
+                lancement sur trente jours : cadrage, production, acquisition,
+                système, croissance — avec un plan écrit et un certificat qui
+                atteste que le système existe vraiment dans votre espace.
               </p>
             </div>
+            <Link href="/academy/completion" className="btn-secondary shrink-0">
+              Voir le projet <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </section>
 

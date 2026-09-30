@@ -7,7 +7,11 @@ CRM, email marketing, automations, affiliate programs, marketplace, payouts and 
 with a complete double-entry-style ledger, server-side commission splits and an admin console.
 
 - **Platform is free to use.** Creators on the Free plan pay a platform commission (default **10 %**, admin-configurable); **Nuvra Pro** removes it (0 %).
-- **Nuvra Academy** is the paid flagship course. Buying it activates the **reseller program**: resellers keep **90 %** of sales they attribute (admin-configurable bps), Nuvra keeps 10 %.
+- **Nuvra Academy** is the paid flagship course — **8 modules, 118 French lessons**, videos with
+  script/storyboard/transcript, exercises, quizzes, Nuvra Actions verified against your real
+  workspace, server-side progress and a verifiable certificate. Buying it activates the **reseller
+  program**: resellers keep **90 %** of sales they attribute (admin-configurable bps), Nuvra keeps 10 %.
+  See [docs/ACADEMY.md](docs/ACADEMY.md).
 - **No fake data anywhere.** Every number on every dashboard is computed from the database. Payment and email integrations run in clearly-labeled TEST mode until you provide credentials — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Quick start
@@ -17,6 +21,7 @@ npm install
 cp .env.example .env          # then edit values (see docs/DEPLOYMENT.md)
 npm run db:migrate            # applies drizzle/ migrations (+ first admin if configured)
 npm run db:seed               # demo data + demo accounts (see below)
+npm run db:seed:academy       # re-project the Academy curriculum only (idempotent)
 npm run dev                   # http://localhost:3000
 ```
 
@@ -27,7 +32,7 @@ Demo accounts (created by `npm run db:seed`, clearly-marked demo data):
 
 | Account | Password | Role |
 |---|---|---|
-| `admin@nuvra.app` | `admin2026!` | Administrator (`/admin`) |
+| `admin@nuvra.app` | your `ADMIN_PASSWORD` | Administrator (`/admin`) |
 | `creator@nuvra.app` | `creator2026!` | Free-plan creator with pages, products, courses, funnel |
 | `reseller@nuvra.app` | `reseller2026!` | Active reseller (90/10 program) |
 | `student@nuvra.app` | `student2026!` | Student / customer |
@@ -39,7 +44,7 @@ Demo accounts (created by `npm run db:seed`, clearly-marked demo data):
 ```bash
 npm run typecheck   # tsc --noEmit — 0 errors
 npm run lint        # eslint (next/core-web-vitals + next/typescript) — 0 problems
-npm test            # vitest — 73 tests: money splits, refunds, ledger, payment integrity, registration, auth, rate-limit, utils
+npm test            # vitest — 127 tests: money splits, refunds, ledger, payment integrity, registration, auth, rate-limit, utils, Academy content contract + full paid-journey E2E
 npm run build       # next build
 npm run smoke       # HTTP smoke test of every route × every demo role (needs a running seeded server)
 ```
@@ -53,6 +58,7 @@ liveness probe for uptime monitors and load balancers.
 | Doc | Contents |
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, directory layout, data flow, rendering model |
+| [docs/ACADEMY.md](docs/ACADEMY.md) | Nuvra Academy: curriculum pipeline, routes, entitlement, progress, private media, certificate |
 | [docs/BUSINESS-MODEL.md](docs/BUSINESS-MODEL.md) | The 4 money systems, configurable values, ledger rules |
 | [docs/SECURITY.md](docs/SECURITY.md) | Auth, sessions, RBAC, multi-tenancy, rate limits, secrets |
 | [docs/API.md](docs/API.md) | HTTP endpoints + server-action contracts |

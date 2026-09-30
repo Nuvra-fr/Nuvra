@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { and, asc, eq } from 'drizzle-orm';
 import {
   ArrowLeft,
@@ -45,6 +45,35 @@ export default async function LearnPage({
     .where(eq(courses.id, courseId))
     .get();
   if (!course) notFound();
+
+  // Nuvra Academy has its own LMS (video center, quiz, notes, Nuvra Actions):
+  // the Academy course is always served by that player, never by this generic one.
+  if (course.isAcademy) {
+    const { getAcademyAccess, getResumeTarget } = await import('@/lib/academy');
+    const access = await getAcademyAccess(ctx.user.id);
+    if (!access.granted) redirect('/dashboard/academy?locked=1');
+    const enrollment = access.enrollment!;
+    const target = sp.lesson
+      ? (await db
+          .select({ id: lessons.id, slug: lessons.slug, moduleSlug: courseModules.slug })
+          .from(lessons)
+          .leftJoin(courseModules, eq(lessons.moduleId, courseModules.id))
+          .where(eq(lessons.id, sp.lesson))
+          .get())
+      : null;
+    if (target?.slug && target.moduleSlug) {
+      redirect(
+        `/dashboard/academy/${target.moduleSlug}/lecon/${target.slug}`,
+      );
+    }
+    const resume = await getResumeTarget(enrollment.id);
+    if (resume) {
+      redirect(
+        `/dashboard/academy/${resume.moduleSlug}/lecon/${resume.lessonSlug}`,
+      );
+    }
+    redirect('/dashboard/academy');
+  }
 
   const enrollment = await db
     .select()

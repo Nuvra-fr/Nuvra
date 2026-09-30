@@ -11,6 +11,7 @@ import {
   Mail,
   ScrollText,
   ArrowLeft,
+  GraduationCap,
 } from 'lucide-react';
 import { requireAdmin } from '@/lib/auth';
 import { BrandMark } from '@/components/BrandLogo';
@@ -22,6 +23,7 @@ const NAV = [
   { href: '/admin/users', label: 'Utilisateurs', icon: Users },
   { href: '/admin/orders', label: 'Commandes', icon: ShoppingBag },
   { href: '/admin/payouts', label: 'Versements', icon: Wallet },
+  { href: '/admin/academy', label: 'Académie', icon: GraduationCap },
   { href: '/admin/marketplace', label: 'Modération', icon: Store },
   { href: '/admin/emails', label: 'File d’envoi', icon: Mail },
   { href: '/admin/settings', label: 'Paramètres', icon: Settings },
